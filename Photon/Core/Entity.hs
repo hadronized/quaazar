@@ -125,11 +125,13 @@ scale x y z e = case e of
 -- `LigNode` is the light node. It embeds an entity representing a light and
 -- any children is then linked to that light entity.
 --
--- `MidNode` is a special node. It’s used to create empty parents in order to
+-- `MidNode` is a special node. It’s used to create parents in order to
 -- affect several nodes at once. It can be used to achieve a lot of aims. The
 -- simplest one is the ability to turn two nodes (i.e. two scene entities) into
 -- a rigid one (for instance, a light on a weapon). Feel free to explore
 -- possibilities!
+-- Keep in mind that the entity of a `MidNode` is just a way to refer to that
+-- node, nothing more.
 data EntityGraph a
   = MidNode            [EntityGraph a]
   | CamNode (Entity a) [EntityGraph a]
