@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-} -- for tests only
+﻿{-# LANGUAGE OverloadedStrings #-} -- for tests only
 
 module Photon.Core.Entity where
 
@@ -6,6 +6,17 @@ import Data.String ( IsString(..) )
 import Control.Applicative ( Applicative(..) )
 import Linear
 
+-- |An entity is a scene object which is instantiated in space. So
+-- far, entities enable the use of three space properties:
+--
+--   - position;
+--   - orientation;
+--   - scaling.
+--
+-- You can compose them in any way you want. Just keep in mind you shouldn’t
+-- use the constructor directly. There’re nice combinators to help you build
+-- entities in a lightweight and optimal way. See the **Combinators** part
+-- of this documentation for further details.
 data Entity a
   = Translate Position (Entity a)
   | Orient Orientation (Entity a)
