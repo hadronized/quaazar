@@ -1,7 +1,20 @@
 name:                photon-core
 version:             0.1.0.0
--- synopsis:            
--- description:         
+synopsis:            Realtime scene engine
+description:         **photon** is a realtime scene engine designed to be
+                     simple to use, powerful and flexible. It’s designed as a
+                     core package – the one you’ll use – and several backends
+                     that implements the core features. Just pick a backend and
+                     you’re good to go!
+                     
+                     The `photon-core` package exposes several *core* concepts
+                     you’ll have to be familiar with. The power of **photon**
+                     is the fact the *core* package is quite lightweight so
+                     that you don’t have that much to know.
+                     
+                     Up to now, the engine is designed to be very simple, with
+                     no textures no shading customization. I’ll enhance all
+                     that as I get better projects to work on! :)
 homepage:            https://github.com/phaazon/photon-core
 license:             GPL-3
 license-file:        LICENSE
@@ -13,7 +26,6 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
-  -- Modules exported by the library.
   exposed-modules:     Photon.Control.Monad
                      , Photon.Core.Color
                      , Photon.Core.Entity
@@ -26,12 +38,12 @@ library
                      , Photon.Utils.Directory
                      , Photon.Utils.Log
                      , Photon.Utils.TimePoint
-  
-  default-extensions:  DeriveFunctor 
-                     , FlexibleContexts 
+
+  default-extensions:  DeriveFunctor
+                     , FlexibleContexts
                      , TemplateHaskell
   other-extensions:    ConstraintKinds
-  
+
   build-depends:       base          >= 4.6  && < 4.7
                      , time          >= 1.4  && < 1.5
                      , directory     >= 1.2  && < 1.3
@@ -43,6 +55,5 @@ library
                      , semigroups    >= 0.13 && < 0.14
                      , nats          >= 0.1  && < 0.2
                      , monad-journal >= 0.2  && < 0.3
-  
+
   default-language:    Haskell2010
-  
