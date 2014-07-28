@@ -1,0 +1,48 @@
+name:                photon-core
+version:             0.1.0.0
+-- synopsis:            
+-- description:         
+homepage:            https://github.com/phaazon/photon-core
+license:             GPL-3
+license-file:        LICENSE
+author:              DimitriSabadie
+maintainer:          dimitri.sabadie@gmail.com
+category:            Graphics
+
+build-type:          Simple
+cabal-version:       >=1.10
+
+library
+  -- Modules exported by the library.
+  exposed-modules:     Photon.Control.Monad
+                     , Photon.Core.Color
+                     , Photon.Core.Entity
+                     , Photon.Core.Light
+                     , Photon.Core.Mesh
+                     , Photon.Core.Projection
+                     , Photon.Core.Scene
+                     , Photon.Core.VGroup
+                     , Photon.Core.Vertex
+                     , Photon.Utils.Directory
+                     , Photon.Utils.Log
+                     , Photon.Utils.TimePoint
+  
+  default-extensions:  DeriveFunctor 
+                     , FlexibleContexts 
+                     , TemplateHaskell
+  other-extensions:    ConstraintKinds
+  
+  build-depends:       base          >= 4.6  && < 4.7
+                     , time          >= 1.4  && < 1.5
+                     , directory     >= 1.2  && < 1.3
+                     , mtl           >= 2.2  && < 2.3
+                     , vector        >= 0.10 && < 0.11
+                     , linear        >= 1.10 && < 1.11
+                     , lens          >= 4.2  && < 4.3
+                     , transformers  >= 0.3  && < 0.5
+                     , semigroups    >= 0.13 && < 0.14
+                     , nats          >= 0.1  && < 0.2
+                     , monad-journal >= 0.2  && < 0.3
+  
+  default-language:    Haskell2010
+  
