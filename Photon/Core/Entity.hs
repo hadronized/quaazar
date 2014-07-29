@@ -1,9 +1,11 @@
-﻿{-# LANGUAGE OverloadedStrings #-} -- for tests only
+{-# LANGUAGE OverloadedStrings #-} -- for tests only
 
 module Photon.Core.Entity where
 
-import Data.String ( IsString(..) )
 import Control.Applicative ( Applicative(..) )
+import Control.Lens
+import Data.String ( IsString(..) )
+import Data.Vector ( Vector, fromList )
 import Linear
 
 -- |An entity is a scene object which is instantiated in space. So
@@ -112,36 +114,21 @@ scale x y z e = case e of
     Scale _ _ _ e' -> Scale x y z e'
     _              -> mapEntity (scale x y z) e
 
--- |An entity graph is a special structure used to create hierarchies between
--- entities. It uses *nodes* to connect entities to each other and create
--- parent relations.
+-- |Entities are stored in a value of type `Entities`. It gathers all scene
+-- entities.
 --
--- `CamNode` is the camera node. It embeds an entity representing a camera
--- and any children is then linked to that camera entity.
---
--- `MdlNode` is the model node. It embeds an entity representing a model and
--- any children is then linked to that model entity.
---
--- `LigNode` is the light node. It embeds an entity representing a light and
--- any children is then linked to that light entity.
---
--- `MidNode` is a special node. It’s used to create parents in order to
--- affect several nodes at once. It can be used to achieve a lot of aims. The
--- simplest one is the ability to turn two nodes (i.e. two scene entities) into
--- a rigid one (for instance, a light on a weapon). Feel free to explore
--- possibilities!
--- Keep in mind that the entity of a `MidNode` is just a way to refer to that
--- node, nothing more.
-data EntityGraph a
-  = MidNode            [EntityGraph a]
-  | CamNode (Entity a) [EntityGraph a]
-  | MdlNode (Entity a) [EntityGraph a]
-  | LigNode (Entity a) [EntityGraph a]
-    deriving (Eq,Functor,Show)
+-- Up to now, you can access an entity using a lens.
+data Entities a = Entities {
+    -- |All cameras.
+    _cameras :: Vector (Entity a)
+    -- |All models.
+  , _models  :: Vector (Entity a)
+    -- |All lights.
+  , _lights  :: Vector (Entity a)
+  } deriving (Eq,Show)
 
-entities :: EntityGraph String
-entities = MidNode
-    [
-      CamNode "cam0" [LigNode "redLight" []]
-    , MdlNode (Translate (V3 1 0 0) "redCube") []
-    ]
+makeLenses ''Entities
+
+-- |Build entities from lists.
+entities :: [Entity a] -> [Entity a] -> [Entity a] -> Entities a
+entities c m l = Entities (fromList c) (fromList m) (fromList l)
