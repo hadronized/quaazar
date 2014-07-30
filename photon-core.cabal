@@ -31,6 +31,7 @@ library
   exposed-modules:     Photon.Control.Monad
                      , Photon.Core.Color
                      , Photon.Core.Entity
+                     , Photon.Core.Interpreter
                      , Photon.Core.Light
                      , Photon.Core.Mesh
                      , Photon.Core.Projection
@@ -43,8 +44,11 @@ library
 
   default-extensions:  DeriveFunctor
                      , FlexibleContexts
+                     , FlexibleInstances
+                     , MultiParamTypeClasses
                      , TemplateHaskell
   other-extensions:    ConstraintKinds
+                     , TypeFamilies
 
   build-depends:       base          >= 4.6  && < 4.7
                      , time          >= 1.4  && < 1.5
