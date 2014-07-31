@@ -31,10 +31,10 @@ library
   exposed-modules:     Photon.Control.Monad
                      , Photon.Core.Color
                      , Photon.Core.Entity
-                     , Photon.Core.Interpreter
                      , Photon.Core.Light
                      , Photon.Core.Mesh
                      , Photon.Core.Projection
+                     , Photon.Core.Renderer
                      , Photon.Core.Scene
                      , Photon.Core.VGroup
                      , Photon.Core.Vertex
@@ -48,6 +48,7 @@ library
                      , MultiParamTypeClasses
                      , TemplateHaskell
   other-extensions:    ConstraintKinds
+                     , RankNTypes
                      , TypeFamilies
 
   build-depends:       base          >= 4.6  && < 4.7
