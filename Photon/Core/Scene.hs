@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-} -- for tests only
-
 module Photon.Core.Scene where
 
 import Control.Lens
@@ -8,13 +6,8 @@ import Data.Map as M ( fromList, lookup )
 import Data.Maybe ( isNothing )
 import Photon.Core.Color ( Color )
 import Photon.Core.Light ( Light )
--- import Photon.Core.Mesh ( Mesh )
+import Photon.Core.Mesh ( Mesh )
 import Photon.Core.Projection ( Projection )
-
-import Photon.Core.Projection ( Projection(..) )
-import Photon.Core.Light ( Light(..) )
-import Photon.Core.Mesh
-import Linear
 
 -- |Scene AST, used to store a scene representation. Up to now, it gathers
 -- information about:
@@ -160,18 +153,3 @@ modifyModel sc ip f =
         x            -> x
   where
     f' (Mdl a c) = Mdl a (f c)
-
--- TEST
-scene :: Scene String
-scene = Scene
-    [
-      Cam "cam0" $ Perspective 0 0 0 0
-    , Cam "cam1" $ Perspective 0 1 0 pi
-    , Lig "redLight" $ Sun red
-    , Msh "cube" cube [Mdl "redCube" red]
-    ]
-  where
-    cube   = Mesh verts vgroup
-    verts  = Vertices [] []
-    vgroup = Triangles []
-    red    = V4 1 0 0 1

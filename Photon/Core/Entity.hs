@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-} -- for tests only
-
 module Photon.Core.Entity where
 
 import Control.Applicative ( Applicative(..) )
