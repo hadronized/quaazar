@@ -117,16 +117,16 @@ scale x y z e = case e of
 --
 -- Up to now, you can access an entity using a lens.
 data Entities a = Entities {
-    -- |All cameras.
-    _cameras :: Vector (Entity a)
+    -- |Active camera.
+    _camera :: Entity a
     -- |All models.
-  , _models  :: Vector (Entity a)
+  , _models :: Vector (Entity a)
     -- |All lights.
-  , _lights  :: Vector (Entity a)
+  , _lights :: Vector (Entity a)
   } deriving (Eq,Show)
 
 makeLenses ''Entities
 
 -- |Build entities from lists.
-entities :: [Entity a] -> [Entity a] -> [Entity a] -> Entities a
-entities c m l = Entities (fromList c) (fromList m) (fromList l)
+entities :: Entity a -> [Entity a] -> [Entity a] -> Entities a
+entities c m l = Entities c (fromList m) (fromList l)
