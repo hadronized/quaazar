@@ -1,4 +1,25 @@
-module Photon.Core.Entity where
+module Photon.Core.Entity (
+    -- * Entity
+    Entity(..)
+  , entity
+  , mapEntity
+  , move
+  , position
+  , orient
+  , orientation
+  , rescale
+  , scale
+  , origin3
+  , xAxis
+  , yAxis
+  , zAxis
+    -- * Putting entities to work together
+  , Entities
+  , entities
+  , camera
+  , models
+  , lights
+  ) where
 
 import Control.Applicative ( Applicative(..) )
 import Control.Lens
