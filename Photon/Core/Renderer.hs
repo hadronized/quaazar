@@ -1,6 +1,9 @@
 {-# LANGUAGE RankNTypes #-}
 
-module Photon.Core.Renderer where
+module Photon.Core.Renderer (
+    -- * Renderer
+    Renderer(..)
+  ) where
 
 import Control.Monad.Trans ( MonadIO )
 import Photon.Core.Entity ( Entities )
