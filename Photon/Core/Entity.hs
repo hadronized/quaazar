@@ -109,7 +109,7 @@ position pos e = case e of
 orient :: Orientation -> Entity a -> Entity a
 orient o e = case e of
     Ent{}        -> Orient o e
-    Orient o' e' -> Orient (o * o') e'
+    Orient o' e' -> Orient (o' * o) e'
     _            -> mapEntity (orient o) e
 
 -- |Set the orientation of an entity with a given one.
