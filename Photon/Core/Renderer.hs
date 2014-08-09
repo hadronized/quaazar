@@ -4,11 +4,11 @@ module Photon.Core.Renderer where
 
 import Control.Monad.Trans ( MonadIO )
 import Photon.Core.Entity ( Entities )
-import Photon.Core.Scene ( Scene, IndexPath )
+import Photon.Core.Scene ( IndexPath )
 
 data Renderer frame = Renderer {
     -- |
-    render :: forall a. Scene a -> Entities IndexPath -> frame
+    render :: Entities IndexPath -> frame
     -- |
   , display :: (MonadIO m) => frame -> m ()
     -- |
