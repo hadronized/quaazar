@@ -1,11 +1,8 @@
-{-# LANGUAGE RankNTypes #-}
-
 module Photon.Core.Renderer (
     -- * Renderer
     Renderer(..)
   ) where
 
-import Control.Monad.Trans ( MonadIO )
 import Photon.Core.Entity ( Entities )
 import Photon.Core.Scene ( IndexPath )
 
@@ -17,7 +14,7 @@ data Renderer frame = Renderer {
     render :: Entities IndexPath -> frame
     -- |Displaye a rendered scene (frame). That function should render the
     -- frame on the screen / dedicated area for rendering.
-  , display :: (MonadIO m) => frame -> m ()
+  , display :: frame -> IO ()
     -- |Write a frame in a file as a PNG image.
-  , screenshot :: (MonadIO m) => FilePath -> frame -> m ()
+  , screenshot :: FilePath -> frame -> IO ()
   }
