@@ -35,7 +35,7 @@ import Control.Monad ( forM_, void )
 import Control.Monad.Trans ( lift )
 import Control.Monad.Trans.State ( evalStateT, get, put )
 import Data.List ( foldl1' )
-import Data.Semigroup
+import Data.Semigroup ( Semigroup(..) )
 import Data.Word ( Word8, Word32 )
 import Foreign.Marshal.Array ( advancePtr, allocaArray, copyArray, withArray )
 import Foreign.Ptr ( Ptr, castPtr )
