@@ -40,7 +40,7 @@ data LogType
 -- |Committer of a log.
 data LogCommitter
   = CoreLog           -- Core committer
-  | BackendLog String -- Specific ion backend committer
+  | BackendLog String -- Specific backend committer
   | UserLog           -- User committer
     deriving (Eq)
 
