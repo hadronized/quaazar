@@ -1,4 +1,4 @@
-﻿module Photon.Core.Vertex (
+module Photon.Core.Vertex (
     -- * Vertex protocol
     VertexProto
   , VertexCompProto(VertexCompProto)
@@ -23,6 +23,11 @@
   --, merge
   , deinterleave
   , withDeinterleaved
+    -- * Parsers
+  , vertexProtoParser
+  , vertexCompProtoParser
+  , vertexCompTypeParser
+  , vertexCompSemParser
   ) where
 
 import Control.Lens
@@ -36,6 +41,7 @@ import Foreign.Marshal.Array ( advancePtr, allocaArray, copyArray, withArray )
 import Foreign.Ptr ( Ptr, castPtr )
 import Foreign.Storable ( sizeOf )
 import Numeric.Natural ( Natural )
+import Photon.Core.Parsing
 
 data VertexCompProto = VertexCompProto {
     -- |
@@ -181,3 +187,56 @@ withDeinterleaved v f = do
           put $ p `advancePtr` bytes
           let copy x = withArray x $ \bufx -> copyArray p (castPtr bufx)  bytes
           lift $ foldVertexComp copy copy copy c 
+
+-- -------
+-- Parsers
+
+-- |Vertex protocol parser.
+vertexProtoParser :: CharParser s VertexProto
+vertexProtoParser =
+       between spaces (spaces *> eof) $ many1 (vertexCompProtoParser <* blanks <* eol)
+
+-- |Vertex component protocol parser.
+vertexCompProtoParser :: CharParser s VertexCompProto
+vertexCompProtoParser = do
+    sem <- vertexCompSemParser
+    void $ between blanks blanks (char ':')
+    normalized <- option False $ try (string "normalized" *> blanks1) *> pure True
+    t <- vertexCompTypeParser
+    return $ VertexCompProto normalized sem t
+
+-- |Parse a `VertexCompType`.
+vertexCompTypeParser :: CharParser s VertexCompType
+vertexCompTypeParser = choice (map buildParser tbl) <?> "vertex component type"
+  where
+    buildParser (n,t) = try (string n *> pure t)
+    tbl =
+        [
+          ("ivec4",VInt4)
+        , ("ivec3",VInt3)
+        , ("ivec2",VInt2)
+        , ("int",VInt)
+        , ("uvec4",VUInt4)
+        , ("uvec3",VUInt3)
+        , ("uvec2",VUInt2)
+        , ("uint",VUInt)
+        , ("vec2",VFloat2)
+        , ("vec3",VFloat3)
+        , ("vec4",VFloat4)
+        , ("float",VFloat)
+        ]
+
+-- |Parse a `VertexCompSemantic`.
+vertexCompSemParser :: CharParser s VertexCompSemantic
+vertexCompSemParser = choice (custom : defined)
+  where
+    defined =
+        map buildParser
+          [
+            ("position",VSPosition)
+          , ("normal",VSNormal)
+          , ("color",VSColor)
+          , ("uv",VSUV)
+          ]
+    custom = VSCustom <$> try (string "custom" *> blanks1 *> integralParser)
+    buildParser (n,t) = try (string n *> pure t)
