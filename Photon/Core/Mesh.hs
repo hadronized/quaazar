@@ -10,7 +10,10 @@ module Photon.Core.Mesh (
   , module Photon.Core.VGroup
   ) where
 
-import Control.Lens ( makeLenses )
+import Control.Lens
+import Control.Monad ( replicateM, unless )
+import Data.List.Split ( chunksOf )
+import Data.Map as M ( Map, lookup )
 import Photon.Core.Parsing
 import Photon.Core.Vertex
 import Photon.Core.VGroup
