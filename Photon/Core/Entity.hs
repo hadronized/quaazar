@@ -144,7 +144,7 @@ data Entities a = Entities {
   , _models :: Vector (Entity a)
     -- |All lights.
   , _lights :: Vector (Entity a)
-  } deriving (Eq,Show)
+  } deriving (Eq,Functor,Show)
 
 makeLenses ''Entities
 
