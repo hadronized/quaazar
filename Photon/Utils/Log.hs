@@ -57,7 +57,7 @@ instance Show LogType where
 instance Show LogCommitter where
   show c = case c of
     CoreLog         -> "core"
-    BackendLog impl -> take 4 $ impl ++ repeat ' '
+    BackendLog impl -> take 8 $ impl ++ repeat ' '
     UserLog         -> "user"
 
 -- |Create a debug log.
