@@ -36,8 +36,7 @@ import Linear
 --
 -- You can compose them in any way you want. Just keep in mind you shouldn’t
 -- use the constructor directly. There’re nice combinators to help you build
--- entities in a lightweight and optimal way. See the **Combinators** part
--- of this documentation for further details.
+-- entities in a lightweight and optimal way.
 data Entity a
   = Translate Position (Entity a)
   | Orient Orientation (Entity a)
