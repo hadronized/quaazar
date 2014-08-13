@@ -16,7 +16,7 @@ import Data.Time.Clock ( DiffTime, utctDayTime, getCurrentTime )
 
 -- |Time point. This is a very important type used to represent absolute time.
 -- Elapsed time between two time points simply gives you how many seconds were
--- stand between those points.
+-- stood between those points.
 type TimePoint = DiffTime
 
 -- |Get a time point.
