@@ -1,7 +1,7 @@
 ﻿{-
 Timepoints are points in time as any other points in specific dimensions (space,
 uvtex and so on). You can then get the difference between two time points (you
-might be used to calling that “elapsed time”.
+might be used to calling that “elapsed time”).
 
 The whole thing can be used as clocking stuff.
 -}
