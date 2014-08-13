@@ -56,9 +56,9 @@ instance Show LogType where
 
 instance Show LogCommitter where
   show c = case c of
-    CoreLog         -> "core"
+    CoreLog         -> "core    "
     BackendLog impl -> take 8 $ impl ++ repeat ' '
-    UserLog         -> "user"
+    UserLog         -> "user    "
 
 -- |Create a debug log.
 deb :: (MonadLogger m) => LogCommitter -> String -> m ()
