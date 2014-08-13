@@ -23,6 +23,5 @@ data Renderer frame = Renderer {
   , screenshot :: FilePath -> frame -> IO ()
   }
 
--- |A post-process effect is an endormophism between two frames. It’s used to
--- modify a frame.
+-- |A post-process effect is an endomorphism between two frames.
 newtype PostFX frame = PostFX { runPostFX :: frame -> frame }
