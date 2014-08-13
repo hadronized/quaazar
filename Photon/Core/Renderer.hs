@@ -8,7 +8,7 @@ module Photon.Core.Renderer (
 import Photon.Core.Entity ( Entities )
 import Photon.Core.Scene ( IndexPath )
 
--- |Renderer are plain data that host rendering functions. They’re generated
+-- |Renderers are plain data that host rendering functions. They’re generated
 -- for a specific `Scene a`.
 data Renderer frame = Renderer {
     -- |Render scene entities into a frame. This frame is just a rendered
