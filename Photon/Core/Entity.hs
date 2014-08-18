@@ -22,6 +22,7 @@ module Photon.Core.Entity (
   ) where
 
 import Control.Applicative ( Applicative(..) )
+import Control.Comonad
 import Control.Lens
 import Data.String ( IsString(..) )
 import Data.Vector ( Vector, fromList )
@@ -57,6 +58,13 @@ instance Monad Entity where
   Orient x a    >>= f = Orient x (a >>= f)
   Scale x y z a >>= f = Scale x y z (a >>= f)
   Ent a         >>= f = f a
+
+instance Comonad Entity where
+  extract (Translate _ e) = extract e
+  extract (Orient    _ e) = extract e
+  extract (Scale _ _ _ e) = extract e
+  extract (Ent x) = x
+  extend f e = Ent (f e)
 
 instance (IsString a) => IsString (Entity a) where
   fromString = Ent . fromString
