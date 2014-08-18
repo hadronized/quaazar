@@ -116,7 +116,6 @@ modifyLight sc ip f =
 -- |Lookup a mesh in a scene.
 lookupMesh :: Scene a -> IndexPath -> Maybe Mesh
 lookupMesh sc ip = do
-    guard . isNothing $ ip^.ipMdl
     top <- lookupTop sc ip
     case top of
         Msh _ m _ -> return m
