@@ -138,8 +138,8 @@ lookupModel sc ip = do
     top <- lookupTop sc ip
     case top of
         Msh _ _ mdls -> do
-            Mdl _ c <- mdls^?ix mdli
-            return c
+          Mdl _ c <- mdls^?ix mdli
+          return c
         _            -> Nothing
 
 -- |Modify a model in a scene.
