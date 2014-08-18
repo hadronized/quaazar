@@ -2,6 +2,7 @@ module Photon.Core.Entity (
     -- * Entity
     Entity(..)
   , entity
+  , entityName
   , mapEntity
   , move
   , position
@@ -22,7 +23,6 @@ module Photon.Core.Entity (
   ) where
 
 import Control.Applicative ( Applicative(..) )
-import Control.Comonad
 import Control.Lens
 import Data.String ( IsString(..) )
 import Data.Vector ( Vector, fromList )
@@ -59,13 +59,6 @@ instance Monad Entity where
   Scale x y z a >>= f = Scale x y z (a >>= f)
   Ent a         >>= f = f a
 
-instance Comonad Entity where
-  extract (Translate _ e) = extract e
-  extract (Orient    _ e) = extract e
-  extract (Scale _ _ _ e) = extract e
-  extract (Ent x) = x
-  extend f e = Ent (f e)
-
 instance (IsString a) => IsString (Entity a) where
   fromString = Ent . fromString
 
@@ -98,6 +91,14 @@ mapEntity f e = case e of
 entity :: a -> Entity a
 entity = Ent
 
+-- |Extract the name of the entity.
+entityName :: Entity a -> a
+entityName e = case e of
+    Translate _ d -> entityName d
+    Orient    _ d -> entityName d
+    Scale _ _ _ d -> entityName d
+    Ent x         -> x
+ 
 -- |Move an entity along a direction.
 move :: Dir -> Entity a -> Entity a
 move dir e = case e of
