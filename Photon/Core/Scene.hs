@@ -2,7 +2,6 @@ module Photon.Core.Scene where
 
 import Control.Lens
 import Data.Map as M ( fromList, lookup )
-import Data.Maybe ( isNothing )
 import Photon.Core.Color ( Color )
 import Photon.Core.Light ( Light )
 import Photon.Core.Mesh ( Mesh )
