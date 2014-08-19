@@ -1,7 +1,6 @@
 module Photon.Core.Scene where
 
 import Control.Lens
-import Control.Monad ( guard )
 import Data.Map as M ( fromList, lookup )
 import Data.Maybe ( isNothing )
 import Photon.Core.Color ( Color )
