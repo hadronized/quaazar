@@ -1,7 +1,17 @@
-module Photon.Core.Scene where
+module Photon.Core.Scene (
+    -- * Scene representation
+    Scene(Scene)
+  , sceneCamera
+  , sceneLights
+  , sceneModels
+    -- * Optimized name
+  , IndexPath(..)
+  , indexPath
+  ) where
 
-import Control.Applicative
 import Control.Lens
+import Data.Map ( Map, fromList )
+import Data.Tuple ( swap )
 import Photon.Core.Light ( Light )
 import Photon.Core.Mesh ( Mesh )
 import Photon.Core.Model ( Model )
@@ -19,16 +29,10 @@ data Scene a = Scene {
     -- |
     _sceneCamera :: Projection
     -- |
-  , _sceneLights :: [Named a Light]
+  , _sceneLights :: [(a,Light)]
     -- |
-  , _sceneMeshes :: [Named a (Mesh,[Named a Model])]
+  , _sceneModels :: [(Mesh,[(a,Model)])]
   } deriving (Eq,Show)
-
--- |A named value.
-data Named n t = Named {
-    _name  :: n
-  , _named :: t
-  } deriving (Functor,Eq,Show)
 
 -- |Names are unique identifiers used to identify objects in a scene. For
 -- instance, `Scene String` has `String` names. `Scene Integer` has `Integer`
@@ -46,15 +50,8 @@ data Named n t = Named {
 -- documentation of the `indexPath` function for further details.
 newtype IndexPath = IndexPath { unIndexPath :: [Int] } deriving (Eq,Ord,Show)
 
-makeLenses ''Named
 makeLenses ''Scene
 makeLenses ''IndexPath
-
-nameIndex :: (Eq n) => n -> [(Int,Named n t)] -> Maybe Int
-nameIndex _ [] = Nothing
-nameIndex n ((i,x):xs)
-    | n == x^.name = Just i
-    | otherwise    = nameIndex n xs
 
 -- |Map a name to its `IndexPath` representation. That function should be
 -- partially applied in order to get a mapping function
@@ -66,13 +63,11 @@ nameIndex n ((i,x):xs)
 -- similar structure’s names (see `EntityGraph`).
 --
 --     fmap (fromJust . indexPath scene) scene
-indexPath :: (Ord a) => Scene a -> a -> Maybe IndexPath
-indexPath sc n = inLight <|> inMesh <|> inModel
+indexPath :: (Ord a) => Scene a -> Map a IndexPath
+indexPath sc = fromList (scligs ++ scmdls)
   where
-    inLight = fmap ip1 (nameIndex n scligs)
-    inMesh  = fmap ip1 (nameIndex n scmshs) 
-    inModel = Nothing
-    scligs = ixed (sc^.sceneLights)
-    scmshs = ixed $ map (fmap $ fmap ixed) (sc^.sceneMeshes)
-    ixed   = zip [0..]
-    ip1 i  = IndexPath [i]
+    scligs   = map (fmap ip1 . swap) . ixed . map fst $ sc^.sceneLights
+    scmdls   = concatMap (\(i0,m) -> map (fmap (ip2 i0) . swap) . ixed $ map fst m) . ixed . map snd $ sc^.sceneModels
+    ixed     = zip [0..]
+    ip1 i    = IndexPath [i]
+    ip2 i0 i = IndexPath [i0,i]
