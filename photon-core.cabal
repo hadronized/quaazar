@@ -34,6 +34,7 @@ library
                      , Photon.Core.Light
                      , Photon.Core.Mesh
                      , Photon.Core.Model
+                     , Photon.Core.Parsing
                      , Photon.Core.Projection
                      , Photon.Core.Renderer
                      , Photon.Core.Scene
