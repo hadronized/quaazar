@@ -1,28 +1,5 @@
-module Photon.Core.Entity (
-    -- * Entity
-    Entity(..)
-  , entity
-  , entityName
-  , mapEntity
-  , move
-  , position
-  , orient
-  , orientation
-  , rescale
-  , scale
-  , origin3
-  , xAxis
-  , yAxis
-  , zAxis
-    -- * Putting entities to work together
-  , Entities
-  , entities
-  , camera
-  , models
-  , lights
-  ) where
+module Photon.Core.Entity where
 
-import Control.Applicative ( Applicative(..) )
 import Control.Lens
 import Data.String ( IsString(..) )
 import Data.Vector ( Vector, fromList )
@@ -34,39 +11,28 @@ import Linear
 --   - position;
 --   - orientation;
 --   - scaling.
---
--- You can compose them in any way you want. Just keep in mind you shouldn’t
--- use the constructor directly. There’re nice combinators to help you build
--- entities in a lightweight and optimal way.
-data Entity a
-  = Translate Position (Entity a)
-  | Orient Orientation (Entity a)
-  | Scale {-# UNPACK #-} !Float {-# UNPACK #-} !Float {-# UNPACK #-} !Float (Entity a)
-  | Ent a
-    deriving (Eq,Functor,Show)
+data Entity a = Entity {
+    -- |
+    _entityPosition    :: Position
+    -- |
+  , _entityOrientation :: Orientation
+    -- |
+  , _entityScale       :: Scale
+    -- |
+  , _entityName        :: a
+  } deriving (Eq,Functor,Show)
 
-instance Applicative Entity where
-  pure = Ent
-  Translate x f <*> a = Translate x (f <*> a)
-  Orient x f    <*> a = Orient x (f <*> a)
-  Scale x y z f <*> a = Scale x y z (f <*> a)
-  Ent f         <*> a = fmap f a
+data Scale = Scale {-# UNPACK #-} !Float {-# UNPACK #-} !Float {-# UNPACK #-} !Float deriving (Eq,Ord,Show)
 
-instance Monad Entity where
-  return = Ent
-  Translate x a >>= f = Translate x (a >>= f)
-  Orient x a    >>= f = Orient x (a >>= f)
-  Scale x y z a >>= f = Scale x y z (a >>= f)
-  Ent a         >>= f = f a
+type Position    = V3 Float
+type Dir         = V3 Float
+type Axis        = V3 Float
+type Orientation = Quaternion Float
+
+makeLenses ''Entity
 
 instance (IsString a) => IsString (Entity a) where
-  fromString = Ent . fromString
-
-type Position = V3 Float
-type Dir      = V3 Float
-type Axis     = V3 Float
-
-type Orientation = Quaternion Float
+  fromString = entity . fromString
 
 -- |Origin of the R³ basis (0,0,0).
 origin3 :: Position
@@ -78,68 +44,33 @@ xAxis = V3 1 0 0
 yAxis = V3 0 1 0
 zAxis = V3 0 0 1
 
--- |Map a function inside an entity. You can use that function to pass down
--- a function and reach lower entity layers.
-mapEntity :: (Entity a -> Entity a) -> Entity a -> Entity a
-mapEntity f e = case e of
-    Ent{}          -> f e
-    Translate p e' -> Translate p (f e')
-    Orient o e'    -> Orient o (f e')
-    Scale x y z e' -> Scale x y z (f e')
-
 -- |Create a new entity with no space information.
 entity :: a -> Entity a
-entity = Ent
+entity = Entity (V3 0 0 0) (axisAngle (-zAxis) 0) (Scale 1 1 1)
 
--- |Extract the name of the entity.
-entityName :: Entity a -> a
-entityName e = case e of
-    Translate _ d -> entityName d
-    Orient    _ d -> entityName d
-    Scale _ _ _ d -> entityName d
-    Ent x         -> x
- 
 -- |Move an entity along a direction.
 move :: Dir -> Entity a -> Entity a
-move dir e = case e of
-    Ent{}          -> Translate dir e
-    Translate p e' -> Translate (p+dir) e'
-    _              -> mapEntity (move dir) e
+move dir = entityPosition %~ (+dir)
 
 -- |Position an entity at a given position.
 position :: Position -> Entity a -> Entity a
-position pos e = case e of
-    Ent{}          -> Translate pos e
-    Translate _ e' -> Translate pos e'
-    _              -> mapEntity (position pos) e
+position = set entityPosition
 
 -- |Orient an entity with another orientation.
 orient :: Orientation -> Entity a -> Entity a
-orient o e = case e of
-    Ent{}        -> Orient o e
-    Orient o' e' -> Orient (o' * o) e'
-    _            -> mapEntity (orient o) e
+orient o = entityOrientation %~ (*o)
 
 -- |Set the orientation of an entity with a given one.
 orientation :: Orientation -> Entity a -> Entity a
-orientation o e = case e of
-    Ent{}       -> Orient o e
-    Orient _ e' -> Orient o e'
-    _           -> mapEntity (orientation o) e
+orientation = set entityOrientation
 
 -- |Rescale an entity.
-rescale :: Float -> Float -> Float -> Entity a -> Entity a
-rescale x y z e = case e of
-    Ent{}             -> Scale x y z e
-    Scale x' y' z' e' -> Scale (x*x') (y*y') (z*z') e'
-    _                 -> mapEntity (rescale x y z) e
+rescale :: Scale -> Entity a -> Entity a
+rescale (Scale x' y' z') = entityScale %~ \(Scale x y z) -> Scale (x*x') (y*y') (z*z')
 
 -- |Scale an entity.
-scale :: Float -> Float -> Float -> Entity a -> Entity a
-scale x y z e = case e of
-    Ent{}          -> Scale x y z e
-    Scale _ _ _ e' -> Scale x y z e'
-    _              -> mapEntity (scale x y z) e
+scale :: Scale -> Entity a -> Entity a
+scale = set entityScale
 
 -- |Entities are stored in a value of type `Entities`. It gathers all scene
 -- entities.
