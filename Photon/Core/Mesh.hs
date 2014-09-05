@@ -90,19 +90,19 @@ vgroupParser prim
         unless (even . length $ last l) $ parserFail "odd number of indices!"
         return . Lines $ map (\[a,b] -> Line a b) l
     parseSLines = do
-        ind@(x:xs) <- whole
-        unless (length ind > 1) $
+        ind@(a:b:xs) <- whole
+        unless (length ind > 2) $
           parserFail "at least two indices are required with stripped lines!"
-        return $ SLines x xs
+        return $ SLines a b xs
     parseTriangles = do
         l <- fmap (chunksOf 3) whole
         unless ((==3) . length $ last l) $ parserFail "wrong number of indices!"
         return . Triangles $ map (\[a,b,c] -> Triangle a b c) l
     parseSTriangles = do
-        ind@(x:y:ys) <- whole
-        unless (length ind > 2) $
-          parserFail "at least three indices are required with stripped triangles"
-        return $ STriangles x y ys
+        ind@(a:b:c:xs) <- whole
+        unless (length ind > 3) $
+          parserFail "at least three indices are required with stripped triangles!"
+        return $ STriangles a b c xs
     whole = spaces *> sepEndBy1 unsignedParser spaces
 
 -- FIXME: this version is quite slow since it’s O(n)

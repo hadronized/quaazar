@@ -18,8 +18,8 @@ data VGroup
   = Points [Word32]
   | Lines [Line]
   | Triangles [Triangle]
-  | SLines Word32 [Word32]
-  | STriangles Word32 Word32 [Word32]
+  | SLines Word32 Word32 [Word32]
+  | STriangles Word32 Word32 Word32 [Word32]
     deriving (Eq,Read,Show)
 
 fromLine :: Line -> [Word32]
@@ -30,8 +30,8 @@ fromTriangle (Triangle a b c) = [a,b,c]
 
 fromVGroup :: VGroup -> [Word32]
 fromVGroup vg = case vg of
-    Points p         -> p
-    Lines l          -> concat (fmap fromLine l)
-    Triangles t      -> concat (fmap fromTriangle t)
-    SLines a l       -> a : l
-    STriangles a b l -> a : b : l
+  Points p           -> p
+  Lines l            -> concat (fmap fromLine l)
+  Triangles t        -> concat (fmap fromTriangle t)
+  SLines a b l       -> a : b : l
+  STriangles a b c l -> a : b : c : l
