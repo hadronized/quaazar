@@ -1,4 +1,11 @@
-module Photon.Core.Light where
+module Photon.Core.Light (
+    -- * Light
+    Light(..)
+    -- * Light properties
+  , LightProperties(LightProperties)
+  , ligColor
+  , ligShininess
+  ) where
 
 import Control.Lens
 import Photon.Core.Color ( Color )
