@@ -1,13 +1,13 @@
-name:                photon-core
+name:                photon
 version:             0.1.0.0
-synopsis:            Realtime scene engine
+synopsis:            Scene engine
 description:         **photon** is a realtime scene engine designed to be
                      simple to use, powerful and flexible. It’s designed as a
                      core package – the one you’ll use – and several backends
                      that implements the core features. Just pick a backend and
                      you’re good to go!
 
-                     The `photon-core` package exposes several *core* concepts
+                     The `photon` package exposes several *core* concepts
                      you’ll have to be familiar with. The power of **photon**
                      is the fact the *core* package is quite lightweight so
                      that you don’t have that much to know.
@@ -15,7 +15,7 @@ description:         **photon** is a realtime scene engine designed to be
                      Up to now, the engine is designed to be very simple, with
                      no textures no shading customization. I’ll enhance all
                      that as I get better projects to work on! :)
-homepage:            https://github.com/phaazon/photon-core
+homepage:            https://github.com/phaazon/photon
 license:             GPL-3
 license-file:        LICENSE
 author:              DimitriSabadie
