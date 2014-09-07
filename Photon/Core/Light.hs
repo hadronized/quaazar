@@ -5,6 +5,7 @@ module Photon.Core.Light (
   , LightProperties(LightProperties)
   , ligColor
   , ligShininess
+  , ligPower
   ) where
 
 import Control.Lens
@@ -19,6 +20,8 @@ data LightProperties = LightProperties {
     _ligColor     :: Color
     -- |
   , _ligShininess :: Float
+    -- |
+  , _ligPower     :: Float
   } deriving (Eq,Show)
 
 makeLenses ''LightProperties
