@@ -24,10 +24,10 @@ import Linear
 -- @Perspective ratio fovy znear zfar@ creates a perspective projection.
 data Projection
   = Perspective
-      Float -- ^ ratio
-      Float -- ^ fovy
-      Float -- ^ znear
-      Float -- ^ zfar
+      Float
+      Float
+      Float
+      Float
     deriving (Eq,Show)
 
 -- |Turn a `Projection` into a projection 4x4 matrix.
