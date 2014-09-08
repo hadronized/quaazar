@@ -32,9 +32,9 @@ module Photon.Core.Parsing (
   ) where
 
 import Control.Monad ( void )
-import Control.Applicative as X hiding ( optional, many )
+import Control.Applicative hiding ( optional, many )
 import Numeric ( readDec, readFloat, readSigned )
-import Text.Parsec as X hiding ( Line, (<|>) )
+import Text.Parsec hiding ( Line, (<|>) )
 import Text.ParserCombinators.Parsec.Char ( CharParser )
 
 -- |Parse an end-of-line.
