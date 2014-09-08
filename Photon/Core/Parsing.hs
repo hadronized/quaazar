@@ -26,8 +26,9 @@ module Photon.Core.Parsing (
   , unsignedParser
   , floatingParser
     -- * Re-exported
-  , module X
   , CharParser
+  , module Control.Applicative
+  , module Text.Parsec
   ) where
 
 import Control.Monad ( void )
