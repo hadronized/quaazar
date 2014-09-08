@@ -1,10 +1,18 @@
-﻿{-
-Timepoints are points in time as any other points in specific dimensions (space,
-uvtex and so on). You can then get the difference between two time points (you
-might be used to calling that “elapsed time”).
+-----------------------------------------------------------------------------
+-- |
+-- Copyright   : (C) 2014 Dimitri Sabadie
+-- License     : BSD3
+--
+-- Maintainer  : Dimitri Sabadie <dimitri.sabadie@gmail.com>
+-- Stability   : experimental
+-- Portability : portable
+--
+-- Timepoints are points in time as any other points in specific dimensions
+-- (space, uvtex and so on). You can then get the difference between two
+-- time points (you might be used to calling that “elapsed time”).
 
-The whole thing can be used as clocking stuff.
--}
+-- The whole thing can be used as clocking stuff.
+----------------------------------------------------------------------------
 
 module Photon.Utils.TimePoint (
     -- * Time point
