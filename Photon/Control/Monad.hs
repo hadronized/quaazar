@@ -1,8 +1,22 @@
+-----------------------------------------------------------------------------
+-- |
+-- Copyright   : (C) 2014 Dimitri Sabadie
+-- License     : BSD3
+--
+-- Maintainer  : Dimitri Sabadie <dimitri.sabadie@gmail.com>
+-- Stability   : experimental
+-- Portability : portable
+--
+-- This module enhances a little bit "Control.Monad" by adding a few useful
+-- functions.
+----------------------------------------------------------------------------
+
 module Photon.Control.Monad (
-    -- * Filter
+    -- * Filters
     partitionM
   ) where
 
+-- |Monadic version of 'filter'.
 partitionM :: (Monad m) => (a -> m Bool) -> [a] -> m ([a],[a])
 partitionM p l = sel l ([],[])
   where
