@@ -1,3 +1,48 @@
+-----------------------------------------------------------------------------
+-- |
+-- Copyright   : (C) 2014 Dimitri Sabadie
+-- License     : BSD3
+--
+-- Maintainer  : Dimitri Sabadie <dimitri.sabadie@gmail.com>
+-- Stability   : experimental
+-- Portability : portable
+--
+-- Entities are very important. They represent “something” with spatial
+-- information attached.
+--
+-- Up to now, supported spatial information is:
+--
+--   - *position* ;
+--   - *orientation* ;
+--   - *scaling*.
+--
+-- In most cases, you’ll be using 'String' entities. They enable the use
+-- of 'String' as object identifiers, which is handy.
+--
+-- To create a new entity, use the 'entity' function:
+--
+-- @ let cube = entity "cube" -- Entity String @
+--
+-- If the type of the entity is in the 'IsString' typeclass, you can
+-- directly use the name of the entity (be sure having the
+-- **OverloadStrings** extension on):
+--
+-- @ let cube = "cube" @
+--
+-- You then have a few combinators to attach spatial information. You can
+-- 'move' the entity around, 'position' it somewhere, 'orient' it, set its
+-- 'orientation', 'rescale' it or 'scale' it:
+--
+-- @
+--     let cube0 = move (V3 1 0 0) "cube0"
+--     let cube1 = position (V3 4 0 1) "cube1"
+--     let cube2 = orient xAxis (pi/2) "cube2"
+--     let cube3 = orientation (V3 1 1 1) (-2*pi/3) "cube3"
+--     let cube4 = rescale (Scale 1 1 2) "cube4"
+--     let cube5 = scale (Scale 2 2 2) "cube5"
+-- @
+----------------------------------------------------------------------------
+
 module Photon.Core.Entity where
 
 import Control.Lens
@@ -12,13 +57,13 @@ import Linear
 --   - orientation;
 --   - scaling.
 data Entity a = Entity {
-    -- |
+    -- |Entity’s position.
     _entityPosition    :: Position
-    -- |
+    -- |Entity’s orientation.
   , _entityOrientation :: Orientation
-    -- |
+    -- |Entity’s scale.
   , _entityScale       :: Scale
-    -- |
+    -- |Entity’s name.
   , _entityName        :: a
   } deriving (Eq,Functor,Show)
 
