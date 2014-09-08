@@ -16,7 +16,7 @@ description:         **photon** is a realtime scene engine designed to be
                      no textures no shading customization. I’ll enhance all
                      that as I get better projects to work on! :)
 homepage:            https://github.com/phaazon/photon
-license:             GPL-3
+license:             BSD3
 license-file:        LICENSE
 author:              DimitriSabadie
 maintainer:          dimitri.sabadie@gmail.com
