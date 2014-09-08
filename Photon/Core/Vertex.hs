@@ -1,3 +1,48 @@
+-----------------------------------------------------------------------------
+-- |
+-- Copyright   : (C) 2014 Dimitri Sabadie
+-- License     : BSD3
+--
+-- Maintainer  : Dimitri Sabadie <dimitri.sabadie@gmail.com>
+-- Stability   : experimental
+-- Portability : portable
+--
+-- Vertices are points in space with extra information attached. This
+-- module exports everything you need to handle vertices and all associated
+-- types.
+--
+-- First, you’ll need to define a *vertex specification*, *vertex format*
+-- or – preferred – a *vertex protocol*. This is done via 'VertexProto'.
+-- A 'VertexProto' is a bunch of vertex component protocols, that define
+-- each component of a vertex (see 'VertexCompProto'). You have several
+-- useful information to provide, such as the type of the
+-- component ('VertexCompType') or its semantic ('VertexCompSemantic').
+--
+-- Once you have a vertex protocol, you can start building vertices. A
+-- single vertex is encoded in a type called 'Vertex', which is a list of
+-- all its components ('VertexComp'). That list must be correct regarding
+-- the vertex protocol you previously declared. You have a few combinators
+-- to build the 'VertexComp':
+--
+--   - 'integral' takes a list of 'Int' and builds a 'VertexComp';
+--   - 'unsigned' takes a list of 'Word32' and builds a 'VertexComp'
+--   - 'floating' takes a list of 'Float' and builds a 'VertexComp';
+--
+-- For instance:
+--
+-- @
+--     let
+--       position = floating [0,0,1]
+--       boneID   = unsigned [1]
+--       color    = floating [1,1,1,1]
+--       vert     = [position,boneID,color] -- :: [VertexComp] ~ Vertex
+-- @
+--
+-- You’ll find useful functions, suck as 'deinterleave' and
+-- 'withDeinterleave' you can use to deinterleave vertices in order to
+-- optimize/whatever evil you plan to do with ;)
+----------------------------------------------------------------------------
+
 module Photon.Core.Vertex (
     -- * Vertex protocol
     VertexProto
@@ -13,9 +58,9 @@ module Photon.Core.Vertex (
   , mapVertexComp
   , vertexCompSize
   , vertexCompBytes
-  , integral
-  , unsigned
-  , floating
+  , integral -- FIXME: ints
+  , unsigned -- FIXME: word32s
+  , floating -- FIXME: floats
   , Vertex
   , Vertices(Vertices)
   , verticesVerts
@@ -43,15 +88,17 @@ import Foreign.Storable ( sizeOf )
 import Numeric.Natural ( Natural )
 import Photon.Core.Parsing
 
+-- |Vertex component protocol.
 data VertexCompProto = VertexCompProto {
-    -- |
+    -- |Must the component be normalized?
     _vcProtoNormalized :: Bool
-    -- |
+    -- |Semantic of the component.
   , _vcProtoSemantic   :: VertexCompSemantic
-    -- |
+    -- |Type of the component.
   , _vcProtoType       :: VertexCompType
   } deriving (Eq,Show)
 
+-- |Possible vertex component type.
 data VertexCompType
   = VInt
   | VInt2
@@ -67,6 +114,7 @@ data VertexCompType
   | VFloat4
     deriving (Eq,Show)
 
+-- |Availabe vertex component semantics.
 data VertexCompSemantic
   = VSPosition
   | VSNormal
@@ -75,6 +123,7 @@ data VertexCompSemantic
   | VSCustom Natural
     deriving (Eq,Show)
 
+-- |Vertex component. It could be integral, unsigned or floating.
 data VertexComp
   = IntegralComp [Int]
   | UnsignedComp [Word32]
@@ -87,21 +136,24 @@ instance Semigroup VertexComp where
   FloatingComp a <> FloatingComp b = FloatingComp $ a ++ b
   _              <> _              = error "types mismatch"
 
--- |`Vertices` is a bunch of vertices associated to a `VertexProtocol`.
+-- |'Vertices' is a bunch of vertices associated to a 'VertexProtocol'.
 data Vertices = Vertices {
-    -- |Vertex protocol.
+    -- |Vertex protocol to use with.
     _verticesVProto :: VertexProto
-    -- |Vertices.
+    -- |True vertices.
   , _verticesVerts  :: [Vertex]
   } deriving (Eq,Show)
 
+-- |A 'Vertex' is simply a list of 'VertexComp'.
 type Vertex = [VertexComp]
+
+-- |A 'VertexProto' is simply a list of 'VertexCompProto'.
 type VertexProto = [VertexCompProto]
 
 makeLenses ''VertexCompProto
 makeLenses ''Vertices
 
--- |Get the integral semantic from a `VertexCompSemantic`.
+-- |Get the integral semantic from a 'VertexCompSemantic'.
 fromVertexCompSemantic :: VertexCompSemantic -> Natural
 fromVertexCompSemantic vcs = case vcs of
     VSPosition -> 0
@@ -110,15 +162,20 @@ fromVertexCompSemantic vcs = case vcs of
     VSUV       -> 3
     VSCustom s -> 4 + s
  
+-- |Build an integral 'VertexComp'.
 integral :: [Int] -> VertexComp
 integral = IntegralComp
 
+-- |Build an unsigned 'VertexComp'.
 unsigned :: [Word32] -> VertexComp
 unsigned = UnsignedComp
 
+-- |Build a floating 'VertexComp'.
 floating :: [Float] -> VertexComp
 floating = FloatingComp
 
+-- |Fold a vertex component using three functions. Depending of the type of
+-- the vertex component, the matching one will be used.
 foldVertexComp :: ([Int] -> a)
                -> ([Word32] -> a)
                -> ([Float] -> a)
@@ -128,17 +185,22 @@ foldVertexComp i u f vc = case vc of
     UnsignedComp x -> u x
     FloatingComp x -> f x
 
+-- |Map a function over a vertex component. Depending of the type of the
+-- vertex component, the matching one will be used.
 mapVertexComp :: ([Int] -> [Int])
-       -> ([Word32] -> [Word32])
-       -> ([Float] -> [Float])
-       -> VertexComp
-       -> VertexComp
+              -> ([Word32] -> [Word32])
+              -> ([Float] -> [Float])
+              -> VertexComp
+              -> VertexComp
 mapVertexComp i u f =
     foldVertexComp (integral . i) (unsigned . u) (floating . f)
 
+-- |Size of a vertex component. In theory it could be any value, but it’s
+-- often 1, 2, 3 or 4.
 vertexCompSize :: VertexComp -> Int
 vertexCompSize = foldVertexComp length length length
 
+-- |Bytes used by a vertex component.
 vertexCompBytes :: VertexComp -> Int
 vertexCompBytes =
     foldVertexComp
@@ -146,33 +208,38 @@ vertexCompBytes =
       ((*) (sizeOf (undefined :: Word32)) . length)
       ((*) (sizeOf (undefined :: Float)) . length)
 
+-- |Component-component vertex merge.
 merge :: Vertex -> Vertex -> Vertex
 merge = zipWith (<>)
 
--- |Deinterleave a list of list of `VertexComp`. A deinterleaved one is simple:
--- a list of `VertexComp` can be something like `[floating a, unsigned b`]. If
+-- |Deinterleave a list of list of 'VertexComp'. A deinterleaved one is simple:
+-- a list of 'VertexComp' can be something like '[floating a, unsigned b']. If
 -- you have several values like this one and put them in a list, it yields
 -- something like:
 --
+-- @
 --     [
 --       [floating a,unsigned b]
 --     , [floating c,unsigned d]
 --     ]
+-- @
 --
 -- A deinterleaved version of this value joins vertically each part:
 --
+-- @
 --     [floating ac,unsigned bd]
+-- @
 --
 -- This function may fail if types mismatch.
 deinterleave :: [Vertex] -> [VertexComp]
 deinterleave = foldl1' merge
 
--- |Expose a `[VertexComp]` as a C pointer. This function is the only way to
--- poke such lists through *FFI*, so you might want to use `deinterleave` if
--- you want to poke `[[VertexComp]]` (i.e. vertices).
+-- |Expose a '[VertexComp]' as a C pointer. This function is the only way to
+-- poke such lists through *FFI*, so you might want to use 'deinterleave' if
+-- you want to poke '[[VertexComp]]' (i.e. vertices).
 --
--- The function that treats the C pointer takes a `Ptr Word8` that represents
--- the `[VertexComp]` and its size in bytes.
+-- The function that treats the C pointer takes a @Ptr Word8@ that represents
+-- the '[VertexComp]' and its size in bytes.
 withDeinterleaved :: [VertexComp] -> (Int -> Ptr Word8 -> IO a) -> IO a
 withDeinterleaved v f = do
     allocaArray totalBytes $ \buf -> do
@@ -188,9 +255,6 @@ withDeinterleaved v f = do
           let copy x = withArray x $ \bufx -> copyArray p (castPtr bufx)  bytes
           lift $ foldVertexComp copy copy copy c 
 
--- -------
--- Parsers
-
 -- |Vertex protocol parser.
 vertexProtoParser :: CharParser s VertexProto
 vertexProtoParser =
@@ -205,7 +269,7 @@ vertexCompProtoParser = do
     t <- vertexCompTypeParser
     return $ VertexCompProto normalized sem t
 
--- |Parse a `VertexCompType`.
+-- |Parse a 'VertexCompType'.
 vertexCompTypeParser :: CharParser s VertexCompType
 vertexCompTypeParser = choice (map buildParser tbl) <?> "vertex component type"
   where
@@ -226,7 +290,7 @@ vertexCompTypeParser = choice (map buildParser tbl) <?> "vertex component type"
         , ("float",VFloat)
         ]
 
--- |Parse a `VertexCompSemantic`.
+-- |Parse a 'VertexCompSemantic'.
 vertexCompSemParser :: CharParser s VertexCompSemantic
 vertexCompSemParser = choice (custom : defined)
   where

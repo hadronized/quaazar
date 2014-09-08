@@ -19,7 +19,7 @@ module Photon.Core.Mesh (
     Mesh(Mesh)
   , meshVertices
   , meshVGroup
-    -- * Parsing
+    -- * Parsers
   , meshParser
     -- * Re-exported modules
   , module Photon.Core.Vertex
@@ -34,6 +34,8 @@ import Photon.Core.Parsing
 import Photon.Core.Vertex
 import Photon.Core.VGroup
 
+-- |A mesh is a pair of vertices and vertex group. See 'meshVertices' and
+-- 'meshVGroup' for further details.
 data Mesh = Mesh {
     _meshVertices :: Vertices
   , _meshVGroup   :: VGroup
@@ -41,8 +43,13 @@ data Mesh = Mesh {
 
 makeLenses ''Mesh
 
+-- Convenient alias.
 type MeshParser = CharParser VertexProto
 
+-- |Parse a 'Mesh'.
+-- 
+-- The 'Map String VertexProto' is used to retrieve the 'VertexProto' used
+-- by the 'Vertices' of the 'Mesh'.
 meshParser :: Map String VertexProto -> MeshParser Mesh
 meshParser vps = do
     proto <- between spaces spaces (protoParser <* blanks <* eol)
@@ -56,11 +63,11 @@ meshParser vps = do
   where
     chunksOfVerts = chunksOf . length
 
--- Parse the `proto` keyword and returns its name.
+-- |Parse the `proto` keyword and returns its name.
 protoParser :: MeshParser String
 protoParser = string "proto" *> blanks1 *> identifierName
 
--- Parse a single `VertexComp`.
+-- |Parse a single `VertexComp`.
 vcompParser :: MeshParser VertexComp
 vcompParser = do
     vcproto <- fmap head getState

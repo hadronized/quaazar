@@ -1,3 +1,16 @@
+-----------------------------------------------------------------------------
+-- |
+-- Copyright   : (C) 2014 Dimitri Sabadie
+-- License     : BSD3
+--
+-- Maintainer  : Dimitri Sabadie <dimitri.sabadie@gmail.com>
+-- Stability   : experimental
+-- Portability : portable
+--
+-- This module exposes a few parsing combinators that plugin on "parsec"’s
+-- ones.
+----------------------------------------------------------------------------
+
 module Photon.Core.Parsing (
     -- * Common parsers
     eol

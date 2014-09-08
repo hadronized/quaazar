@@ -1,3 +1,16 @@
+-----------------------------------------------------------------------------
+-- |
+-- Copyright   : (C) 2014 Dimitri Sabadie
+-- License     : BSD3
+--
+-- Maintainer  : Dimitri Sabadie <dimitri.sabadie@gmail.com>
+-- Stability   : experimental
+-- Portability : portable
+--
+-- Projection is often used in 3D engine. They’re a lot of types of
+-- projection. Those supported are contained in 'Projection'.
+----------------------------------------------------------------------------
+
 module Photon.Core.Projection (
     -- * Projection
     Projection(..)
@@ -8,13 +21,13 @@ import Linear
 
 -- |Projection type.
 --
--- `Perspective ratio fovy znear zfar`.
+-- @Perspective ratio fovy znear zfar@ creates a perspective projection.
 data Projection
   = Perspective
-      Float
-      Float
-      Float
-      Float
+      Float -- ^ ratio
+      Float -- ^ fovy
+      Float -- ^ znear
+      Float -- ^ zfar
     deriving (Eq,Show)
 
 -- |Turn a `Projection` into a projection 4x4 matrix.

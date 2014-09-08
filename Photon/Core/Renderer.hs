@@ -1,3 +1,22 @@
+-----------------------------------------------------------------------------
+-- |
+-- Copyright   : (C) 2014 Dimitri Sabadie
+-- License     : BSD3
+--
+-- Maintainer  : Dimitri Sabadie <dimitri.sabadie@gmail.com>
+-- Stability   : experimental
+-- Portability : portable
+--
+-- Renderer interface. A 'Renderer' is an object that exposes a few useful
+-- functions:
+--   - 'render': perform a render;
+--   - 'display': display a render;
+--   - 'postfx': apply post-process effects;
+--   - 'screenshot': write a render on the disk.
+--
+-- Furthermore, this module exports the notion of 'PostFX'.
+----------------------------------------------------------------------------
+
 module Photon.Core.Renderer (
     -- * Renderer
     Renderer(..)

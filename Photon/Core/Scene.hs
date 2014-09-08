@@ -1,3 +1,23 @@
+-----------------------------------------------------------------------------
+-- |
+-- Copyright   : (C) 2014 Dimitri Sabadie
+-- License     : BSD3
+--
+-- Maintainer  : Dimitri Sabadie <dimitri.sabadie@gmail.com>
+-- Stability   : experimental
+-- Portability : portable
+--
+-- This module exports everything you need to describe and act with your
+-- scene. Up to now, a few objects of the scene are supported:
+-- 
+--   - *camera*, which are simple projections;
+--   - *lights*, which are 'Light's;
+--   - *models*, which are 'Model's attached to 'Mesh'es.
+--
+-- Additionally, you’ll find 'IndexPath'. That is a special type used to
+-- replace your name type used in your scene (commonly a 'String').
+----------------------------------------------------------------------------
+
 module Photon.Core.Scene (
     -- * Scene representation
     Scene(Scene)
