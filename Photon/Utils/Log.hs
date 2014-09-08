@@ -1,4 +1,41 @@
-﻿{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE ConstraintKinds #-}
+
+-----------------------------------------------------------------------------
+-- |
+-- Copyright   : (C) 2014 Dimitri Sabadie
+-- License     : BSD3
+--
+-- Maintainer  : Dimitri Sabadie <dimitri.sabadie@gmail.com>
+-- Stability   : experimental
+-- Portability : portable
+--
+-- Logging interface module.
+--
+-- Logging uses "Control.Monad.Journal" (hence the 'MonadJournal'
+-- typeclass). However, this module exposes a few combinators that might
+-- help you a lot:
+--
+--   - 'deb' is used to log debug messages ;
+--   - 'info' is used to log informational messages ;
+--   - 'warn' is used to log warnings ;
+--   - 'err' is used to log errors.
+--
+-- You also have a pretty neat 'sinkLogs', which is a default 'sink'
+-- implementation for 'MonadJournal'. Of course, you can use you're own if
+-- you want to.
+--
+-- If you intend to handle the logs yourself, you have to understand what
+-- logs look like. Logs gather three things:
+--
+--   - a committer ('LogCommitter'), which is the entity responsible of the
+--     log ;
+--   - a type ('LogType'), which is the type of the log (debug,
+--     informational, warning and so on and so forth) ;
+--   - a 'String' message.
+--
+-- Logs are gathered in a 'Traversable' queue ('LogQueue'). Feel free to
+-- traverse it and handle logs anyway you want then!
+----------------------------------------------------------------------------
 
 module Photon.Utils.Log (
     -- * MonadLogger
@@ -22,11 +59,14 @@ import Control.Monad.Trans.Journal
 import Data.Foldable as F ( mapM_ )
 import Data.Vector ( Vector, fromList )
 
+-- |Monad used to log.
 type MonadLogger m = (MonadJournal LogQueue m)
 
--- |A log.
+-- |A plain log with meta-information.
 data Log = Log LogType LogCommitter String deriving (Eq)
 
+-- FIXME: use DList instead
+-- |Logs queue.
 type LogQueue = Vector Log 
 
 -- |Type of log.
