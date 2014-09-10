@@ -44,37 +44,37 @@ data Mesh = Mesh {
 makeLenses ''Mesh
 
 -- Convenient alias.
-type MeshParser = CharParser VertexProto
+type MeshParser = CharParser VertexFormat
 
 -- |Parse a 'Mesh'.
 -- 
--- The 'Map String VertexProto' is used to retrieve the 'VertexProto' used
+-- The 'Map String VertexFormat' is used to retrieve the 'VertexFormat' used
 -- by the 'Vertices' of the 'Mesh'.
-meshParser :: Map String VertexProto -> MeshParser Mesh
+meshParser :: Map String VertexFormat -> MeshParser Mesh
 meshParser vps = do
-    proto <- between spaces spaces (protoParser <* blanks <* eol)
-    maybe (parserFail $ "invalid vertex protocol: " ++ proto) putState (M.lookup proto vps)
-    vproto <- getState
+    format <- between spaces spaces (formatParser <* blanks <* eol)
+    maybe (parserFail $ "invalid vertex format: " ++ format) putState (M.lookup format vps)
+    vformat <- getState
     between spaces spaces (string "@vertices" *> blanks *> eol)
     verts <- many1 (between spaces spaces vcompParser)
     prim <- vgroupSectionParser
     vgroup <- vgroupParser prim
-    return $ Mesh (Vertices vproto $ chunksOfVerts vproto verts) vgroup
+    return $ Mesh (Vertices vformat $ chunksOfVerts vformat verts) vgroup
   where
     chunksOfVerts = chunksOf . length
 
--- |Parse the `proto` keyword and returns its name.
-protoParser :: MeshParser String
-protoParser = string "proto" *> blanks1 *> identifierName
+-- |Parse the `format` keyword and returns its name.
+formatParser :: MeshParser String
+formatParser = string "format" *> blanks1 *> identifierName
 
 -- |Parse a single `VertexComp`.
 vcompParser :: MeshParser VertexComp
 vcompParser = do
-    vcproto <- fmap head getState
+    vcformat <- fmap head getState
     -- FIXME: rotate must be written in a faster way; it’d require to change
     -- the state of the parser
     modifyState rotate
-    case vcproto^.vcProtoType of
+    case vcformat^.vcFormatType of
       VInt    -> parseIntegral 1
       VInt2   -> parseIntegral 2
       VInt3   -> parseIntegral 3
