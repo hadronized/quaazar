@@ -12,16 +12,16 @@
 -- types.
 --
 -- First, you’ll need to define a *vertex specification*, *vertex format*
--- or – preferred – a *vertex protocol*. This is done via 'VertexProto'.
--- A 'VertexProto' is a bunch of vertex component protocols, that define
--- each component of a vertex (see 'VertexCompProto'). You have several
--- useful information to provide, such as the type of the
--- component ('VertexCompType') or its semantic ('VertexCompSemantic').
+-- This is done via 'VertexProto'. A 'VertexFormat' is a bunch of vertex
+-- component formats, that describe each component of a vertex (see
+-- 'VertexCompFormat'). You have several useful information to provide, such
+-- as the type of the component ('VertexCompType') or its semantic
+-- ('VertexCompSemantic').
 --
--- Once you have a vertex protocol, you can start building vertices. A
+-- Once you have a vertex format, you can start building vertices. A
 -- single vertex is encoded in a type called 'Vertex', which is a list of
 -- all its components ('VertexComp'). That list must be correct regarding
--- the vertex protocol you previously declared. You have a few combinators
+-- the vertex format you previously declared. You have a few combinators
 -- to build the 'VertexComp':
 --
 --   - 'integral' takes a list of 'Int' and builds a 'VertexComp';
@@ -44,12 +44,12 @@
 ----------------------------------------------------------------------------
 
 module Photon.Core.Vertex (
-    -- * Vertex protocol
-    VertexProto
-  , VertexCompProto(VertexCompProto)
-  , vcProtoType
-  , vcProtoNormalized
-  , vcProtoSemantic
+    -- * Vertex format 
+    VertexFormat
+  , VertexCompFormat(VertexCompFormat)
+  , vcFormatType
+  , vcFormatNormalized
+  , vcFormatSemantic
   , VertexCompType(..)
   , VertexCompSemantic(..)
   , fromVertexCompSemantic
@@ -64,13 +64,13 @@ module Photon.Core.Vertex (
   , Vertex
   , Vertices(Vertices)
   , verticesVerts
-  , verticesVProto
+  , verticesFormat
   --, merge
   , deinterleave
   , withDeinterleaved
     -- * Parsers
-  , vertexProtoParser
-  , vertexCompProtoParser
+  , vertexFormatParser
+  , vertexCompFormatParser
   , vertexCompTypeParser
   , vertexCompSemParser
   ) where
@@ -88,14 +88,14 @@ import Foreign.Storable ( sizeOf )
 import Numeric.Natural ( Natural )
 import Photon.Core.Parsing
 
--- |Vertex component protocol.
-data VertexCompProto = VertexCompProto {
+-- |Vertex component format.
+data VertexCompFormat = VertexCompFormat {
     -- |Must the component be normalized?
-    _vcProtoNormalized :: Bool
+    _vcFormatNormalized :: Bool
     -- |Semantic of the component.
-  , _vcProtoSemantic   :: VertexCompSemantic
+  , _vcFormatSemantic   :: VertexCompSemantic
     -- |Type of the component.
-  , _vcProtoType       :: VertexCompType
+  , _vcFormatType       :: VertexCompType
   } deriving (Eq,Show)
 
 -- |Possible vertex component type.
@@ -136,10 +136,10 @@ instance Semigroup VertexComp where
   FloatingComp a <> FloatingComp b = FloatingComp $ a ++ b
   _              <> _              = error "types mismatch"
 
--- |'Vertices' is a bunch of vertices associated to a 'VertexProtocol'.
+-- |'Vertices' is a bunch of vertices associated to a 'VertexFormat'.
 data Vertices = Vertices {
-    -- |Vertex protocol to use with.
-    _verticesVProto :: VertexProto
+    -- |Vertex format to use with.
+    _verticesFormat :: VertexFormat
     -- |True vertices.
   , _verticesVerts  :: [Vertex]
   } deriving (Eq,Show)
@@ -147,10 +147,10 @@ data Vertices = Vertices {
 -- |A 'Vertex' is simply a list of 'VertexComp'.
 type Vertex = [VertexComp]
 
--- |A 'VertexProto' is simply a list of 'VertexCompProto'.
-type VertexProto = [VertexCompProto]
+-- |A 'VertexFormat' is simply a list of 'VertexCompFormat'.
+type VertexFormat = [VertexCompFormat]
 
-makeLenses ''VertexCompProto
+makeLenses ''VertexCompFormat
 makeLenses ''Vertices
 
 -- |Get the integral semantic from a 'VertexCompSemantic'.
@@ -255,19 +255,19 @@ withDeinterleaved v f = do
           let copy x = withArray x $ \bufx -> copyArray p (castPtr bufx)  bytes
           lift $ foldVertexComp copy copy copy c 
 
--- |Vertex protocol parser.
-vertexProtoParser :: CharParser s VertexProto
-vertexProtoParser =
-       between spaces (spaces *> eof) $ many1 (vertexCompProtoParser <* blanks <* eol)
+-- |Vertex format parser.
+vertexFormatParser :: CharParser s VertexFormat
+vertexFormatParser =
+       between spaces (spaces *> eof) $ many1 (vertexCompFormatParser <* blanks <* eol)
 
--- |Vertex component protocol parser.
-vertexCompProtoParser :: CharParser s VertexCompProto
-vertexCompProtoParser = do
+-- |Vertex component format parser.
+vertexCompFormatParser :: CharParser s VertexCompFormat
+vertexCompFormatParser = do
     sem <- vertexCompSemParser
     void $ between blanks blanks (char ':')
     normalized <- option False $ try (string "normalized" *> blanks1) *> pure True
     t <- vertexCompTypeParser
-    return $ VertexCompProto normalized sem t
+    return $ VertexCompFormat normalized sem t
 
 -- |Parse a 'VertexCompType'.
 vertexCompTypeParser :: CharParser s VertexCompType
