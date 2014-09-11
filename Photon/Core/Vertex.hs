@@ -257,8 +257,7 @@ withDeinterleaved v f = do
 
 -- |Vertex format parser.
 vertexFormatParser :: CharParser s VertexFormat
-vertexFormatParser =
-       between spaces (spaces *> eof) $ many1 (vertexCompFormatParser <* blanks <* eol)
+vertexFormatParser = many1 $ between spaces blanks vertexCompFormatParser <* (void (many1 eol) <|> eof)
 
 -- |Vertex component format parser.
 vertexCompFormatParser :: CharParser s VertexCompFormat
