@@ -19,7 +19,7 @@ import Control.Monad.Trans ( MonadIO, liftIO )
 import Control.Monad.Except ( MonadError, throwError )
 import Photon.Core.Vertex ( VertexFormat, vertexFormatParser )
 import Photon.Utils.Log ( MonadLogger )
-import Text.Parsec ( parseFromFile )
+import Text.Parsec.String ( parseFromFile )
 
 loadVertexFormat :: (MonadLogger m,MonadError String m,MonadIO m)
                  => FilePath
