@@ -30,9 +30,9 @@ import Control.Lens
 import Control.Monad ( replicateM, unless )
 import Data.List.Split ( chunksOf )
 import Data.Map as M ( Map, lookup )
-import Photon.Core.Parsing
 import Photon.Core.Vertex
 import Photon.Core.VGroup
+import Photon.Utils.Parsing
 
 -- |A mesh is a pair of vertices and vertex group. See 'meshVertices' and
 -- 'meshVGroup' for further details.

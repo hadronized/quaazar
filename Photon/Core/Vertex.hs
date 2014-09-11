@@ -86,7 +86,7 @@ import Foreign.Marshal.Array ( advancePtr, allocaArray, copyArray, withArray )
 import Foreign.Ptr ( Ptr, castPtr )
 import Foreign.Storable ( sizeOf )
 import Numeric.Natural ( Natural )
-import Photon.Core.Parsing
+import Photon.Utils.Parsing
 
 -- |Vertex component format.
 data VertexCompFormat = VertexCompFormat {

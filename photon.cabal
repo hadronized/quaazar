@@ -34,7 +34,6 @@ library
                      , Photon.Core.Light
                      , Photon.Core.Mesh
                      , Photon.Core.Model
-                     , Photon.Core.Parsing
                      , Photon.Core.Projection
                      , Photon.Core.Renderer
                      , Photon.Core.Scene
@@ -42,6 +41,7 @@ library
                      , Photon.Core.Vertex
                      , Photon.Utils.Directory
                      , Photon.Utils.Log
+                     , Photon.Utils.Parsing
                      , Photon.Utils.TimePoint
 
   default-extensions:  DeriveFunctor
