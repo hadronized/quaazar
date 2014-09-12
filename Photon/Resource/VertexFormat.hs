@@ -12,16 +12,16 @@
 ----------------------------------------------------------------------------
 
 module Photon.Resource.VertexFormat (
-    -- *
+    -- * Loading vertex formats
+    loadVertexFormat
   ) where
 
 import Control.Monad.Trans ( MonadIO, liftIO )
 import Control.Monad.Except ( MonadError, throwError )
 import Photon.Core.Vertex ( VertexFormat, vertexFormatParser )
-import Photon.Utils.Log ( MonadLogger )
 import Text.Parsec.String ( parseFromFile )
 
-loadVertexFormat :: (MonadLogger m,MonadError String m,MonadIO m)
+loadVertexFormat :: (MonadError String m,MonadIO m)
                  => FilePath
                  -> m VertexFormat
 loadVertexFormat path = do
