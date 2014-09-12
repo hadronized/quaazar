@@ -11,7 +11,7 @@
 -- ones.
 ----------------------------------------------------------------------------
 
-module Photon.Core.Parsing (
+module Photon.Utils.Parsing (
     -- * Common parsers
     eol
   , line

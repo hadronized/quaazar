@@ -86,7 +86,7 @@ import Foreign.Marshal.Array ( advancePtr, allocaArray, copyArray, withArray )
 import Foreign.Ptr ( Ptr, castPtr )
 import Foreign.Storable ( sizeOf )
 import Numeric.Natural ( Natural )
-import Photon.Core.Parsing
+import Photon.Utils.Parsing
 
 -- |Vertex component format.
 data VertexCompFormat = VertexCompFormat {
@@ -257,8 +257,7 @@ withDeinterleaved v f = do
 
 -- |Vertex format parser.
 vertexFormatParser :: CharParser s VertexFormat
-vertexFormatParser =
-       between spaces (spaces *> eof) $ many1 (vertexCompFormatParser <* blanks <* eol)
+vertexFormatParser = many1 $ between spaces blanks vertexCompFormatParser <* (void (many1 eol) <|> eof)
 
 -- |Vertex component format parser.
 vertexCompFormatParser :: CharParser s VertexCompFormat
