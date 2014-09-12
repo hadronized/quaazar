@@ -39,6 +39,7 @@ library
                      , Photon.Core.Scene
                      , Photon.Core.VGroup
                      , Photon.Core.Vertex
+                     , Photon.Resource.Mesh
                      , Photon.Resource.VertexFormat
                      , Photon.Utils.Directory
                      , Photon.Utils.Log
@@ -50,6 +51,7 @@ library
                      , FlexibleInstances
                      , MultiParamTypeClasses
                      , TemplateHaskell
+
   other-extensions:    ConstraintKinds
                      , RankNTypes
                      , TypeFamilies
