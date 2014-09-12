@@ -1,13 +1,13 @@
 name:                photon
 version:             0.1.0.0
 synopsis:            Scene engine
-description:         **photon** is a realtime scene engine designed to be
+description:         "photon" is a realtime scene engine designed to be
                      simple to use, powerful and flexible. It’s designed as a
                      core package – the one you’ll use – and several backends
                      that implements the core features. Just pick a backend and
                      you’re good to go!
 
-                     The `photon` package exposes several *core* concepts
+                     The "photon" package exposes several *core* concepts
                      you’ll have to be familiar with. The power of **photon**
                      is the fact the *core* package is quite lightweight so
                      that you don’t have that much to know.
