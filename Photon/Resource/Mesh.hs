@@ -12,16 +12,17 @@
 
 module Photon.Resource.Mesh (
     -- * Loading meshes
-    loadMesh
+    --loadMesh
   ) where
 
 import Control.Monad.Except ( MonadError, throwError )
 import Control.Monad.Trans ( MonadIO, liftIO )
 import Data.Map as M ( Map )
 import Photon.Core.Vertex ( VertexFormat )
-import Photon.Core.Mesh ( Mesh, meshParser )
+import Photon.Core.Mesh ( Mesh )
 import Photon.Utils.Parsing
 
+{-
 loadMesh :: (MonadError String m,MonadIO m)
          => Map String VertexFormat
          -> FilePath
@@ -31,3 +32,4 @@ loadMesh vformats path = do
     either (throwError . show) return (parsed f)
   where
     parsed = runParser (meshParser vformats) [] path
+-}
