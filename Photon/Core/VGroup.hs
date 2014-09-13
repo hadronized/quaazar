@@ -24,9 +24,7 @@ module Photon.Core.VGroup (
   ) where
 
 import Control.Applicative
-import Control.Monad ( mzero )
 import Data.Aeson
-import Data.Aeson.Types ( modifyFailure )
 import Data.Scientific ( toBoundedInteger )
 import Data.Word ( Word32 )
 import Data.Vector ( toList )
@@ -35,25 +33,21 @@ import Data.Vector ( toList )
 data Line = Line Word32 Word32 deriving (Eq,Read,Show)
 
 instance FromJSON Line where
-  parseJSON v = withArray "line" parseArray v
-    where
-      parseArray ar = case toList ar of
-        [Number x,Number y] -> case sequence (map toBoundedInteger [x,y]) of
-          Just [a,b] -> return (Line a b)
-          _ -> fail "incorrect line type"
-        _ -> fail" incorrect line format"
+  parseJSON = withArray "line" $ \ar -> case toList ar of
+    [Number x,Number y] -> case sequence (map toBoundedInteger [x,y]) of
+      Just [a,b] -> return (Line a b)
+      _ -> fail "incorrect line type"
+    _ -> fail" incorrect line format"
 
 -- |A triangle is thre vertex indices.
 data Triangle = Triangle Word32 Word32 Word32 deriving (Eq,Read,Show)
 
 instance FromJSON Triangle where
-  parseJSON v = withArray "triangle" parseArray v
-    where
-      parseArray ar = case toList ar of
-        [Number x,Number y,Number z] -> case sequence (map toBoundedInteger [x,y,z]) of
-          Just [a,b,c] -> return (Triangle a b c)
-          _ -> fail "incorrect triangle type"
-        _ -> fail "incorrect triangle format"
+  parseJSON = withArray "triangle" $ \ar -> case toList ar of
+    [Number x,Number y,Number z] -> case sequence (map toBoundedInteger [x,y,z]) of
+      Just [a,b,c] -> return (Triangle a b c)
+      _ -> fail "incorrect triangle type"
+    _ -> fail "incorrect triangle format"
 
 -- |Grouping vertices via indices is performed via 'VGroup'. You have
 -- several ways of grouping:
