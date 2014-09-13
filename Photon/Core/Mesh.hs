@@ -19,20 +19,14 @@ module Photon.Core.Mesh (
     Mesh(Mesh)
   , meshVertices
   , meshVGroup
-    -- * Parsers
-  , meshParser
     -- * Re-exported modules
   , module Photon.Core.Vertex
   , module Photon.Core.VGroup
   ) where
 
-import Control.Lens
-import Control.Monad ( replicateM, unless )
-import Data.List.Split ( chunksOf )
-import Data.Map as M ( Map, lookup )
+import Control.Lens ( makeLenses )
 import Photon.Core.Vertex
 import Photon.Core.VGroup
-import Photon.Utils.Parsing
 
 -- |A mesh is a pair of vertices and vertex group. See 'meshVertices' and
 -- 'meshVGroup' for further details.
@@ -42,93 +36,3 @@ data Mesh = Mesh {
   } deriving (Eq,Show)
 
 makeLenses ''Mesh
-
--- Convenient alias.
-type MeshParser = CharParser VertexFormat
-
--- |Parse a 'Mesh'.
--- 
--- The 'Map String VertexFormat' is used to retrieve the 'VertexFormat' used
--- by the 'Vertices' of the 'Mesh'.
-meshParser :: Map String VertexFormat -> MeshParser Mesh
-meshParser vps = do
-    format <- between spaces spaces (formatParser <* blanks <* eol)
-    maybe (parserFail $ "invalid vertex format: " ++ format) putState (M.lookup format vps)
-    vformat <- getState
-    between spaces spaces (string "@vertices" *> blanks *> eol)
-    verts <- many1 (between spaces spaces vcompParser)
-    prim <- vgroupSectionParser
-    vgroup <- vgroupParser prim
-    return $ Mesh (Vertices vformat $ chunksOfVerts vformat verts) vgroup
-  where
-    chunksOfVerts = chunksOf . length
-
--- |Parse the `format` keyword and returns its name.
-formatParser :: MeshParser String
-formatParser = string "format" *> blanks1 *> identifierName
-
--- |Parse a single `VertexComp`.
-vcompParser :: MeshParser VertexComp
-vcompParser = do
-    vcformat <- fmap head getState
-    -- FIXME: rotate must be written in a faster way; it’d require to change
-    -- the state of the parser
-    modifyState rotate
-    case vcformat^.vcFormatType of
-      VInt    -> parseIntegral 1
-      VInt2   -> parseIntegral 2
-      VInt3   -> parseIntegral 3
-      VInt4   -> parseIntegral 4
-      VUInt   -> parseUnsigned 1
-      VUInt2  -> parseUnsigned 2
-      VUInt3  -> parseUnsigned 3
-      VUInt4  -> parseUnsigned 4
-      VFloat  -> parseFloating 1
-      VFloat2 -> parseFloating 2
-      VFloat3 -> parseFloating 3
-      VFloat4 -> parseFloating 4
-  where
-    parseIntegral = vc integral integralParser
-    parseUnsigned = vc unsigned unsignedParser
-    parseFloating = vc floating floatingParser
-    vc toVC p n = fmap toVC $ replicateM n (between blanks blanks p) <* eol
-
--- |Parse `VGroup` section.
-vgroupSectionParser :: MeshParser String
-vgroupSectionParser = string "@vgroup" *> blanks1 *> identifierName <* blanks <* eol
-
--- |Parse a `VGroup`.
-vgroupParser :: String -> MeshParser VGroup
-vgroupParser prim
-    | prim == "points"     = parsePoints
-    | prim == "lines"      = parseLines
-    | prim == "slines"     = parseSLines
-    | prim == "triangles"  = parseTriangles
-    | prim == "striangles" = parseSTriangles
-    | otherwise            = parserZero
-  where
-    parsePoints = fmap Points whole
-    parseLines = do
-        l <- fmap (chunksOf 2) whole
-        unless (even . length $ last l) $ parserFail "odd number of indices!"
-        return . Lines $ map (\[a,b] -> Line a b) l
-    parseSLines = do
-        ind@(a:b:xs) <- whole
-        unless (length ind > 2) $
-          parserFail "at least two indices are required with stripped lines!"
-        return $ SLines a b xs
-    parseTriangles = do
-        l <- fmap (chunksOf 3) whole
-        unless ((==3) . length $ last l) $ parserFail "wrong number of indices!"
-        return . Triangles $ map (\[a,b,c] -> Triangle a b c) l
-    parseSTriangles = do
-        ind@(a:b:c:xs) <- whole
-        unless (length ind > 3) $
-          parserFail "at least three indices are required with stripped triangles!"
-        return $ STriangles a b c xs
-    whole = spaces *> sepEndBy1 unsignedParser spaces
-
--- FIXME: this version is quite slow since it’s O(n)
-rotate :: [a] -> [a]
-rotate [] = []
-rotate (x:xs) = xs ++ [x]

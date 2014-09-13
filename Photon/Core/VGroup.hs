@@ -42,8 +42,8 @@ data VGroup
   = Points [Word32]
   | Lines [Line]
   | Triangles [Triangle]
-  | SLines Word32 Word32 [Word32]
-  | STriangles Word32 Word32 Word32 [Word32]
+  | SLines Line [Word32]
+  | STriangles Triangle [Word32]
     deriving (Eq,Read,Show)
 
 -- |Turn a 'Line' into a list of two indices.
@@ -57,8 +57,8 @@ fromTriangle (Triangle a b c) = [a,b,c]
 -- |Turn a 'VGroup' into a list of indices.
 fromVGroup :: VGroup -> [Word32]
 fromVGroup vg = case vg of
-  Points p           -> p
-  Lines l            -> concatMap fromLine l
-  Triangles t        -> concatMap fromTriangle t
-  SLines a b l       -> a : b : l
-  STriangles a b c l -> a : b : c : l
+  Points ps      -> ps
+  Lines ls       -> concatMap fromLine ls
+  Triangles ts   -> concatMap fromTriangle ts
+  SLines l i     -> fromLine l ++ i
+  STriangles a i -> fromTriangle a ++ i
