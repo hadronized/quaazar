@@ -40,8 +40,8 @@ instance FromJSON Line where
       parseArray ar = case toList ar of
         [Number x,Number y] -> case sequence (map toBoundedInteger [x,y]) of
           Just [a,b] -> return (Line a b)
-          _ -> mzero
-        _ -> mzero
+          _ -> fail "incorrect line type"
+        _ -> fail" incorrect line format"
 
 -- |A triangle is thre vertex indices.
 data Triangle = Triangle Word32 Word32 Word32 deriving (Eq,Read,Show)
@@ -52,8 +52,8 @@ instance FromJSON Triangle where
       parseArray ar = case toList ar of
         [Number x,Number y,Number z] -> case sequence (map toBoundedInteger [x,y,z]) of
           Just [a,b,c] -> return (Triangle a b c)
-          _ -> mzero
-        _ -> mzero
+          _ -> fail "incorrect triangle type"
+        _ -> fail "incorrect triangle format"
 
 -- |Grouping vertices via indices is performed via 'VGroup'. You have
 -- several ways of grouping:
