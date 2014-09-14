@@ -61,7 +61,7 @@ module Photon.Core.Vertex (
   , vertexCompSize
   , vertexCompBytes
   , integral -- FIXME: ints
-  , unsigned -- FIXME: word32s
+  , unsigned -- FIXME: uints 
   , floating -- FIXME: floats
   , Vertex
   , Vertices(Vertices)
@@ -82,6 +82,7 @@ import Data.Aeson.Types ( Parser )
 import Data.List ( foldl1' )
 import Data.Scientific ( toBoundedInteger )
 import Data.Semigroup ( Semigroup(..) )
+import Data.Vector ( toList )
 import Data.Word ( Word8, Word32 )
 import Foreign.Marshal.Array ( advancePtr, allocaArray, copyArray )
 import Foreign.Ptr ( Ptr, castPtr )
@@ -177,6 +178,7 @@ instance Semigroup VertexComp where
   FloatingComp a <> FloatingComp b = FloatingComp $ a ++ b
   _              <> _              = error "types mismatch"
 
+
 -- |'Vertices' is a bunch of vertices associated to a 'VertexFormat'.
 data Vertices = Vertices {
     -- |Vertex format to use with.
@@ -193,6 +195,22 @@ type VertexFormat = [VertexCompFormat]
 
 makeLenses ''VertexCompFormat
 makeLenses ''Vertices
+
+instance FromJSON VertexComp where
+  parseJSON = withObject "vertex component" parseObject
+    where
+      parseObject o = do
+        t <- o .: "type"
+        v <- o .: "values"
+        withText "vertex component type" (parseValues v) t
+      parseValues v t
+          | t == "ints"   = fmap integral (values :: Parser [Int])
+          | t == "uints"  = fmap unsigned (values :: Parser [Word32])
+          | t == "floats" = fmap floating (values :: Parser [Float])
+          | otherwise     = fail "unknown vertex component type"
+        where
+          values :: (FromJSON a) => Parser [a]
+          values = parseJSON v
 
 -- |Get the integral semantic from a 'VertexCompSemantic'.
 fromVertexCompSemantic :: VertexCompSemantic -> Natural
