@@ -35,25 +35,6 @@ import Control.Lens
 import Data.Aeson
 import Photon.Core.Color ( Color )
 
--- |Lighting properties. This type is shared by lights.
-data LightProperties = LightProperties {
-    -- |Color of the light.
-    _ligColor     :: Color
-    -- |Shininess of the light. That property directly affects the
-    -- specular aspect of the light. The greater it is, the intense
-    -- the specular effect is.
-  , _ligShininess :: Float
-    -- |Power of the light – a.k.a. radius. Used to alter the attenuation
-    -- of the light over distance.
-  , _ligPower     :: Float
-  } deriving (Eq,Show)
-
-makeLenses ''LightProperties
-
-instance FromJSON LightProperties where
-  parseJSON = withObject "light properties" $ \o ->
-    LightProperties <$> o .: "color" <*> o .: "shininess" <*> o .: "power"
-
 -- |Light. Extra information (cuttoff angle for instance) can be added
 -- regarding the type of the light.
 data Light
@@ -69,3 +50,22 @@ instance FromJSON Light where
       parseType lp t
         | t == "omni" = fmap Omni lp
         | otherwise   = fail "unknown light type"
+
+-- |Lighting properties. This type is shared by lights.
+data LightProperties = LightProperties {
+    -- |Color of the light.
+    _ligColor     :: Color
+    -- |Shininess of the light. That property directly affects the
+    -- specular aspect of the light. The greater it is, the intense
+    -- the specular effect is.
+  , _ligShininess :: Float
+    -- |Power of the light – a.k.a. radius. Used to alter the attenuation
+    -- of the light over distance.
+  , _ligPower     :: Float
+  } deriving (Eq,Show)
+
+instance FromJSON LightProperties where
+  parseJSON = withObject "light properties" $ \o ->
+    LightProperties <$> o .: "color" <*> o .: "shininess" <*> o .: "power"
+
+makeLenses ''LightProperties
