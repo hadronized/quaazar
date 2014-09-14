@@ -82,7 +82,6 @@ import Data.Aeson.Types ( Parser )
 import Data.List ( foldl1' )
 import Data.Scientific ( toBoundedInteger )
 import Data.Semigroup ( Semigroup(..) )
-import Data.Vector ( toList )
 import Data.Word ( Word8, Word32 )
 import Foreign.Marshal.Array ( advancePtr, allocaArray, copyArray )
 import Foreign.Ptr ( Ptr, castPtr )
@@ -186,6 +185,10 @@ data Vertices = Vertices {
     -- |True vertices.
   , _verticesVerts  :: [Vertex]
   } deriving (Eq,Show)
+
+instance FromJSON Vertices where
+  parseJSON = withObject "vertices" $ \o ->
+    Vertices <$> o .: "format" <*> o .: "vertices"
 
 -- |A 'Vertex' is simply a list of 'VertexComp'.
 type Vertex = [VertexComp]
