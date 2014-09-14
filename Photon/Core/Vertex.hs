@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   : (C) 2014 Dimitri Sabadie
@@ -59,7 +61,7 @@ module Photon.Core.Vertex (
   , vertexCompSize
   , vertexCompBytes
   , integral -- FIXME: ints
-  , unsigned -- FIXME: word32s
+  , unsigned -- FIXME: uints 
   , floating -- FIXME: floats
   , Vertex
   , Vertices(Vertices)
@@ -68,25 +70,24 @@ module Photon.Core.Vertex (
   --, merge
   , deinterleave
   , withDeinterleaved
-    -- * Parsers
-  , vertexFormatParser
-  , vertexCompFormatParser
-  , vertexCompTypeParser
-  , vertexCompSemParser
   ) where
 
+import Control.Applicative
 import Control.Lens
 import Control.Monad ( forM_, void )
 import Control.Monad.Trans ( lift )
 import Control.Monad.Trans.State ( evalStateT, get, put )
+import Data.Aeson
+import Data.Aeson.Types ( Parser )
 import Data.List ( foldl1' )
+import Data.Scientific ( toBoundedInteger )
 import Data.Semigroup ( Semigroup(..) )
 import Data.Word ( Word8, Word32 )
-import Foreign.Marshal.Array ( advancePtr, allocaArray, copyArray, withArray )
+import Foreign.Marshal.Array ( advancePtr, allocaArray, copyArray )
 import Foreign.Ptr ( Ptr, castPtr )
 import Foreign.Storable ( sizeOf )
 import Numeric.Natural ( Natural )
-import Photon.Utils.Parsing
+import qualified Foreign.Marshal.Array as FFI ( withArray )
 
 -- |Vertex component format.
 data VertexCompFormat = VertexCompFormat {
@@ -97,6 +98,10 @@ data VertexCompFormat = VertexCompFormat {
     -- |Type of the component.
   , _vcFormatType       :: VertexCompType
   } deriving (Eq,Show)
+
+instance FromJSON VertexCompFormat where
+  parseJSON = withObject "vertex component format" $ \o ->
+    VertexCompFormat <$> o .:? "normalized" .!= False <*> o .: "semantic" <*> o .: "type"
 
 -- |Possible vertex component type.
 data VertexCompType
@@ -114,6 +119,24 @@ data VertexCompType
   | VFloat4
     deriving (Eq,Show)
 
+instance FromJSON VertexCompType where
+  parseJSON = withText "vertex component type" parseVCT
+    where
+      parseVCT t
+        | t == "int"    = return VInt
+        | t == "int2"   = return VInt2
+        | t == "int3"   = return VInt3
+        | t == "int4"   = return VInt4
+        | t == "uint"   = return VUInt
+        | t == "uint2"  = return VUInt2
+        | t == "uint3"  = return VUInt3
+        | t == "uint4"  = return VUInt4
+        | t == "float"  = return VFloat
+        | t == "float2" = return VFloat2
+        | t == "float3" = return VFloat3
+        | t == "float4" = return VFloat4
+        | otherwise     = fail "unknown vertex component type"
+
 -- |Availabe vertex component semantics.
 data VertexCompSemantic
   = VSPosition
@@ -122,6 +145,24 @@ data VertexCompSemantic
   | VSUV
   | VSCustom Natural
     deriving (Eq,Show)
+
+instance FromJSON VertexCompSemantic where
+  parseJSON =
+      withObject "vertex component semantic" $ \o ->
+         o .: "name" >>= withText "semantic name" (parseVCC o)
+    where
+      parseVCC o s
+        | s == "position" = return VSPosition
+        | s == "normal"   = return VSNormal
+        | s == "uv"       = return VSUV
+        | s == "custom"   = o .: "value" >>= withScientific "custom semantic" parseCustom
+        | otherwise       = fail "unknown vertex component semantic"
+      parseCustom =
+        maybe (fail "incorrect custom semantic value") testVSCustom . toBoundedInteger
+      testVSCustom :: Int -> Parser VertexCompSemantic
+      testVSCustom sem
+        | sem < 0   = fail "negative semantics are forbbiden"
+        | otherwise = return (VSCustom $ fromIntegral sem)
 
 -- |Vertex component. It could be integral, unsigned or floating.
 data VertexComp
@@ -136,6 +177,7 @@ instance Semigroup VertexComp where
   FloatingComp a <> FloatingComp b = FloatingComp $ a ++ b
   _              <> _              = error "types mismatch"
 
+
 -- |'Vertices' is a bunch of vertices associated to a 'VertexFormat'.
 data Vertices = Vertices {
     -- |Vertex format to use with.
@@ -143,6 +185,10 @@ data Vertices = Vertices {
     -- |True vertices.
   , _verticesVerts  :: [Vertex]
   } deriving (Eq,Show)
+
+instance FromJSON Vertices where
+  parseJSON = withObject "vertices" $ \o ->
+    Vertices <$> o .: "format" <*> o .: "vertices"
 
 -- |A 'Vertex' is simply a list of 'VertexComp'.
 type Vertex = [VertexComp]
@@ -152,6 +198,22 @@ type VertexFormat = [VertexCompFormat]
 
 makeLenses ''VertexCompFormat
 makeLenses ''Vertices
+
+instance FromJSON VertexComp where
+  parseJSON = withObject "vertex component" parseObject
+    where
+      parseObject o = do
+        t <- o .: "type"
+        v <- o .: "values"
+        withText "vertex component type" (parseValues v) t
+      parseValues v t
+          | t == "ints"   = fmap integral (values :: Parser [Int])
+          | t == "uints"  = fmap unsigned (values :: Parser [Word32])
+          | t == "floats" = fmap floating (values :: Parser [Float])
+          | otherwise     = fail "unknown vertex component type"
+        where
+          values :: (FromJSON a) => Parser [a]
+          values = parseJSON v
 
 -- |Get the integral semantic from a 'VertexCompSemantic'.
 fromVertexCompSemantic :: VertexCompSemantic -> Natural
@@ -252,54 +314,5 @@ withDeinterleaved v f = do
           let bytes = vertexCompBytes c
           p <- get
           put $ p `advancePtr` bytes
-          let copy x = withArray x $ \bufx -> copyArray p (castPtr bufx)  bytes
+          let copy x = FFI.withArray x $ \bufx -> copyArray p (castPtr bufx)  bytes
           lift $ foldVertexComp copy copy copy c 
-
--- |Vertex format parser.
-vertexFormatParser :: CharParser s VertexFormat
-vertexFormatParser = many1 $ between spaces blanks vertexCompFormatParser <* (void (many1 eol) <|> eof)
-
--- |Vertex component format parser.
-vertexCompFormatParser :: CharParser s VertexCompFormat
-vertexCompFormatParser = do
-    sem <- vertexCompSemParser
-    void $ between blanks blanks (char ':')
-    normalized <- option False $ try (string "normalized" *> blanks1) *> pure True
-    t <- vertexCompTypeParser
-    return $ VertexCompFormat normalized sem t
-
--- |Parse a 'VertexCompType'.
-vertexCompTypeParser :: CharParser s VertexCompType
-vertexCompTypeParser = choice (map buildParser tbl) <?> "vertex component type"
-  where
-    buildParser (n,t) = try (string n *> pure t)
-    tbl =
-        [
-          ("ivec4",VInt4)
-        , ("ivec3",VInt3)
-        , ("ivec2",VInt2)
-        , ("int",VInt)
-        , ("uvec4",VUInt4)
-        , ("uvec3",VUInt3)
-        , ("uvec2",VUInt2)
-        , ("uint",VUInt)
-        , ("vec2",VFloat2)
-        , ("vec3",VFloat3)
-        , ("vec4",VFloat4)
-        , ("float",VFloat)
-        ]
-
--- |Parse a 'VertexCompSemantic'.
-vertexCompSemParser :: CharParser s VertexCompSemantic
-vertexCompSemParser = choice (custom : defined)
-  where
-    defined =
-        map buildParser
-          [
-            ("position",VSPosition)
-          , ("normal",VSNormal)
-          , ("color",VSColor)
-          , ("uv",VSUV)
-          ]
-    custom = VSCustom <$> try (string "custom" *> blanks1 *> integralParser)
-    buildParser (n,t) = try (string n *> pure t)

@@ -1,0 +1,3 @@
+position : vec3
+normal   : normalized vec3
+uv       : normalized vec2
