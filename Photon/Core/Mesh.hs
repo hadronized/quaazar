@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   : (C) 2014 Dimitri Sabadie
@@ -24,6 +26,7 @@ module Photon.Core.Mesh (
   , module Photon.Core.VGroup
   ) where
 
+import Control.Applicative
 import Control.Lens ( makeLenses )
 import Data.Aeson
 import Photon.Core.Vertex

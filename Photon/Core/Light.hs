@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   : (C) 2014 Dimitri Sabadie
@@ -28,14 +30,10 @@ module Photon.Core.Light (
   , ligPower
   ) where
 
+import Control.Applicative
 import Control.Lens
+import Data.Aeson
 import Photon.Core.Color ( Color )
-
--- |Light. Extra information (cuttoff angle for instance) can be added
--- regarding the type of the light.
-data Light
-  = Omni LightProperties -- ^ Omni light
-    deriving (Eq,Show)
 
 -- |Lighting properties. This type is shared by lights.
 data LightProperties = LightProperties {
@@ -51,3 +49,23 @@ data LightProperties = LightProperties {
   } deriving (Eq,Show)
 
 makeLenses ''LightProperties
+
+instance FromJSON LightProperties where
+  parseJSON = withObject "light properties" $ \o ->
+    LightProperties <$> o .: "color" <*> o .: "shininess" <*> o .: "power"
+
+-- |Light. Extra information (cuttoff angle for instance) can be added
+-- regarding the type of the light.
+data Light
+  = Omni LightProperties -- ^ Omni light
+    deriving (Eq,Show)
+
+instance FromJSON Light where
+  parseJSON = withObject "light" $ \o -> do
+      t  <- o .: "type"
+      lp <- o .: "properties"
+      withText "light type" (parseType lp) t
+    where
+      parseType lp t
+        | t == "omni" = fmap Omni lp
+        | otherwise   = fail "unknown light type"
