@@ -38,7 +38,7 @@
 --       vert     = [position,boneID,color] -- :: [VertexComp] ~ Vertex
 -- @
 --
--- You’ll find useful functions, suck as 'deinterleave' and
+-- You’ll find useful functions, such as 'deinterleave' and
 -- 'withDeinterleave' you can use to deinterleave vertices in order to
 -- optimize/whatever evil you plan to do with ;)
 ----------------------------------------------------------------------------
