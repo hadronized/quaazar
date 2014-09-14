@@ -101,7 +101,7 @@ data VertexCompFormat = VertexCompFormat {
 
 instance FromJSON VertexCompFormat where
   parseJSON = withObject "vertex component format" $ \o ->
-    VertexCompFormat <$> o .: "normalized" <*> o .: "semantic" <*> o .: "type"
+    VertexCompFormat <$> o .:? "normalized" .!= False <*> o .: "semantic" <*> o .: "type"
 
 -- |Possible vertex component type.
 data VertexCompType
