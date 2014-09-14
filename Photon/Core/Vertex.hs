@@ -149,7 +149,7 @@ data VertexCompSemantic
 instance FromJSON VertexCompSemantic where
   parseJSON =
       withObject "vertex component semantic" $ \o ->
-         o .: "semantic" >>= withText "semantic" (parseVCC o)
+         o .: "name" >>= withText "semantic name" (parseVCC o)
     where
       parseVCC o s
         | s == "position" = return VSPosition
