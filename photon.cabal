@@ -41,6 +41,7 @@ library
                      , Photon.Core.Vertex
                      , Photon.Resource.Mesh
                      , Photon.Resource.VertexFormat
+                     , Photon.Utils.Dep
                      , Photon.Utils.Directory
                      , Photon.Utils.Log
                      , Photon.Utils.Parsing
