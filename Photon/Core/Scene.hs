@@ -19,8 +19,14 @@
 ----------------------------------------------------------------------------
 
 module Photon.Core.Scene (
+    -- * Scene
+    Scene(Scene)
+  , scene
+  , camera
+  , lights
+  , models
     -- * Scene relations
-    SceneRel(SceneRel)
+  , SceneRel(SceneRel)
   , sceneCamera
   , sceneLights
   , sceneModels
@@ -30,8 +36,10 @@ module Photon.Core.Scene (
   ) where
 
 import Control.Lens
-import Data.Map ( Map, fromList )
+import Data.Map as M ( Map, fromList )
 import Data.Tuple ( swap )
+import Data.Vector as V ( Vector, fromList )
+import Photon.Core.Entity ( Entity )
 import Photon.Core.Light ( Light )
 import Photon.Core.Mesh ( Mesh )
 import Photon.Core.Model ( Model )
@@ -84,10 +92,26 @@ makeLenses ''IndexPath
 --
 --     fmap (fromJust . indexPath scene) scene
 indexPath :: (Ord a) => SceneRel a -> Map a IndexPath
-indexPath sc = fromList (scligs ++ scmdls)
+indexPath sc = M.fromList (scligs ++ scmdls)
   where
     scligs   = map (fmap ip1 . swap) . ixed . map fst $ sc^.sceneLights
     scmdls   = concatMap (\(i0,m) -> map (fmap (ip2 i0) . swap) . ixed $ map fst m) . ixed . map snd $ sc^.sceneModels
     ixed     = zip [0..]
     ip1 i    = IndexPath [i]
     ip2 i0 i = IndexPath [i0,i]
+
+-- |Entities are stored in a `Scene`.
+data Scene a = Scene {
+    -- |Active camera.
+    _camera :: Entity a
+    -- |All models.
+  , _models :: Vector (Entity a)
+    -- |All lights.
+  , _lights :: Vector (Entity a)
+  } deriving (Eq,Functor,Show)
+
+makeLenses ''Scene
+
+-- |Build a scene.
+scene :: Entity a -> [Entity a] -> [Entity a] -> Scene a
+scene c m l = Scene c (V.fromList m) (V.fromList l)
