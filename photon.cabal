@@ -39,8 +39,7 @@ library
                      , Photon.Core.Scene
                      , Photon.Core.VGroup
                      , Photon.Core.Vertex
-                     , Photon.Resource.Mesh
-                     , Photon.Resource.VertexFormat
+                     , Photon.Resource.Loader
                      , Photon.Utils.Directory
                      , Photon.Utils.Log
                      , Photon.Utils.Parsing
