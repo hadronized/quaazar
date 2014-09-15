@@ -13,19 +13,16 @@
 
 module Photon.Resource.VertexFormat (
     -- * Loading vertex formats
-    --loadVertexFormat
+    loadVertexFormat
   ) where
 
 import Control.Monad.Trans ( MonadIO, liftIO )
 import Control.Monad.Except ( MonadError, throwError )
+import Data.Aeson ( eitherDecode )
+import Data.ByteString.Lazy as B ( readFile )
 import Photon.Core.Vertex ( VertexFormat )
-import Text.Parsec.String ( parseFromFile )
 
-{-
-loadVertexFormat :: (MonadError String m,MonadIO m)
-                 => FilePath
-                 -> m VertexFormat
-loadVertexFormat path = do
-    vf <- liftIO $ parseFromFile vertexFormatParser path
-    either (throwError . show) return vf
--}
+loadVertexFormat :: (MonadError String m,MonadIO m) => FilePath -> m VertexFormat
+loadVertexFormat path = liftIO (B.readFile path) >>= eitherDecode_
+  where
+    eitherDecode_ = either throwError return . eitherDecode
