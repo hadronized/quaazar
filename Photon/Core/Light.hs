@@ -48,7 +48,7 @@ instance FromJSON Light where
       withText "light type" (parseType lp) t
     where
       parseType lp t
-        | t == "omni" = fmap Omni lp
+        | t == "omni" = return (Omni lp)
         | otherwise   = fail "unknown light type"
 
 -- |Lighting properties. This type is shared by lights.
