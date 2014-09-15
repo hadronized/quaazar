@@ -43,7 +43,32 @@
 -- @
 ----------------------------------------------------------------------------
 
-module Photon.Core.Entity where
+module Photon.Core.Entity (
+    -- * Entity
+    Entity(Entity)
+  , entityPosition
+  , entityOrientation
+  , entityScale
+  , entityName
+    -- * Space information
+  , Position
+  , Dir
+  , Axis
+  , Orientation
+  , Scale
+  , origin3
+  , xAxis
+  , yAxis
+  , zAxis
+    -- * Combinators
+  , entity
+  , move
+  , position
+  , orient
+  , orientation
+  , rescale
+  , scale
+  ) where
 
 import Control.Lens
 import Data.String ( IsString(..) )
