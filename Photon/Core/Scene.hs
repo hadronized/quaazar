@@ -19,8 +19,8 @@
 ----------------------------------------------------------------------------
 
 module Photon.Core.Scene (
-    -- * Scene representation
-    Scene(Scene)
+    -- * Scene relations
+    SceneRel(SceneRel)
   , sceneCamera
   , sceneLights
   , sceneModels
@@ -37,15 +37,15 @@ import Photon.Core.Mesh ( Mesh )
 import Photon.Core.Model ( Model )
 import Photon.Core.Projection ( Projection )
 
--- |Scene AST, used to store a scene representation. Up to now, it gathers
--- information about:
+-- |Store scene’s relations. Up to now, it gathers relationships between:
 --
 --   - camera;
 --   - meshes;
 --   - models;
 --   - lights.
 --
-data Scene a = Scene {
+-- It enables the use of shared objects.
+data SceneRel a = SceneRel {
     -- |
     _sceneCamera :: Projection
     -- |
@@ -70,7 +70,7 @@ data Scene a = Scene {
 -- documentation of the 'indexPath' function for further details.
 newtype IndexPath = IndexPath { unIndexPath :: [Int] } deriving (Eq,Ord,Show)
 
-makeLenses ''Scene
+makeLenses ''SceneRel
 makeLenses ''IndexPath
 
 -- |Map a name to its 'IndexPath' representation. That function should be
@@ -83,7 +83,7 @@ makeLenses ''IndexPath
 -- similar structure’s names (see 'EntityGraph').
 --
 --     fmap (fromJust . indexPath scene) scene
-indexPath :: (Ord a) => Scene a -> Map a IndexPath
+indexPath :: (Ord a) => SceneRel a -> Map a IndexPath
 indexPath sc = fromList (scligs ++ scmdls)
   where
     scligs   = map (fmap ip1 . swap) . ixed . map fst $ sc^.sceneLights
