@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   : (C) 2014 Dimitri Sabadie
@@ -14,11 +16,15 @@
 module Photon.Core.Model where
 
 import Control.Lens ( makeLenses )
+import Data.Aeson
 import Photon.Core.Color ( Color )
 
 -- |Model.
 data Model = Model {
     _modelColor :: Color
   } deriving (Eq,Show)
+
+instance FromJSON Model where
+  parseJSON = withObject "model" $ \o -> fmap Model (o .: "color")
 
 makeLenses ''Model
