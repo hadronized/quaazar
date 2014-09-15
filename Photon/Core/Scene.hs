@@ -59,7 +59,7 @@ data SceneRel a = SceneRel {
     -- |
   , _sceneLights :: [(a,Light)]
     -- |
-  , _sceneModels :: [(Mesh,[(a,Model)])]
+  , _sceneModels :: [((a,Mesh),[(a,Model)])]
   } deriving (Eq,Show)
 
 -- |Names are unique identifiers used to identify objects in a scene. For
