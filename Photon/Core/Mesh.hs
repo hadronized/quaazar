@@ -39,7 +39,7 @@ data Mesh n = Mesh {
   , _meshVGroup   :: VGroup
   } deriving (Eq,Show)
 
-instance FromJSON Mesh where
+instance (FromJSON n) => FromJSON (Mesh n) where
   parseJSON = withObject "mesh" $ \o ->
     Mesh <$> o .: "vertices" <*> o .: "vgroup"
 
