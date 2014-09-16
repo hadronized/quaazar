@@ -44,7 +44,6 @@ import Photon.Core.Light ( Light )
 import Photon.Core.Mesh ( Mesh )
 import Photon.Core.Model ( Model )
 import Photon.Core.Projection ( Projection )
-import Photon.Utils.Dep ( Void )
 
 -- |Store scene’s relations. Up to now, it gathers relationships between:
 --
@@ -60,7 +59,7 @@ data SceneRel a = SceneRel {
     -- |
   , _sceneLights :: [(a,Light)]
     -- |
-  , _sceneModels :: [(Mesh Void,[(a,Model)])]
+  , _sceneModels :: [(Mesh,[(a,Model)])]
   } deriving (Eq,Show)
 
 -- |Names are unique identifiers used to identify objects in a scene. For
