@@ -13,7 +13,7 @@
 -- *pointers* or *references*, but this module provides another way – more
 -- robust and elegant – to do that.
 --
--- When a value 'a' depends on a value 'b', you can find a 'Dep n b' in
+-- When a value 'a' depends on a value 'b', you can find a @Dep n b@ in
 -- 'a'. This means that 'a' has 'b' as dependency, and will represent it
 -- as 'n'.
 --
@@ -69,12 +69,12 @@ resolved :: Dep n a -> Maybe a
 resolved (Resolved a) = Just a
 resolved _            = Nothing
 
--- |Is a 'Dep n a' pending?
+-- |Is a @Dep n a@ pending?
 isPending :: Dep n a -> Bool
 isPending (Pending _) = True
 isPending _           = False
 
--- |Is a 'Dep n a' resolved?
+-- |Is a @Dep n a@ resolved?
 isResolved :: Dep n a -> Bool
 isResolved (Resolved _) = True
 isResolved _            = False
@@ -92,6 +92,7 @@ enforce d = case d of
   Pending  _ -> Nothing
   Resolved a -> Just (Resolved a)
 
+-- |Resolve and enforce at the same time.
 enforceResolve :: (n -> Maybe a) -> Dep n a -> Maybe (Dep Void a)
 enforceResolve _ (Resolved a) = Just (Resolved a)
 enforceResolve lk (Pending n) = fmap Resolved (lk n)
