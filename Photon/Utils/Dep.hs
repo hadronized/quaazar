@@ -27,7 +27,7 @@
 
 module Photon.Utils.Dep (
     -- * Dependency
-    Dep
+    Dep(Resolved)
   , pending
   , resolve
   , depName
@@ -37,6 +37,8 @@ module Photon.Utils.Dep (
     -- * Enforcing
   , enforce
   , enforceResolve
+    -- * Re-exported
+  , Void
   ) where
 
 import Data.Void ( Void )
