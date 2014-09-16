@@ -88,6 +88,7 @@ import Foreign.Ptr ( Ptr, castPtr )
 import Foreign.Storable ( sizeOf )
 import Numeric.Natural ( Natural )
 import qualified Foreign.Marshal.Array as FFI ( withArray )
+import Photon.Utils.Dep
 
 -- |Vertex component format.
 data VertexCompFormat = VertexCompFormat {
@@ -179,16 +180,16 @@ instance Semigroup VertexComp where
 
 
 -- |'Vertices' is a bunch of vertices associated to a 'VertexFormat'.
-data Vertices = Vertices {
+data Vertices n = Vertices {
     -- |Vertex format to use with.
-    _verticesFormat :: VertexFormat
+    _verticesFormat :: Dep n VertexFormat
     -- |True vertices.
   , _verticesVerts  :: [Vertex]
   } deriving (Eq,Show)
 
-instance FromJSON Vertices where
+instance (FromJSON n) => FromJSON (Vertices n) where
   parseJSON = withObject "vertices" $ \o ->
-    Vertices <$> o .: "format" <*> o .: "vertices"
+    Vertices . pending <$> o .: "format" <*> o .: "vertices"
 
 -- |A 'Vertex' is simply a list of 'VertexComp'.
 type Vertex = [VertexComp]
