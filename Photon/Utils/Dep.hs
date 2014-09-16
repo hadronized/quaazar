@@ -27,7 +27,7 @@
 
 module Photon.Utils.Dep (
     -- * Dependency
-    Dep(Resolved)
+    Dep
   , pending
   , resolve
   , depName
