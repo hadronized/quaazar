@@ -178,7 +178,6 @@ instance Semigroup VertexComp where
   FloatingComp a <> FloatingComp b = FloatingComp $ a ++ b
   _              <> _              = error "types mismatch"
 
-
 -- |'Vertices' is a bunch of vertices associated to a 'VertexFormat'.
 data Vertices n = Vertices {
     -- |Vertex format to use with.
