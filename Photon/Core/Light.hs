@@ -23,6 +23,9 @@
 module Photon.Core.Light (
     -- * Light
     Light(..)
+  , ligColor
+  , ligShininess
+  , ligPower
   ) where
 
 import Control.Applicative
