@@ -1,2 +1,11 @@
-position : vec3
-normal   : normalized vec3
+[
+  {
+    "semantic"   : { "name" : "position" }
+  , "type"       : "float3"
+  }
+, {
+    "semantic"   : { "name" : "normal" }
+  , "normalized" : true
+  , "type"       : "float3"
+  }
+]
