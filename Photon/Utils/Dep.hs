@@ -22,7 +22,7 @@
 -- name 'n'. When the dependency is resolved, the 'n' value is replaced by
 -- the dependency itself, 'b'.
 --
--- You can thing of 'Dep' a little bit like 'Either'.
+-- You can think of 'Dep' a little bit like 'Either'.
 ----------------------------------------------------------------------------
 
 module Photon.Utils.Dep (
