@@ -24,15 +24,14 @@ module Photon.Core.Renderer (
   , PostFX(..)
   ) where
 
-import Photon.Core.Entity ( Entities )
-import Photon.Core.Scene ( IndexPath )
+import Photon.Core.Scene ( IndexPath, Scene )
 
 -- |Renderers are plain data that host rendering functions. They’re generated
 -- for a specific `Scene a`.
 data Renderer frame = Renderer {
-    -- |Render scene entities into a frame. This frame is just a rendered
-    -- version of the scene, nothing more.
-    render     :: Entities IndexPath -> frame
+    -- |Render a scene into a frame. This frame is just a rendered version
+    -- of the scene, nothing more.
+    render     :: Scene IndexPath -> frame
     -- |Apply a list of post-processes on a frame, and return the new frame.
   , postfx     :: [PostFX frame] -> frame -> frame
     -- |Display a rendered scene (frame). That function should render the

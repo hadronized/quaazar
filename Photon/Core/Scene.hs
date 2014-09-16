@@ -19,8 +19,14 @@
 ----------------------------------------------------------------------------
 
 module Photon.Core.Scene (
-    -- * Scene representation
+    -- * Scene
     Scene(Scene)
+  , scene
+  , camera
+  , lights
+  , models
+    -- * Scene relations
+  , SceneRel(SceneRel)
   , sceneCamera
   , sceneLights
   , sceneModels
@@ -30,28 +36,30 @@ module Photon.Core.Scene (
   ) where
 
 import Control.Lens
-import Data.Map ( Map, fromList )
+import Data.Map as M ( Map, fromList )
 import Data.Tuple ( swap )
+import Data.Vector as V ( Vector, fromList )
+import Photon.Core.Entity ( Entity )
 import Photon.Core.Light ( Light )
 import Photon.Core.Mesh ( Mesh )
 import Photon.Core.Model ( Model )
 import Photon.Core.Projection ( Projection )
 
--- |Scene AST, used to store a scene representation. Up to now, it gathers
--- information about:
+-- |Store scene’s relations. Up to now, it gathers relationships between:
 --
 --   - camera;
 --   - meshes;
 --   - models;
 --   - lights.
 --
-data Scene a = Scene {
+-- It enables the use of shared objects.
+data SceneRel a = SceneRel {
     -- |
     _sceneCamera :: Projection
     -- |
   , _sceneLights :: [(a,Light)]
     -- |
-  , _sceneModels :: [(Mesh,[(a,Model)])]
+  , _sceneModels :: [(Mesh a,[(a,Model)])]
   } deriving (Eq,Show)
 
 -- |Names are unique identifiers used to identify objects in a scene. For
@@ -70,7 +78,7 @@ data Scene a = Scene {
 -- documentation of the 'indexPath' function for further details.
 newtype IndexPath = IndexPath { unIndexPath :: [Int] } deriving (Eq,Ord,Show)
 
-makeLenses ''Scene
+makeLenses ''SceneRel
 makeLenses ''IndexPath
 
 -- |Map a name to its 'IndexPath' representation. That function should be
@@ -83,11 +91,27 @@ makeLenses ''IndexPath
 -- similar structure’s names (see 'EntityGraph').
 --
 --     fmap (fromJust . indexPath scene) scene
-indexPath :: (Ord a) => Scene a -> Map a IndexPath
-indexPath sc = fromList (scligs ++ scmdls)
+indexPath :: (Ord a) => SceneRel a -> Map a IndexPath
+indexPath sc = M.fromList (scligs ++ scmdls)
   where
     scligs   = map (fmap ip1 . swap) . ixed . map fst $ sc^.sceneLights
     scmdls   = concatMap (\(i0,m) -> map (fmap (ip2 i0) . swap) . ixed $ map fst m) . ixed . map snd $ sc^.sceneModels
     ixed     = zip [0..]
     ip1 i    = IndexPath [i]
     ip2 i0 i = IndexPath [i0,i]
+
+-- |Entities are stored in a `Scene`.
+data Scene a = Scene {
+    -- |Active camera.
+    _camera :: Entity a
+    -- |All models.
+  , _models :: Vector (Entity a)
+    -- |All lights.
+  , _lights :: Vector (Entity a)
+  } deriving (Eq,Functor,Show)
+
+makeLenses ''Scene
+
+-- |Build a scene.
+scene :: Entity a -> [Entity a] -> [Entity a] -> Scene a
+scene c m l = Scene c (V.fromList m) (V.fromList l)

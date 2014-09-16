@@ -43,11 +43,35 @@
 -- @
 ----------------------------------------------------------------------------
 
-module Photon.Core.Entity where
+module Photon.Core.Entity (
+    -- * Entity
+    Entity(Entity)
+  , entityPosition
+  , entityOrientation
+  , entityScale
+  , entityName
+    -- * Space information
+  , Position
+  , Dir
+  , Axis
+  , Orientation
+  , Scale
+  , origin3
+  , xAxis
+  , yAxis
+  , zAxis
+    -- * Combinators
+  , entity
+  , move
+  , position
+  , orient
+  , orientation
+  , rescale
+  , scale
+  ) where
 
 import Control.Lens
 import Data.String ( IsString(..) )
-import Data.Vector ( Vector, fromList )
 import Linear
 
 -- |An entity is a scene object which is instantiated in space. So
@@ -116,22 +140,3 @@ rescale (Scale x' y' z') = entityScale %~ \(Scale x y z) -> Scale (x*x') (y*y') 
 -- |Scale an entity.
 scale :: Scale -> Entity a -> Entity a
 scale = set entityScale
-
--- |Entities are stored in a value of type `Entities`. It gathers all scene
--- entities.
---
--- Up to now, you can access an entity using a lens.
-data Entities a = Entities {
-    -- |Active camera.
-    _camera :: Entity a
-    -- |All models.
-  , _models :: Vector (Entity a)
-    -- |All lights.
-  , _lights :: Vector (Entity a)
-  } deriving (Eq,Functor,Show)
-
-makeLenses ''Entities
-
--- |Build entities from lists.
-entities :: Entity a -> [Entity a] -> [Entity a] -> Entities a
-entities c m l = Entities c (fromList m) (fromList l)

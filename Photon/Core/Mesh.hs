@@ -34,8 +34,8 @@ import Photon.Core.VGroup
 
 -- |A mesh is a pair of vertices and vertex group. See 'meshVertices' and
 -- 'meshVGroup' for further details.
-data Mesh = Mesh {
-    _meshVertices :: Vertices
+data Mesh n = Mesh {
+    _meshVertices :: Vertices n
   , _meshVGroup   :: VGroup
   } deriving (Eq,Show)
 
