@@ -43,8 +43,8 @@ import Data.Void ( Void )
 
 -- |Dependency of type 'a' through a name 'n'. A dependency has two
 -- states:
---   1. pending;
---   2. resolved.
+--   - pending;
+--   - resolved.
 data Dep n a
   = Pending n
   | Resolved a
