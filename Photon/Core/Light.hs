@@ -23,6 +23,8 @@
 module Photon.Core.Light (
     -- * Light
     Light(..)
+    -- * Light properties
+  , LightProperties(LightProperties)
   , ligColor
   , ligShininess
   , ligPower
