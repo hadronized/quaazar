@@ -14,6 +14,11 @@
 module Photon.Resource.Available (
     -- * Available resources
     Available
+  , vertexFormats
+  , meshes
+  , models
+  , lights
+    -- * Acquiring resources
   , Resource(..)
   ) where
 
@@ -47,4 +52,4 @@ makeLenses ''Available
 -- don’t want to go on if a resource is missing. If you do, you can
 -- use some kind of 'MonadError' monad.
 class Resource a where
-  resource :: Available n -> n > Maybe a
+  resource :: Available n -> n -> Maybe a
