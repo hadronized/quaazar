@@ -27,7 +27,7 @@
 
 module Photon.Utils.Dep (
     -- * Dependency
-    Dep(Resolved)
+    Dep
   , pending
   , resolve
   , depName
@@ -35,7 +35,6 @@ module Photon.Utils.Dep (
   , isPending
   , isResolved
     -- * Enforcing
-  , enforce
   , enforceResolve
     -- * Re-exported
   , Void
@@ -57,8 +56,8 @@ pending :: n -> Dep n a
 pending = Pending
 
 -- |Resolve a dependency if possible.
-resolve :: (n -> Maybe a) -> Dep n a -> Maybe (Dep n a)
-resolve _ r@Resolved{} = Just r
+resolve :: (n -> Maybe a) -> Dep n a -> Maybe (Dep Void a)
+resolve _ (Resolved a) = Just (Resolved a)
 resolve lk (Pending n) = fmap Resolved (lk n)
 
 -- |Get the dependency’s name if it’s pending.
@@ -81,20 +80,6 @@ isResolved :: Dep n a -> Bool
 isResolved (Resolved _) = True
 isResolved _            = False
 
--- |Sometimes, when a dependency is resolved, we want to express that
--- through the type system. It’s expressed via a non-constructible
--- name – i.e. 'Void'.
---
--- If the dependency is pending, returns 'Nothing'.
---
--- If you want to combine resolving and enforcing, check the
--- 'enforceResolve' function.
-enforce :: Dep n a -> Maybe (Dep Void a)
-enforce d = case d of
-  Pending  _ -> Nothing
-  Resolved a -> Just (Resolved a)
-
--- |Resolve and enforce at the same time.
-enforceResolve :: (n -> Maybe a) -> Dep n a -> Maybe (Dep Void a)
-enforceResolve _ (Resolved a) = Just (Resolved a)
-enforceResolve lk (Pending n) = fmap Resolved (lk n)
+-- |Explicitely resolve the dependency.
+enforceResolve :: a -> Dep Void a
+enforceResolve = Resolved
