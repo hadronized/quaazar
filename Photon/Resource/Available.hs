@@ -50,6 +50,14 @@ data Available n = Available {
 
 makeLenses ''Available
 
+-- TODO resolution integration should not be (.~), but some kind
+-- of union.
+-- |Resolve unresolved dependencies.
+resolve :: Available -> Available
+resolve a = meshes .~ resolvedMeshes
+  where
+    resolvedMeshes = fmap (resolveMesh vfs) (a^.unresolvedMeshes)
+
 -- |This typeclass provides 'load', a function used to load resources
 -- from a resource-capable monad. The @Proxy n@ is used to select a
 -- specific type of resource to load. You can then deduce this:
