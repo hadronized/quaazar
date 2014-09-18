@@ -79,3 +79,9 @@ instance Resource Model where
     mdl <- liftIO (loadJSON n)
     models . at n .= Just mdl
   resource n = uses models (preview . at n)
+
+instance Resource Light where
+  load _ n = do
+    lig <- liftIO (loadJSON n)
+    lights . at n .= Just lig
+  resource n = uses lights (preview . at n)
