@@ -71,7 +71,7 @@ instance Resource VertexFormat where
 instance Resource Mesh where
   load _ n = do
     unmsh <- liftIO (loadJSON n)
-    unresolved_Meshes . at .= Just unmsh
+    unresolvedMeshes . at .= Just unmsh
   resource n = uses meshes (preview . at n)
 
 instance Resource Model where
