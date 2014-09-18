@@ -57,5 +57,5 @@ makeLenses ''Available
 -- It also exposes the 'resource' function, used to acquire loaded
 -- resources.
 class Resource a where
-  load     :: Proxy n -> n -> m ()
+  load     :: Proxy a -> n -> m ()
   resource :: n -> Maybe a
