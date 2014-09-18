@@ -66,4 +66,16 @@ instance Resource VertexFormat where
   load _ n = do
     vf <- liftIO (loadJSON n)
     vertexFormats . at n .= Just vf
-  resource n = fmap (preview . at n) (use vertexFormats)
+  resource n = uses vertexFormats (preview . at n)
+
+instance Resource Mesh where
+  load _ n = do
+    unmsh <- liftIO (loadJSON n)
+    unresolved_Meshes . at .= Just unmsh
+  resource n = uses meshes (preview . at n)
+
+instance Resource Model where
+  load _ n = do
+    mdl <- liftIO (loadJSON n)
+    models . at n .= Just mdl
+  resource n = uses models (preview . at n)
