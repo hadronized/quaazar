@@ -23,6 +23,8 @@ module Photon.Resource.Available (
   ) where
 
 import Control.Lens ( makeLenses )
+import Control.Monad.State ( MonadState )
+import Control.Monad.Trans ( MonadIO(..) )
 import Data.Map as M ( Map )
 import Data.Proxy ( Proxy )
 import Photon.Core.Light ( Light )
@@ -57,5 +59,11 @@ makeLenses ''Available
 -- It also exposes the 'resource' function, used to acquire loaded
 -- resources.
 class Resource a where
-  load     :: Proxy a -> n -> m ()
-  resource :: n -> Maybe a
+  load     :: (MonadIO m,MonadState Available m) => Proxy a -> n -> m ()
+  resource :: (MonadState Available m) => n -> m (Maybe a)
+
+instance Resource VertexFormat where
+  load _ n = do
+    vf <- liftIO (loadJSON n)
+    vertexFormats . at n .= Just vf
+  resource n = fmap (preview . at n) (use vertexFormats)
