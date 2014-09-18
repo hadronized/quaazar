@@ -24,32 +24,38 @@ module Photon.Resource.Available (
 
 import Control.Lens ( makeLenses )
 import Data.Map as M ( Map )
+import Data.Proxy ( Proxy )
 import Photon.Core.Light ( Light )
 import Photon.Core.Mesh ( Mesh )
 import Photon.Core.Model ( Model )
 import Photon.Core.Vertex ( VertexFormat )
+import Photon.Resource.Mesh ( UnresolvedMesh )
 
 -- |Expose available resources. See 'Resource' for further details about
 -- how to get resources from 'Available'.
 data Available n = Available {
     -- |Available vertex formats.
-    _vertexFormats :: Map n VertexFormat
+    _vertexFormats    :: Map n VertexFormat
     -- |Available meshes.
-  , _meshes        :: Map n Mesh
+  , _meshes           :: Map n Mesh
     -- |Available models.
-  , _models        :: Map n Model
+  , _models           :: Map n Model
     -- |Available lights.
-  , _lights        :: Map n Light
+  , _lights           :: Map n Light
+    -- |Available unresolved meshes.
+  , _unresolvedMeshes :: Map n UnresolvedMesh
   } deriving (Eq,Show)
 
 makeLenses ''Available
 
--- |This typeclass provides 'resource', a function used with 'Available'
--- to extract resources.
+-- |This typeclass provides 'load', a function used to load resources
+-- from a resource-capable monad. The @Proxy n@ is used to select a
+-- specific type of resource to load. You can then deduce this:
 --
--- Once you got an 'Available' value, you can use the 'Maybe' *monad*
--- to build your scene, since 'resource' outputs in 'Maybe', and you
--- don’t want to go on if a resource is missing. If you do, you can
--- use some kind of 'MonadError' monad.
+-- @ let loadMesh = load (Proxy :: Mesh) @
+--
+-- It also exposes the 'resource' function, used to acquire loaded
+-- resources.
 class Resource a where
-  resource :: Available n -> n -> Maybe a
+  load     :: Proxy n -> n -> m ()
+  resource :: n -> Maybe a
