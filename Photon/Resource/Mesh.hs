@@ -14,9 +14,7 @@
 -- deferred dependencies resolving.
 ----------------------------------------------------------------------------
 
-module Photon.Resource.Mesh (
-    -- *
-  ) where
+module Photon.Resource.Mesh where
 
 import Control.Applicative
 import Data.Map as M ( Map, lookup )

@@ -22,7 +22,7 @@ module Photon.Resource.Available (
   , Resource(..)
   ) where
 
-import Control.Lens ( makeLenses )
+import Control.Lens
 import Control.Monad.State ( MonadState )
 import Control.Monad.Trans ( MonadIO(..) )
 import Data.Map as M ( Map )
@@ -31,7 +31,8 @@ import Photon.Core.Light ( Light )
 import Photon.Core.Mesh ( Mesh )
 import Photon.Core.Model ( Model )
 import Photon.Core.Vertex ( VertexFormat )
-import Photon.Resource.Mesh ( UnresolvedMesh )
+import Photon.Resource.Loader ( loadJSON )
+import Photon.Resource.Mesh ( UnresolvedMesh(..) )
 
 -- |Expose available resources. See 'Resource' for further details about
 -- how to get resources from 'Available'.
@@ -67,29 +68,29 @@ resolve a = meshes .~ resolvedMeshes
 -- It also exposes the 'resource' function, used to acquire loaded
 -- resources.
 class Resource a where
-  load     :: (MonadIO m,MonadState Available m) => Proxy a -> n -> m ()
-  resource :: (MonadState Available m) => n -> m (Maybe a)
+  load     :: (MonadIO m,MonadState (Available n) m) => Proxy a -> n -> m ()
+  resource :: Available n -> n -> Maybe a
 
 instance Resource VertexFormat where
   load _ n = do
     vf <- liftIO (loadJSON n)
     vertexFormats . at n .= Just vf
-  resource n = uses vertexFormats (preview . at n)
+  resource n = vertexFormats ^? at n
 
 instance Resource Mesh where
   load _ n = do
     unmsh <- liftIO (loadJSON n)
     unresolvedMeshes . at .= Just unmsh
-  resource n = uses meshes (preview . at n)
+  resource n = meshes ^? at n
 
 instance Resource Model where
   load _ n = do
     mdl <- liftIO (loadJSON n)
     models . at n .= Just mdl
-  resource n = uses models (preview . at n)
+  resource n = models ^? at n
 
 instance Resource Light where
   load _ n = do
     lig <- liftIO (loadJSON n)
     lights . at n .= Just lig
-  resource n = uses lights (preview . at n)
+  resource n = lights ^? at n
