@@ -11,27 +11,14 @@
 -- called 'Available', which is used to lookup resources from.
 ----------------------------------------------------------------------------
 
-module Photon.Resource.Available (
-    -- * Available resources
-    Available
-  , vertexFormats
-  , meshes
-  , models
-  , lights
-    -- * Acquiring resources
-  , Resource(..)
-  ) where
+module Photon.Resource.Available where
 
 import Control.Lens
-import Control.Monad.State ( MonadState )
-import Control.Monad.Trans ( MonadIO(..) )
-import Data.Map as M ( Map )
-import Data.Proxy ( Proxy )
+import Data.Map as M ( Map, mapMaybe )
 import Photon.Core.Light ( Light )
 import Photon.Core.Mesh ( Mesh )
 import Photon.Core.Model ( Model )
 import Photon.Core.Vertex ( VertexFormat )
-import Photon.Resource.Loader ( loadJSON )
 import Photon.Resource.Mesh ( UnresolvedMesh(..) )
 
 -- |Expose available resources. See 'Resource' for further details about
@@ -46,51 +33,44 @@ data Available n = Available {
     -- |Available lights.
   , _lights           :: Map n Light
     -- |Available unresolved meshes.
-  , _unresolvedMeshes :: Map n UnresolvedMesh
-  } deriving (Eq,Show)
+  , _unresolvedMeshes :: Map n (UnresolvedMesh n)
+  }
 
 makeLenses ''Available
 
 -- TODO resolution integration should not be (.~), but some kind
 -- of union.
 -- |Resolve unresolved dependencies.
-resolve :: Available -> Available
-resolve a = meshes .~ resolvedMeshes
+resolve :: Available n -> Available n
+resolve a = a & meshes .~ resolvedMeshes
   where
-    resolvedMeshes = fmap (resolveMesh vfs) (a^.unresolvedMeshes)
+    resolvedMeshes = mapMaybe (flip resolveMesh vfs) (a^.unresolvedMeshes)
+    vfs            = a^.vertexFormats
 
--- |This typeclass provides 'load', a function used to load resources
--- from a resource-capable monad. The @Proxy n@ is used to select a
--- specific type of resource to load. You can then deduce this:
+-- |This typeclass provides 'register', a function used to register
+-- resources from a resource-capable monad. The @Proxy n@ is used to
+-- select a specific type of resource to load. You can then deduce this:
 --
 -- @ let loadMesh = load (Proxy :: Mesh) @
 --
 -- It also exposes the 'resource' function, used to acquire loaded
 -- resources.
 class Resource a where
-  load     :: (MonadIO m,MonadState (Available n) m) => Proxy a -> n -> m ()
-  resource :: Available n -> n -> Maybe a
+  register :: (Ord n) => n -> a -> Available n -> Available n
+  resource :: (Ord n) => n -> Available n -> Maybe a
 
 instance Resource VertexFormat where
-  load _ n = do
-    vf <- liftIO (loadJSON n)
-    vertexFormats . at n .= Just vf
-  resource n = vertexFormats ^? at n
+  register n v = vertexFormats . at n .~ Just v
+  resource n = view (vertexFormats . at n)
 
 instance Resource Mesh where
-  load _ n = do
-    unmsh <- liftIO (loadJSON n)
-    unresolvedMeshes . at .= Just unmsh
-  resource n = meshes ^? at n
+  register n m = meshes . at n .~ Just m
+  resource n = view (meshes . at n)
 
 instance Resource Model where
-  load _ n = do
-    mdl <- liftIO (loadJSON n)
-    models . at n .= Just mdl
-  resource n = models ^? at n
+  register n m = models . at n .~ Just m
+  resource n = view (models . at n)
 
 instance Resource Light where
-  load _ n = do
-    lig <- liftIO (loadJSON n)
-    lights . at n .= Just lig
-  resource n = lights ^? at n
+  register n l = lights . at n .~ Just l
+  resource n = view (lights . at n)
