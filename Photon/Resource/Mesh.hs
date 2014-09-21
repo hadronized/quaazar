@@ -22,9 +22,9 @@ import Data.Aeson
 import Photon.Core.Mesh ( Mesh(..) )
 import Photon.Core.Vertex ( VertexFormat, Vertices(Vertices) )
 
-newtype UnresolvedMesh n = UnresolvedMesh { resolveMesh :: Map n VertexFormat -> Maybe Mesh }
+newtype UnresolvedMesh = UnresolvedMesh { resolveMesh :: Map String VertexFormat -> Maybe Mesh }
 
-instance (Ord n,FromJSON n) => FromJSON (UnresolvedMesh n) where
+instance FromJSON UnresolvedMesh where
   parseJSON = withObject "mesh" $ \o -> do
       verts <- o .: "vertices"
       vgr   <- o .: "vgroup"
@@ -32,9 +32,9 @@ instance (Ord n,FromJSON n) => FromJSON (UnresolvedMesh n) where
     where
       mapFun verts vgr m = Mesh <$> resolveVertices verts m <*> pure vgr
 
-newtype UnresolvedVertices n = UnresolvedVertices { resolveVertices :: Map n VertexFormat -> Maybe Vertices }
+newtype UnresolvedVertices = UnresolvedVertices { resolveVertices :: Map String VertexFormat -> Maybe Vertices }
 
-instance (Ord n,FromJSON n) => FromJSON (UnresolvedVertices n) where
+instance FromJSON UnresolvedVertices where
   parseJSON = withObject "vertices" $ \o -> do
       format <- o .: "format"
       verts  <- o .: "vertices"

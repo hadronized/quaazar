@@ -23,17 +23,17 @@ import Photon.Resource.Mesh ( UnresolvedMesh(..) )
 
 -- |Expose available resources. See 'Resource' for further details about
 -- how to get resources from 'Available'.
-data Available n = Available {
+data Available = Available {
     -- |Available vertex formats.
-    _vertexFormats    :: Map n VertexFormat
+    _vertexFormats    :: Map String VertexFormat
     -- |Available meshes.
-  , _meshes           :: Map n Mesh
+  , _meshes           :: Map String Mesh
     -- |Available models.
-  , _models           :: Map n Model
+  , _models           :: Map String Model
     -- |Available lights.
-  , _lights           :: Map n Light
+  , _lights           :: Map String Light
     -- |Available unresolved meshes.
-  , _unresolvedMeshes :: Map n (UnresolvedMesh n)
+  , _unresolvedMeshes :: Map String UnresolvedMesh
   }
 
 makeLenses ''Available
@@ -41,7 +41,7 @@ makeLenses ''Available
 -- TODO resolution integration should not be (.~), but some kind
 -- of union.
 -- |Resolve unresolved dependencies.
-resolve :: Available n -> Available n
+resolve :: Available -> Available
 resolve a = a & meshes .~ resolvedMeshes
   where
     resolvedMeshes = mapMaybe (flip resolveMesh vfs) (a^.unresolvedMeshes)
