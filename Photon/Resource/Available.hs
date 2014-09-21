@@ -46,31 +46,3 @@ resolve a = a & meshes .~ resolvedMeshes
   where
     resolvedMeshes = mapMaybe (flip resolveMesh vfs) (a^.unresolvedMeshes)
     vfs            = a^.vertexFormats
-
--- |This typeclass provides 'register', a function used to register
--- resources from a resource-capable monad. The @Proxy n@ is used to
--- select a specific type of resource to load. You can then deduce this:
---
--- @ let loadMesh = load (Proxy :: Mesh) @
---
--- It also exposes the 'resource' function, used to acquire loaded
--- resources.
-class Resource a where
-  register :: (Ord n) => n -> a -> Available n -> Available n
-  resource :: (Ord n) => n -> Available n -> Maybe a
-
-instance Resource VertexFormat where
-  register n v = vertexFormats . at n .~ Just v
-  resource n = view (vertexFormats . at n)
-
-instance Resource Mesh where
-  register n m = meshes . at n .~ Just m
-  resource n = view (meshes . at n)
-
-instance Resource Model where
-  register n m = models . at n .~ Just m
-  resource n = view (models . at n)
-
-instance Resource Light where
-  register n l = lights . at n .~ Just l
-  resource n = view (lights . at n)

@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   : (C) 2014 Dimitri Sabadie
@@ -13,10 +15,11 @@
 module Photon.Resource.Loader where
 
 import Control.Lens hiding ( (<.>) )
+import Control.Monad ( liftM )
 import Control.Monad.Error.Class ( MonadError(..) )
 import Control.Monad.Trans ( MonadIO, liftIO )
 import Data.ByteString.Lazy as B ( readFile )
-import Data.Proxy ( Proxy )
+import Data.Proxy ( Proxy(..) )
 import Data.Aeson
 import Photon.Core.Light ( Light )
 import Photon.Core.Mesh ( Mesh )
@@ -26,12 +29,23 @@ import Photon.Resource.Available
 import Photon.Utils.Log
 import System.FilePath
 
-loadJSON :: (MonadError String m,MonadIO m,FromJSON a)
-         => FilePath
-         -> m a
-loadJSON path = liftIO (B.readFile path) >>= eitherDecode_
+loadJSON :: (FromJSON a,MonadIO m) => FilePath -> m (Either String a)
+loadJSON path =  liftM eitherDecode (liftIO $ B.readFile path)
+
+class Load a n where
+  resourceFilePath :: Proxy a -> n -> FilePath
+
+instance Load VertexFormat String where
+  resourceFilePath _ n = "vformats" </> n <.> "yvft"
+
+loadVertexFormat :: (Ord n,Load VertexFormat n,MonadIO m,MonadLogger m)
+                 => n
+                 -> Available n
+                 -> m (Available n)
+loadVertexFormat n available = loadJSON path >>= register
   where
-    eitherDecode_ = either throwError return . eitherDecode
-
---  load     :: (MonadIO m,MonadLogger m) => Proxy a -> n -> Available n -> m (Available n)
-
+    path        = resourceFilePath (Proxy :: Proxy VertexFormat) n
+    register    = either loadError (\vf -> return $ available & vertexFormats . at n .~ Just vf)
+    loadError e = do
+      err CoreLog $ "failed to load vertex format '" ++ path ++ "': " ++ e
+      return available
