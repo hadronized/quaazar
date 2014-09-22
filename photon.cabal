@@ -34,11 +34,14 @@ library
                      , Photon.Core.Light
                      , Photon.Core.Mesh
                      , Photon.Core.Model
+                     , Photon.Core.Normal
+                     , Photon.Core.Position
                      , Photon.Core.Projection
                      , Photon.Core.Renderer
                      , Photon.Core.Scene
                      , Photon.Core.VGroup
                      , Photon.Core.Vertex
+                     , Photon.Core.UV
                      , Photon.Resource.Available
                      , Photon.Resource.Loader
                      , Photon.Resource.Mesh
@@ -73,7 +76,7 @@ library
                      , scientific    >= 0.3   && < 0.4
                      , parsec        >= 3.1   && < 3.2
                      , semigroups    >= 0.13  && < 0.14
-                     , nats          >= 0.1   && < 0.2
+                     , nats          >= 0.1   && < 0.2 -- FIXME
                      , monad-journal >= 0.2   && < 0.3
                      , filepath      >= 1.3   && < 1.4
 
