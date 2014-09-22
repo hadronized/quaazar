@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   : (C) 2014 Dimitri Sabadie
@@ -6,23 +8,66 @@
 -- Maintainer  : Dimitri Sabadie <dimitri.sabadie@gmail.com>
 -- Stability   : experimental
 -- Portability : portable
---
--- This module exports a JSON loader for lights.
 ----------------------------------------------------------------------------
 
-module Photon.Resource.Loader (
-    -- * JSON loader
-    loadJSON
-  ) where
+module Photon.Resource.Loader where
 
-import Control.Monad.Error.Class ( MonadError(..) )
+import Control.Lens hiding ( (<.>) )
+import Control.Monad ( liftM )
 import Control.Monad.Trans ( MonadIO, liftIO )
 import Data.ByteString.Lazy as B ( readFile )
 import Data.Aeson
+import Photon.Resource.Available
+import Photon.Utils.Log
+import System.FilePath
 
-loadJSON :: (MonadError String m,MonadIO m,FromJSON a)
-         => FilePath
-         -> m a
-loadJSON path = liftIO (B.readFile path) >>= eitherDecode_
+loadJSON :: (FromJSON a,MonadIO m) => FilePath -> m (Either String a)
+loadJSON path = liftM eitherDecode (liftIO $ B.readFile path)
+
+loadVertexFormat :: (MonadIO m,MonadLogger m)
+                 => String 
+                 -> Available
+                 -> m Available
+loadVertexFormat n available = loadJSON path >>= register
   where
-    eitherDecode_ = either throwError return . eitherDecode
+    path        = "vformats" </> n <.> "yvft"
+    register    = either loadError (\vf -> return $ available & vertexFormats . at n .~ Just vf)
+    loadError e = do
+      err CoreLog $ "failed to load vertex format '" ++ path ++ "': " ++ e
+      return available
+
+loadMesh :: (MonadIO m,MonadLogger m)
+         => String
+         -> Available
+         -> m Available
+loadMesh n available = loadJSON path >>= register
+  where
+    path        = "meshes" </> n <.> "ymsh"
+    register    = either loadError (\m -> return $ available & unresolvedMeshes . at n .~ Just m)
+    loadError e = do
+      err CoreLog $ "failed to load mesh '" ++ path ++ "': " ++ e
+      return available
+
+loadModel :: (MonadIO m,MonadLogger m)
+          => String
+          -> Available
+          -> m Available
+loadModel n available = loadJSON path >>= register
+  where
+    path        = "models" </> n <.> "ymdl"
+    register    = either loadError (\m -> return $ available & models . at n .~ Just m)
+    loadError e = do
+      err CoreLog $ "failed to load model '" ++ path ++ "': " ++ e
+      return available
+
+loadLight :: (MonadIO m,MonadLogger m)
+          => String
+          -> Available
+          -> m Available
+loadLight n available = loadJSON path >>= register
+  where
+    path        = "lights" </> n <.> "ylig"
+    register    = either loadError (\l -> return $ available & lights . at n .~ Just l)
+    loadError e = do
+      err CoreLog $ "failed to load light '" ++ path ++ "': " ++ e
+      return available

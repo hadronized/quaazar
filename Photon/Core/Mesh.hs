@@ -26,21 +26,15 @@ module Photon.Core.Mesh (
   , module Photon.Core.VGroup
   ) where
 
-import Control.Applicative
 import Control.Lens ( makeLenses )
-import Data.Aeson
 import Photon.Core.Vertex
 import Photon.Core.VGroup
 
 -- |A mesh is a pair of vertices and vertex group. See 'meshVertices' and
 -- 'meshVGroup' for further details.
-data Mesh n = Mesh {
-    _meshVertices :: Vertices n
+data Mesh = Mesh {
+    _meshVertices :: Vertices
   , _meshVGroup   :: VGroup
   } deriving (Eq,Show)
-
-instance (FromJSON n) => FromJSON (Mesh n) where
-  parseJSON = withObject "mesh" $ \o ->
-    Mesh <$> o .: "vertices" <*> o .: "vgroup"
 
 makeLenses ''Mesh
