@@ -44,7 +44,6 @@ library
                      , Photon.Core.UV
                      , Photon.Resource.Available
                      , Photon.Resource.Loader
-                     , Photon.Resource.Mesh
                      , Photon.Utils.Directory
                      , Photon.Utils.Log
                      , Photon.Utils.Parsing
