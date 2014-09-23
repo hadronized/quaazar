@@ -37,10 +37,8 @@ newtype Color = Color { unColor :: V4 Float } deriving (Eq,Ord,Show)
 
 instance FromJSON Color where
   parseJSON v = do
-    c <- parseJSON v
-    case c of
-      [r,g,b,a] -> return (color r g b a)
-      _         -> fail "invalid color"
+    [r,g,b,a] <- parseJSON v
+    return $ color r g b a
 
 color :: Float -> Float -> Float -> Float -> Color
 color r g b a = Color (V4 r g b a)
