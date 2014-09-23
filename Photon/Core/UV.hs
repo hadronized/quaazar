@@ -12,9 +12,15 @@
 
 module Photon.Core.UV (
     -- * UV
-    UV
+    UV(..)
   ) where
 
-import Linear ( V3 )
+import Data.Aeson
+import Linear ( V2(..) )
 
-type UV = V2 Float
+newtype UV = UV { unUV :: V2 Float } deriving (Eq,Ord,Show)
+
+instance FromJSON UV where
+  parseJSON v' = do
+    [u,v] <- parseJSON v'
+    return . UV $ V2 u v
