@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   : (C) 2014 Dimitri Sabadie
@@ -24,7 +26,9 @@ module Photon.Core.Mesh (
   , module Photon.Core.VGroup
   ) where
 
+import Control.Applicative
 import Control.Lens ( makeLenses )
+import Data.Aeson
 import Photon.Core.Vertex
 import Photon.Core.VGroup
 
@@ -34,5 +38,8 @@ data Mesh = Mesh {
     _meshVertices :: Vertices
   , _meshVGroup   :: VGroup
   } deriving (Eq,Show)
+
+instance FromJSON Mesh where
+  parseJSON = withObject "mesh" $ \o -> Mesh <$> o .: "vertices" <*> o .: "vgroup"
 
 makeLenses ''Mesh

@@ -14,7 +14,7 @@
 module Photon.Resource.Available where
 
 import Control.Lens
-import Data.Map as M ( Map, mapMaybe )
+import Data.Map ( Map )
 import Photon.Core.Light ( Light )
 import Photon.Core.Mesh ( Mesh )
 import Photon.Core.Model ( Model )
@@ -23,11 +23,11 @@ import Photon.Core.Model ( Model )
 -- how to get resources from 'Available'.
 data Available = Available {
     -- |Available meshes.
-    _meshes           :: Map String Mesh
+    _meshes :: Map String Mesh
     -- |Available models.
-  , _models           :: Map String Model
+  , _models :: Map String Model
     -- |Available lights.
-  , _lights           :: Map String Light
+  , _lights :: Map String Light
   }
 
 makeLenses ''Available

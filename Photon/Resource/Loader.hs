@@ -24,18 +24,6 @@ import System.FilePath
 loadJSON :: (FromJSON a,MonadIO m) => FilePath -> m (Either String a)
 loadJSON path = liftM eitherDecode (liftIO $ B.readFile path)
 
-loadVertexFormat :: (MonadIO m,MonadLogger m)
-                 => String 
-                 -> Available
-                 -> m Available
-loadVertexFormat n available = loadJSON path >>= register
-  where
-    path        = "vformats" </> n <.> "yvft"
-    register    = either loadError (\vf -> return $ available & vertexFormats . at n .~ Just vf)
-    loadError e = do
-      err CoreLog $ "failed to load vertex format '" ++ path ++ "': " ++ e
-      return available
-
 loadMesh :: (MonadIO m,MonadLogger m)
          => String
          -> Available
@@ -43,7 +31,7 @@ loadMesh :: (MonadIO m,MonadLogger m)
 loadMesh n available = loadJSON path >>= register
   where
     path        = "meshes" </> n <.> "ymsh"
-    register    = either loadError (\m -> return $ available & unresolvedMeshes . at n .~ Just m)
+    register    = either loadError (\m -> return $ available & meshes . at n .~ Just m)
     loadError e = do
       err CoreLog $ "failed to load mesh '" ++ path ++ "': " ++ e
       return available
