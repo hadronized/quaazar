@@ -12,9 +12,15 @@
 
 module Photon.Core.Position (
     -- * Position
-    Position
+    Position(..)
   ) where
 
-import Linear ( V3 )
+import Data.Aeson
+import Linear ( V3(..) )
 
-type Position = V3 Float
+newtype Position = Position { unPosition :: V3 Float } deriving (Eq,Ord,Show)
+
+instance FromJSON Position where
+  parseJSON v = do
+    [x,y,z] <- parseJSON v
+    return . Position $ V3 x y z
