@@ -23,6 +23,7 @@ module Photon.Core.Vertex where
 import Control.Applicative
 import Control.Lens
 import Data.Aeson
+import Numeric.Natural ( Natural )
 import Photon.Core.Normal ( Normal )
 import Photon.Core.Position ( Position )
 import Photon.Core.UV ( UV )
@@ -47,7 +48,7 @@ makeLenses ''Vertex
 
 data Vertices
   = Interleaved [Vertex]
-  | Deinterleaved [Position] [Normal] [[UV]]
+  | Deinterleaved Natural [Position] [Normal] [[UV]]
     deriving (Eq,Show)
 
 instance FromJSON Vertices where
@@ -55,8 +56,11 @@ instance FromJSON Vertices where
     int <- o .: "interleaved" .!= True
     if int then
       Interleaved <$> o .: "values"
-      else
-        Deinterleaved <$> o .: "positions" <*> o .: "normals" <*> o .: "uvs"
+      else do
+        positions <- o .: "positions"
+        normals   <- o .: "normals"
+        uvs       <- o .: "uvs"
+        return $ Deinterleaved (fromIntegral $ length positions) positions normals uvs
 
 -- |Group '[Vertex]' into interleaved 'Vertices'.
 interleaved :: [Vertex] -> Vertices
@@ -66,6 +70,11 @@ interleaved = Interleaved
 -- DList to maximize append speed.
 -- |Group '[Vertex]' into deinterleaved 'Vertices'.
 deinterleaved :: [Vertex] -> Vertices
-deinterleaved verts = let (p,n,uvs) = foldr rezip ([],[],[]) verts in Deinterleaved p n uvs
+deinterleaved verts =
+    let
+      (p,n,uvs) = foldr rezip ([],[],[]) verts
+      vnb = fromIntegral (length p)
+    in
+      Deinterleaved vnb p n uvs
   where
     rezip (Vertex p n uvs) (ap,an,auvs) = (p:ap,n:an,uvs:auvs)
