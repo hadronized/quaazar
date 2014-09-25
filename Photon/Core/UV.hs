@@ -13,6 +13,7 @@
 module Photon.Core.UV (
     -- * UV
     UV(..)
+  , uv
   ) where
 
 import Data.Aeson
@@ -24,3 +25,6 @@ instance FromJSON UV where
   parseJSON v' = do
     [u,v] <- parseJSON v'
     return . UV $ V2 u v
+
+uv :: Float -> Float -> UV
+uv u v = UV (V2 u v)

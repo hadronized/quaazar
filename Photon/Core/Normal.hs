@@ -13,6 +13,7 @@
 module Photon.Core.Normal (
     -- * Normal 
     Normal(..)
+  , normal
   ) where
 
 import Data.Aeson
@@ -24,3 +25,6 @@ instance FromJSON Normal where
   parseJSON v = do
     [x,y,z] <- parseJSON v
     return . Normal $ V3 x y z
+
+normal :: Float -> Float -> Float -> Normal
+normal x y z = Normal (V3 x y z)
