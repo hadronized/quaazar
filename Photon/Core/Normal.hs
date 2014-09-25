@@ -13,7 +13,7 @@
 module Photon.Core.Normal (
     -- * Normal 
     Normal(..)
-  , normal
+  , nor
   ) where
 
 import Data.Aeson
@@ -24,7 +24,7 @@ newtype Normal = Normal { unNormal :: V3 Float } deriving (Eq,Ord,Show)
 instance FromJSON Normal where
   parseJSON v = do
     [x,y,z] <- parseJSON v
-    return . Normal $ V3 x y z
+    return $ nor x y z
 
-normal :: Float -> Float -> Float -> Normal
-normal x y z = Normal (V3 x y z)
+nor :: Float -> Float -> Float -> Normal
+nor x y z = Normal (V3 x y z)
