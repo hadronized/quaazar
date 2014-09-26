@@ -29,6 +29,7 @@ library
   ghc-options:         -W -Wall -O2
 
   exposed-modules:     Photon.Control.Monad
+                     , Photon.Core.BoundingVolume
                      , Photon.Core.Color
                      , Photon.Core.Entity
                      , Photon.Core.Light
