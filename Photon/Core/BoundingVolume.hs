@@ -9,13 +9,14 @@
 --
 ----------------------------------------------------------------------------
 
-module BoundingVolume (
+module Photon.Core.BoundingVolume (
     -- *
   ) where
 
-import Data.List ( maximumBy )
-import Data.Ord ( comparing )
-import Photon.Core.Vertex ( Vertices(..) )
+import Control.Lens ( view )
+import Linear
+import Photon.Core.Position ( unPosition )
+import Photon.Core.Vertex ( Vertices(..), vertexPosition )
 
 data BoundingVolume
   = BSphere Float          -- ^ radius
@@ -25,9 +26,11 @@ data BoundingVolume
 -- |Construct a bounding sphere from vertices.
 bsphere :: Vertices -> BoundingVolume
 bsphere verts = BSphere $ case verts of
-    Interleaved vs       -> maximumBy (comparing . norm $ view vertexPosition) vs
-    Deinterleaved ps _ _ -> maximum $ map norm ps
+    Interleaved vs         -> maximum $ map (norm . unPosition . view vertexPosition) vs
+    Deinterleaved _ ps _ _ -> maximum $ map (norm . unPosition) ps
 
+{-
 minmax :: (Ord a) => [a] -> (a,a)
 minmax []     = error "empty list: minmax"
 minmax (x:xs) = foldl (\(mn,mx) a -> (min mn a,max mx a)) (x,x) xs
+-}
