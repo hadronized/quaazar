@@ -16,6 +16,7 @@ bl_info = {
 
 import bpy
 from bpy_extras.io_utils import ExportHelper
+from bpy.props import BoolProperty
 import json
 
 class PhotonMeshExporter(bpy.types.Operator, ExportHelper):
@@ -27,6 +28,12 @@ class PhotonMeshExporter(bpy.types.Operator, ExportHelper):
 
   filename_ext   = ".ymsh"
 
+  sparse = BoolProperty (
+      name        = "Sparse output"
+    , description = "Should the output file be sparse?"
+    , default     = False
+    , )
+
   def execute(self, context):
     print("-- ----------------------- --")
     print("-- Photon Mesh JSON Export --")
@@ -37,7 +44,7 @@ class PhotonMeshExporter(bpy.types.Operator, ExportHelper):
         continue
       print("I: exporting '" + msh.name + "'")
       phmsh = toPhotonMesh(msh)
-      print(phmsh.toJSON())
+      print(phmsh.toJSON(self.sparse))
     print("-- ----------------------- --")
     return {'FINISHED'}
 
@@ -55,9 +62,10 @@ class PhotonMesh:
     self.vertices = vs
     self.vgroup   = vgr
 
-  def toJSON(self):
+  def toJSON(self, sparse):
+    i = 2 if sparse else None
     d = { "vertices" : self.vertices, "vgroup" : self.vgroup }
-    return json.dumps(d, sort_keys=True, indent=2)
+    return json.dumps(d, sort_keys=True, indent=i)
 
 def getSceneMeshes():
   return [obj.data for obj in bpy.context.scene.objects if obj.type == 'MESH']
@@ -76,7 +84,7 @@ def toPhotonMesh(msh):
   for vert in msh.vertices:
     pos = [vert.co[0],vert.co[1],vert.co[2]]
     nor = [vert.normal[0],vert.normal[1],vert.normal[2]]
-    vs.append({'position' : pos,'normal' : nor})
+    vs.append([pos,nor])
 
   # vertex group
   i = 0
