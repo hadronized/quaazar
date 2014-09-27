@@ -23,6 +23,7 @@ module Photon.Core.Vertex where
 import Control.Applicative
 import Control.Lens
 import Data.Aeson
+import Data.Aeson.Types ( typeMismatch )
 import Numeric.Natural ( Natural )
 import Photon.Core.Normal ( Normal )
 import Photon.Core.Position ( Position )
@@ -38,11 +39,11 @@ data Vertex = Vertex {
   } deriving (Eq,Ord,Show)
 
 instance FromJSON Vertex where
-  parseJSON = withObject "vertex" $ \o ->
-    Vertex
-      <$> o .: "position"
-      <*> o .: "normal"
-      <*> o .: "uvs"
+  parseJSON v = do
+    a <- parseJSON v
+    case a of
+      [p,n,u] -> Vertex <$> parseJSON p <*> parseJSON n <*> parseJSON u
+      _       -> typeMismatch "vertex" v
 
 makeLenses ''Vertex
 
