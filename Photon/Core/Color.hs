@@ -25,6 +25,7 @@ module Photon.Core.Color (
 
 import Control.Lens
 import Data.Aeson
+import Data.Aeson.Types ( typeMismatch )
 import Linear.V4
 
 -- |A color is a 4-float vector. The four channels are:
@@ -37,8 +38,10 @@ newtype Color = Color { unColor :: V4 Float } deriving (Eq,Ord,Show)
 
 instance FromJSON Color where
   parseJSON v = do
-    [r,g,b,a] <- parseJSON v
-    return $ color r g b a
+    a' <- parseJSON v
+    case a' of
+      [r,g,b,a] -> return (color r g b a)
+      _         -> typeMismatch "color" v
 
 color :: Float -> Float -> Float -> Float -> Color
 color r g b a = Color (V4 r g b a)

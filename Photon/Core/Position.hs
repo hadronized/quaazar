@@ -17,14 +17,17 @@ module Photon.Core.Position (
   ) where
 
 import Data.Aeson
+import Data.Aeson.Types ( typeMismatch )
 import Linear ( V3(..) )
 
 newtype Position = Position { unPosition :: V3 Float } deriving (Eq,Ord,Show)
 
 instance FromJSON Position where
   parseJSON v = do
-    [x,y,z] <- parseJSON v
-    return $ pos x y z
+    a <- parseJSON v
+    case a of
+      [x,y,z] -> return (pos x y z)
+      _       -> typeMismatch "position" v
 
 pos :: Float -> Float -> Float -> Position
 pos x y z = Position (V3 x y z)
