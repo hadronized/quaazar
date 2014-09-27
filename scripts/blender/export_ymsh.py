@@ -15,14 +15,17 @@ bl_info = {
 }
 
 import bpy
+from bpy_extras.io_utils import ExportHelper
 import json
 
-class PhotonMeshExporter(bpy.types.Operator):
+class PhotonMeshExporter(bpy.types.Operator, ExportHelper):
   """Photon Mesh Exporter Script"""
   bl_idname      = "object.photon_mesh_exporter"
   bl_label       = "Photon Mesh Exporter"
   bl_description = "Export all meshes from the scene into a directory"
   bl_options     = {'REGISTER'}
+
+  filename_ext   = ".ymsh"
 
   def execute(self, context):
     print("-- ----------------------- --")
