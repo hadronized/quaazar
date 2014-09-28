@@ -37,14 +37,19 @@ class PhotonMeshExporter(bpy.types.Operator, ExportHelper):
   def execute(self, context):
     print("-- ----------------------- --")
     print("-- Photon Mesh JSON Export --")
-    meshes = getSceneMeshes()
-    for msh in meshes:
+    o = bpy.context.active_object
+    if o == None:
+      print("E: no mesh selected")
+    else:
+      msh = o.data
       if not hasOnlyTris(msh):
         print("W: '" + msh.name + "' is not elegible to export, please convert quadrangles to triangles")
-        continue
-      print("I: exporting '" + msh.name + "'")
-      phmsh = toPhotonMesh(msh)
-      print(phmsh.toJSON(self.sparse))
+      else:
+        print("I: exporting '" + msh.name + "'")
+        phmsh = toPhotonMesh(msh)
+        fp = open(self.filepath, "w")
+        fp.write(phmsh.toJSON(self.sparse))
+        fp.close()
     print("-- ----------------------- --")
     return {'FINISHED'}
 
@@ -67,9 +72,6 @@ class PhotonMesh:
     d = { "vertices" : self.vertices, "vgroup" : self.vgroup }
     return json.dumps(d, sort_keys=True, indent=i)
 
-def getSceneMeshes():
-  return [obj.data for obj in bpy.context.scene.objects if obj.type == 'MESH']
-
 def hasOnlyTris(msh):
   for poly in msh.polygons:
     if len(poly.vertices) > 3:
@@ -82,8 +84,8 @@ def toPhotonMesh(msh):
 
   # vertices
   for vert in msh.vertices:
-    pos = [vert.co[0],vert.co[1],vert.co[2]]
-    nor = [vert.normal[0],vert.normal[1],vert.normal[2]]
+    pos = [round_(vert.co[0]),round_(vert.co[1]),round_(vert.co[2])]
+    nor = [round_(vert.normal[0]),round_(vert.normal[1]),round_(vert.normal[2])]
     vs.append([pos,nor])
 
   # vertex group
@@ -97,3 +99,6 @@ def toPhotonMesh(msh):
     i += 3
 
   return PhotonMesh(vs,vg)
+
+def round_(x):
+  return round(x,6)
