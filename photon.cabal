@@ -37,6 +37,7 @@ library
                      , Photon.Core.Model
                      , Photon.Core.Normal
                      , Photon.Core.Position
+                     , Photon.Core.PostFX
                      , Photon.Core.Projection
                      , Photon.Core.Renderer
                      , Photon.Core.Scene
