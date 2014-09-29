@@ -110,29 +110,41 @@ instance Floating E where
   atanh   = ATanH
   acosh   = ACosH
 
+-- |Int literal.
 int :: Int -> E
 int = LitI
 
+-- |Unsigned int literal.
 unsigned :: Word32 -> E
 unsigned = LitU
 
+-- |Float literal.
 float :: Float -> E
 float = LitF
 
+-- |Relative lookup. @relative row col@ performs a lookup at @row@ rows
+-- and @col@ columns from the currently computing pixel and retrieve the
+-- corresponding pixel. Both values in pixels.
 relative :: Int -> Int -> E
 relative = RelLk
 
+-- |Absolute lookup. @absolute row col@ performs a lookup at absolute
+-- position from upper-left corner of the frame. Both values in pixels.
 absolute :: Natural -> Natural -> E
 absolute = AbsLk
 
+-- |Currently computing pixel.
 pixel :: E
 pixel = relative 0 0
 
+-- |Time.
 time :: E
 time = Time
 
+-- |Outer left multiplication.
 (*@) :: E -> E -> E
 (*@) = LMul
 
+-- |Outer right multiplication.
 (@*) :: E -> E -> E
 (@*) = RMul
