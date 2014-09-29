@@ -14,6 +14,9 @@ module Photon.Core.PostFX (
     PostFX(..)
     -- * Frame shader
   , FrameShader
+  , int
+  , unsigned
+  , float
   , relative
   , absolute
   , pixel
@@ -55,6 +58,19 @@ instance Num E where
   abs         = Abs
   signum      = undefined
   fromInteger = LitI . fromInteger
+
+instance Fractional E where
+  (/) = Div
+  fromRational = float . fromRational
+
+int :: Int -> E
+int = LitI
+
+unsigned :: Word32 -> E
+unsigned = LitU
+
+float :: Float -> E
+float = LitF
 
 relative :: Int -> Int -> E
 relative = RelLk
