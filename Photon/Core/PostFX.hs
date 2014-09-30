@@ -8,14 +8,14 @@
 -- Portability : portable
 --
 -- This module exports 'PostFX', a useful type used to alter a frame after
--- it’s been fulfilled with a render. It enables to enhance the final
+-- it’s been fulfilled with a render. It enables enhancing the final
 -- aspect of a render, or alter it in fancy ways.
 --
--- You can’t directly build 'PostFX' since this type is backend’s
+-- You can’t directly build a 'PostFX' since this type is backend’s
 -- renderer-dependent. In order to abstract that away, a new type is
 -- introduced: 'FrameShader'. A 'FrameShader' can be seen as a function
 -- from a /pixel/ to its updated pixel version. A few extra stuff is
--- available, like time, nearby pixels and so on.
+-- available, like time, nearby pixels lookup functions and so on.
 --
 -- In order to turn a 'FrameShader' into a 'PostFX', use the 'Renderer'’s
 -- 'compileFrameShader' function.
@@ -44,14 +44,16 @@ import Numeric.Natural ( Natural )
 newtype PostFX frame = PostFX { runPostFX :: frame -> frame }
 
 -- |Frame shader DSL.
-data FrameShader
-  = Add FrameShader FrameShader
-  | Sub FrameShader FrameShader
-  | Mul FrameShader FrameShader
-  | Div FrameShader FrameShader
-  | Abs FrameShader
-  | LMul FrameShader FrameShader
-  | RMul FrameShader FrameShader 
+data E
+  = Add E E
+  | Sub E E
+  | Mul E E
+  | Div E E
+  | Recip E
+  | Abs E
+  | LMul E E
+  | RMul E E 
+  | Pi
   | Exp E
   | Sqrt E
   | Log E
@@ -74,9 +76,12 @@ data FrameShader
   | RelLk Int Int
   | AbsLk Natural Natural
   | Time
+  | Vec2 E E
+  | Vec3 E E E
+  | Vec4 E E E E
     deriving (Eq,Show)
 
-type E = FrameShader
+type FrameShader = E
 
 instance Num E where
   (+)         = Add
@@ -88,10 +93,11 @@ instance Num E where
 
 instance Fractional E where
   (/) = Div
+  recip = Recip
   fromRational = float . fromRational
 
 instance Floating E where
-  pi      = float pi
+  pi      = Pi
   exp     = Exp
   sqrt    = Sqrt
   log     = Log
@@ -141,6 +147,18 @@ pixel = relative 0 0
 time :: E
 time = Time
 
+-- |Build a 2D-vector.
+vec2 :: E -> E -> E
+vec2 = Vec2
+
+-- |Build a 3D-vector.
+vec3 :: E -> E -> E -> E
+vec3 = Vec3
+
+-- |Build a 4D-vector.
+vec4 :: E -> E -> E -> E -> E
+vec4 = Vec4
+
 -- |Outer left multiplication.
 (*@) :: E -> E -> E
 (*@) = LMul
@@ -148,3 +166,7 @@ time = Time
 -- |Outer right multiplication.
 (@*) :: E -> E -> E
 (@*) = RMul
+
+-- |Outer right division.
+(@/) :: E -> E -> E
+a @/ k = a @* recip k
