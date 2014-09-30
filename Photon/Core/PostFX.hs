@@ -92,8 +92,8 @@ instance Num E where
   fromInteger = LitI . fromInteger
 
 instance Fractional E where
-  (/) = Div
-  recip = Recip
+  (/)          = Div
+  recip        = Recip
   fromRational = float . fromRational
 
 instance Floating E where
