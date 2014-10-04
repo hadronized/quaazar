@@ -11,7 +11,14 @@
 -- called 'Available', which is used to lookup resources from.
 ----------------------------------------------------------------------------
 
-module Photon.Resource.Available where
+module Photon.Resource.Available (
+    -- * Available resources
+    Available
+  , empty
+  , meshes
+  , models
+  , lights
+  ) where
 
 import Control.Lens
 import Data.Map ( Map )
