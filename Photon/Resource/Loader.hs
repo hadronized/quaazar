@@ -10,7 +10,12 @@
 -- Portability : portable
 ----------------------------------------------------------------------------
 
-module Photon.Resource.Loader where
+module Photon.Resource.Loader (
+    -- * Resource loaders
+    loadMesh
+  , loadModel
+  , loadLight
+  ) where
 
 import Control.Lens hiding ( (<.>) )
 import Control.Monad ( liftM )
