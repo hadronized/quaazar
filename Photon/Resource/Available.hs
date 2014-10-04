@@ -18,6 +18,7 @@ import Data.Map ( Map )
 import Photon.Core.Light ( Light )
 import Photon.Core.Mesh ( Mesh )
 import Photon.Core.Model ( Model )
+import qualified Data.Map as M ( empty )
 
 -- |Expose available resources. See 'Resource' for further details about
 -- how to get resources from 'Available'.
@@ -29,5 +30,8 @@ data Available = Available {
     -- |Available lights.
   , _lights :: Map String Light
   }
+
+empty :: Available
+empty = Available M.empty M.empty M.empty
 
 makeLenses ''Available
