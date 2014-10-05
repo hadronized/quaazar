@@ -58,6 +58,7 @@ library
   other-extensions:    ConstraintKinds
                      , OverloadedStrings
                      , RankNTypes
+                     , ScopedTypeVariables
                      , TypeFamilies
 
   build-depends:       base          >= 4.6   && < 4.8
