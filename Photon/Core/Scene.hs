@@ -23,13 +23,13 @@ module Photon.Core.Scene (
     Scene(Scene)
   , scene
   , camera
+  , objects 
   , lights
-  , models
     -- * Scene relations
   , SceneRel(SceneRel)
-  , sceneCamera
-  , sceneLights
-  , sceneMaterials
+  , cameraRel
+  , lightsRel
+  , objectsRel 
     -- * Optimized name
   , IndexPath(..)
   , indexPath

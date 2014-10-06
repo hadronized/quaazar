@@ -25,6 +25,6 @@ data Material = Material {
   } deriving (Eq,Show)
 
 instance FromJSON Material where
-  parseJSON = withObject "material" $ \o -> fmap Model (o .: "color")
+  parseJSON = withObject "material" $ \o -> fmap Material (o .: "color")
 
 makeLenses ''Material

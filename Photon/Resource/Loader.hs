@@ -13,7 +13,7 @@
 module Photon.Resource.Loader (
     -- * Resource loaders
     loadMesh
-  , loadModel
+  , loadMaterial
   , loadLight
   ) where
 
@@ -41,16 +41,16 @@ loadMesh n available = loadJSON path >>= register
       err CoreLog $ "failed to load mesh '" ++ path ++ "': " ++ e
       return available
 
-loadModel :: (MonadIO m,MonadLogger m)
-          => String
-          -> Available
-          -> m Available
-loadModel n available = loadJSON path >>= register
+loadMaterial :: (MonadIO m,MonadLogger m)
+             => String
+             -> Available
+             -> m Available
+loadMaterial n available = loadJSON path >>= register
   where
-    path        = "models" </> n <.> "ymdl"
-    register    = either loadError (\m -> return $ available & models . at n .~ Just m)
+    path        = "materials" </> n <.> "ymdl"
+    register    = either loadError (\m -> return $ available & materials . at n .~ Just m)
     loadError e = do
-      err CoreLog $ "failed to load model '" ++ path ++ "': " ++ e
+      err CoreLog $ "failed to load material '" ++ path ++ "': " ++ e
       return available
 
 loadLight :: (MonadIO m,MonadLogger m)

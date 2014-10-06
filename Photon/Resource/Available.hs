@@ -16,26 +16,26 @@ module Photon.Resource.Available (
     Available
   , empty
   , meshes
-  , models
+  , materials
   , lights
   ) where
 
 import Control.Lens
 import Data.Map ( Map )
 import Photon.Core.Light ( Light )
+import Photon.Core.Material ( Material )
 import Photon.Core.Mesh ( Mesh )
-import Photon.Core.Model ( Model )
 import qualified Data.Map as M ( empty )
 
 -- |Expose available resources. See 'Resource' for further details about
 -- how to get resources from 'Available'.
 data Available = Available {
     -- |Available meshes.
-    _meshes :: Map String Mesh
-    -- |Available models.
-  , _models :: Map String Model
+    _meshes    :: Map String Mesh
+    -- |Available materials.
+  , _materials :: Map String Material
     -- |Available lights.
-  , _lights :: Map String Light
+  , _lights    :: Map String Light
   }
 
 empty :: Available
