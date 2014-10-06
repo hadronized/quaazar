@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ConstraintKinds, ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -25,6 +25,8 @@ import Data.Aeson
 import Photon.Resource.Available
 import Photon.Utils.Log
 import System.FilePath
+
+type MonadResource = (MonadIO m,MonadLogger m,MonadState Available m,MonadPlus m)
 
 loadJSON :: (FromJSON a,MonadIO m) => FilePath -> m (Either String a)
 loadJSON path = liftM eitherDecode (liftIO $ B.readFile path)
