@@ -9,22 +9,22 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Models are a way to customize meshes. They add the concept of *material*
+-- Materials are a way to customize objects. They add the concept of *material*
 -- and are useful to customize the way a mesh is rendered.
 ----------------------------------------------------------------------------
 
-module Photon.Core.Model where
+module Photon.Core.Material where
 
 import Control.Lens ( makeLenses )
 import Data.Aeson
 import Photon.Core.Color ( Color )
 
--- |Model.
-data Model = Model {
-    _modelColor :: Color
+-- |Material.
+data Material = Material {
+    _matColor :: Color
   } deriving (Eq,Show)
 
-instance FromJSON Model where
-  parseJSON = withObject "model" $ \o -> fmap Model (o .: "color")
+instance FromJSON Material where
+  parseJSON = withObject "material" $ \o -> fmap Model (o .: "color")
 
-makeLenses ''Model
+makeLenses ''Material
