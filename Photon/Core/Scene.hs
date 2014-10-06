@@ -29,7 +29,7 @@ module Photon.Core.Scene (
   , SceneRel(SceneRel)
   , sceneCamera
   , sceneLights
-  , sceneModels
+  , sceneMaterials
     -- * Optimized name
   , IndexPath(..)
   , indexPath
@@ -41,25 +41,23 @@ import Data.Tuple ( swap )
 import Data.Vector as V ( Vector, fromList )
 import Photon.Core.Entity ( Entity )
 import Photon.Core.Light ( Light )
+import Photon.Core.Material ( Material )
 import Photon.Core.Mesh ( Mesh )
-import Photon.Core.Model ( Model )
 import Photon.Core.Projection ( Projection )
 
 -- |Store scene’s relations. Up to now, it gathers relationships between:
 --
 --   - camera;
---   - meshes;
---   - models;
+--   - objects;
+--   - materials;
 --   - lights.
---
--- It enables the use of shared objects.
 data SceneRel a = SceneRel {
     -- |
-    _sceneCamera :: Projection
+    _cameraRel  :: Projection
     -- |
-  , _sceneLights :: [(a,Light)]
+  , _lightsRel  :: [(a,Light)]
     -- |
-  , _sceneModels :: [(Mesh,[(a,Model)])]
+  , _objectsRel :: [(Material,[(a,Mesh)])]
   } deriving (Eq,Show)
 
 -- |Names are unique identifiers used to identify objects in a scene. For
@@ -92,10 +90,10 @@ makeLenses ''IndexPath
 --
 --     fmap (fromJust . indexPath scene) scene
 indexPath :: (Ord a) => SceneRel a -> Map a IndexPath
-indexPath sc = M.fromList (scligs ++ scmdls)
+indexPath sc = M.fromList (scligs ++ scobjs)
   where
-    scligs   = map (fmap ip1 . swap) . ixed . map fst $ sc^.sceneLights
-    scmdls   = concatMap (\(i0,m) -> map (fmap (ip2 i0) . swap) . ixed $ map fst m) . ixed . map snd $ sc^.sceneModels
+    scligs   = map (fmap ip1 . swap) . ixed . map fst $ sc^.lightsRel
+    scobjs   = concatMap (\(i0,nmsh) -> map (fmap (ip2 i0) . swap) . ixed $ map fst nmsh) . ixed . map snd $ sc^.objectsRel
     ixed     = zip [0..]
     ip1 i    = IndexPath [i]
     ip2 i0 i = IndexPath [i0,i]
@@ -103,11 +101,11 @@ indexPath sc = M.fromList (scligs ++ scmdls)
 -- |Entities are stored in a `Scene`.
 data Scene a = Scene {
     -- |Active camera.
-    _camera :: Entity a
-    -- |All models.
-  , _models :: Vector (Entity a)
+    _camera  :: Entity a
+    -- |All objects.
+  , _objects :: Vector (Entity a)
     -- |All lights.
-  , _lights :: Vector (Entity a)
+  , _lights  :: Vector (Entity a)
   } deriving (Eq,Functor,Show)
 
 makeLenses ''Scene
