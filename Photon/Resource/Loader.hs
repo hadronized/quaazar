@@ -15,8 +15,15 @@ module Photon.Resource.Loader (
     loadMesh
   , loadMaterial
   , loadLight
+    -- * More complex loaders
+  , loadLights
+  , loadMeshes
+  , loadObjectsPerMaterial
+  , loadObjects
+  , loadSceneRel
   ) where
 
+import Control.Applicative
 import Control.Lens hiding ( (<.>) )
 import Control.Monad ( liftM )
 import Control.Monad.Trans ( MonadIO, liftIO )
@@ -64,3 +71,18 @@ loadLight n available = loadJSON path >>= register
     loadError e = do
       err CoreLog $ "failed to load light '" ++ path ++ "': " ++ e
       return available
+
+loadLights :: (MonadIO m,MonadLogger m,FromJSON a) => [a] -> m [(a,Light)]
+loadLights = fmap <$> zip <*> mapM loadLight
+
+loadMeshes :: (MonadIO m,MonadLogger m,FromJSON a) => [a] -> m [(a,Mesh)]
+loadMeshes = fmap <$> zip <*> mapM loadMesh
+
+loadObjectsPerMaterial :: (MonadIO m,MonadLogger m,FromJSON a) => a-> [a] -> n (Material,[(a,Mesh)])
+loadObjectsPerMaterial mat objs = (,) <$> loadMaterial mat <*> loadMeshes objs
+
+loadObjects :: (MonadIO m,MonadLogger m,FromJSON a) => [(a,[a])] -> n [(Material [(a,Mesh)])]
+loadObjects = mapM (curry loadObjectsPerMaterial)
+
+loadSceneRel :: (MonadIO m,MonadLogger m,FromJSON a) => [a] -> [(a,[a])] -> Projection -> n SceneRel
+loadSceneRel ligs objs proj = SceneRel proj <$> loadLights ligs <*> loadObjects objs
