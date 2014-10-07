@@ -78,7 +78,7 @@ loadLights = fmap <$> zip <*> mapM loadLight
 loadMeshes :: (MonadIO m,MonadLogger m,FromJSON a) => [a] -> m [(a,Mesh)]
 loadMeshes = fmap <$> zip <*> mapM loadMesh
 
-loadObjectsPerMaterial :: (MonadIO m,MonadLogger m,FromJSON a) => a-> [a] -> n (Material,[(a,Mesh)])
+loadObjectsPerMaterial :: (MonadIO m,MonadLogger m,FromJSON a) => a -> [a] -> n (Material,[(a,Mesh)])
 loadObjectsPerMaterial mat objs = (,) <$> loadMaterial mat <*> loadMeshes objs
 
 loadObjects :: (MonadIO m,MonadLogger m,FromJSON a) => [(a,[a])] -> n [(Material [(a,Mesh)])]
