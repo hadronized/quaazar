@@ -43,7 +43,6 @@ library
                      , Photon.Core.VGroup
                      , Photon.Core.Vertex
                      , Photon.Core.UV
-                     , Photon.Resource.Available
                      , Photon.Resource.Loader
                      , Photon.Utils.Directory
                      , Photon.Utils.Log

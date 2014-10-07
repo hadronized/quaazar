@@ -24,65 +24,58 @@ module Photon.Resource.Loader (
   ) where
 
 import Control.Applicative
-import Control.Lens hiding ( (<.>) )
+import Control.Monad ( MonadPlus(..) )
 import Control.Monad ( liftM )
 import Control.Monad.Trans ( MonadIO, liftIO )
 import Data.ByteString.Lazy as B ( readFile )
 import Data.Aeson
-import Photon.Resource.Available
+import Photon.Core.Light ( Light )
+import Photon.Core.Material ( Material )
+import Photon.Core.Mesh ( Mesh )
+import Photon.Core.Projection ( Projection )
+import Photon.Core.Scene ( SceneRel(..) )
 import Photon.Utils.Log
 import System.FilePath
 
 loadJSON :: (FromJSON a,MonadIO m) => FilePath -> m (Either String a)
 loadJSON path = liftM eitherDecode (liftIO $ B.readFile path)
 
-loadMesh :: (MonadIO m,MonadLogger m)
-         => String
-         -> Available
-         -> m Available
-loadMesh n available = loadJSON path >>= register
+loadMesh :: (MonadIO m,MonadLogger m,MonadPlus m) => String -> m Mesh
+loadMesh n = loadJSON path >>= either loadError return
   where
     path        = "meshes" </> n <.> "ymsh"
-    register    = either loadError (\m -> return $ available & meshes . at n .~ Just m)
     loadError e = do
       err CoreLog $ "failed to load mesh '" ++ path ++ "': " ++ e
-      return available
+      mzero
 
-loadMaterial :: (MonadIO m,MonadLogger m)
-             => String
-             -> Available
-             -> m Available
-loadMaterial n available = loadJSON path >>= register
+loadMaterial :: (MonadIO m,MonadLogger m,MonadPlus m) => String -> m Material
+loadMaterial n = loadJSON path >>= either loadError return
   where
     path        = "materials" </> n <.> "ymdl"
-    register    = either loadError (\m -> return $ available & materials . at n .~ Just m)
     loadError e = do
       err CoreLog $ "failed to load material '" ++ path ++ "': " ++ e
-      return available
+      mzero
 
-loadLight :: (MonadIO m,MonadLogger m)
-          => String
-          -> Available
-          -> m Available
-loadLight n available = loadJSON path >>= register
+loadLight :: (MonadIO m,MonadLogger m,MonadPlus m) => String -> m Light
+loadLight n = loadJSON path >>= either loadError return
   where
     path        = "lights" </> n <.> "ylig"
-    register    = either loadError (\l -> return $ available & lights . at n .~ Just l)
     loadError e = do
       err CoreLog $ "failed to load light '" ++ path ++ "': " ++ e
-      return available
+      mzero
 
-loadLights :: (MonadIO m,MonadLogger m,FromJSON a) => [a] -> m [(a,Light)]
+-- FIXME: GHC 7.10 Applicative-Monad proposal
+loadLights :: (Applicative m,MonadIO m,MonadLogger m,MonadPlus m) => [String] -> m [(String,Light)]
 loadLights = fmap <$> zip <*> mapM loadLight
 
-loadMeshes :: (MonadIO m,MonadLogger m,FromJSON a) => [a] -> m [(a,Mesh)]
+loadMeshes :: (Applicative m,MonadIO m,MonadLogger m,MonadPlus m) => [String] -> m [(String,Mesh)]
 loadMeshes = fmap <$> zip <*> mapM loadMesh
 
-loadObjectsPerMaterial :: (MonadIO m,MonadLogger m,FromJSON a) => a -> [a] -> n (Material,[(a,Mesh)])
+loadObjectsPerMaterial :: (Applicative m,MonadIO m,MonadLogger m,MonadPlus m) => String -> [String] -> m (Material,[(String,Mesh)])
 loadObjectsPerMaterial mat objs = (,) <$> loadMaterial mat <*> loadMeshes objs
 
-loadObjects :: (MonadIO m,MonadLogger m,FromJSON a) => [(a,[a])] -> n [(Material [(a,Mesh)])]
-loadObjects = mapM (curry loadObjectsPerMaterial)
+loadObjects :: (Applicative m,MonadIO m,MonadLogger m,MonadPlus m) => [(String,[String])] -> m [(Material,[(String,Mesh)])]
+loadObjects = mapM (uncurry loadObjectsPerMaterial)
 
-loadSceneRel :: (MonadIO m,MonadLogger m,FromJSON a) => [a] -> [(a,[a])] -> Projection -> n SceneRel
+loadSceneRel :: (Applicative m,MonadIO m,MonadLogger m,MonadPlus m) => [String] -> [(String,[String])] -> Projection -> m (SceneRel String)
 loadSceneRel ligs objs proj = SceneRel proj <$> loadLights ligs <*> loadObjects objs
