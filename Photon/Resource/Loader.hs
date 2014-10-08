@@ -43,21 +43,24 @@ loadJSON path = liftM eitherDecode (liftIO $ B.readFile path)
 loadMesh :: (MonadIO m,MonadLogger m,MonadPlus m) => String -> m Mesh
 loadMesh n = loadJSON path >>= either loadError ok 
   where
-    path        = "meshes" </> n <.> "ymsh"
+    path = "meshes" </> n <.> "ymsh"
     loadError e = do
       err CoreLog $ "failed to load mesh '" ++ path ++ "': " ++ e
       mzero
-    ok msh      = do
+    ok msh = do
       info CoreLog $ "loaded mesh '" ++ path ++ "'"
       return msh
 
 loadMaterial :: (MonadIO m,MonadLogger m,MonadPlus m) => String -> m Material
-loadMaterial n = loadJSON path >>= either loadError return
+loadMaterial n = loadJSON path >>= either loadError ok 
   where
-    path        = "materials" </> n <.> "ymdl"
+    path = "materials" </> n <.> "ymdl"
     loadError e = do
       err CoreLog $ "failed to load material '" ++ path ++ "': " ++ e
       mzero
+    ok mat = do
+      info CoreLog $ "loaded material '" ++ path ++ "'"
+      return mat
 
 loadLight :: (MonadIO m,MonadLogger m,MonadPlus m) => String -> m Light
 loadLight n = loadJSON path >>= either loadError return
