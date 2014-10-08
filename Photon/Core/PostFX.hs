@@ -35,6 +35,7 @@ module Photon.Core.PostFX (
   , time
   , (*@)
   , (@*)
+  , (@/)
   ) where
 
 import Data.Word ( Word32 )
