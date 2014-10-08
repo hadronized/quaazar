@@ -63,12 +63,15 @@ loadMaterial n = loadJSON path >>= either loadError ok
       return mat
 
 loadLight :: (MonadIO m,MonadLogger m,MonadPlus m) => String -> m Light
-loadLight n = loadJSON path >>= either loadError return
+loadLight n = loadJSON path >>= either loadError ok 
   where
-    path        = "lights" </> n <.> "ylig"
+    path = "lights" </> n <.> "ylig"
     loadError e = do
       err CoreLog $ "failed to load light '" ++ path ++ "': " ++ e
       mzero
+    ok lig = do
+      info CoreLog $ "loaded light '" ++ path ++ "'"
+      return lig
 
 -- FIXME: GHC 7.10 Applicative-Monad proposal
 loadLights :: (Applicative m,MonadIO m,MonadLogger m,MonadPlus m) => [String] -> m [(String,Light)]
