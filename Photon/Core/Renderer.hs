@@ -31,8 +31,6 @@ data Renderer frame = Renderer {
     -- |Render a scene into a frame. This frame is just a rendered version
     -- of the scene, nothing more.
     render             :: Scene IndexPath -> frame
-    -- |Compile a frame shader into a post-process.
-  , compileFrameShader :: FrameShader -> PostFX frame
     -- |Apply a list of post-processes on a frame, and return the new frame.
   , postfx             :: [PostFX frame] -> frame -> frame
     -- |Display a rendered scene (frame). That function should render the
