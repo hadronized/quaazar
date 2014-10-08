@@ -23,7 +23,7 @@ module Photon.Render.Renderer (
   ) where
 
 import Photon.Core.Scene ( IndexPath, Scene )
-import Photon.Render.PostFX ( FrameShader, PostFX )
+import Photon.Render.PostFX ( PostFX )
 
 -- |Renderers are plain data that host rendering functions. They’re generated
 -- for a specific `Scene a`.
