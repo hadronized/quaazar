@@ -17,13 +17,13 @@
 -- Furthermore, this module exports the notion of 'PostFX'.
 ----------------------------------------------------------------------------
 
-module Photon.Core.Renderer (
+module Photon.Render.Renderer (
     -- * Renderer
     Renderer(..)
   ) where
 
 import Photon.Core.Scene ( IndexPath, Scene )
-import Photon.Core.PostFX ( FrameShader, PostFX )
+import Photon.Render.PostFX ( FrameShader, PostFX )
 
 -- |Renderers are plain data that host rendering functions. They’re generated
 -- for a specific `Scene a`.

@@ -21,7 +21,7 @@
 -- 'compileFrameShader' function.
 ----------------------------------------------------------------------------
 
-module Photon.Core.PostFX (
+module Photon.Render.PostFX (
     -- * Post effects
     PostFX(..)
     -- * Frame shader
@@ -29,6 +29,9 @@ module Photon.Core.PostFX (
   , int
   , unsigned
   , float
+  , vec2
+  , vec3
+  , vec4
   , relative
   , absolute
   , pixel
