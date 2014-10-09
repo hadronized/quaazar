@@ -53,7 +53,6 @@ data E
   | Sub E E
   | Mul E E
   | Div E E
-  | Recip E
   | Abs E
   | LMul E E
   | RMul E E 
@@ -97,7 +96,7 @@ instance Num E where
 
 instance Fractional E where
   (/)          = Div
-  recip        = Recip
+  recip        = undefined
   fromRational = float . fromRational
 
 instance Floating E where
