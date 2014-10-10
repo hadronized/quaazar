@@ -69,7 +69,7 @@ class PhotonMesh:
 
   def toJSON(self, sparse):
     i = 2 if sparse else None
-    d = { "vertices" : {"interleaved" : True, "values" : self.vertices}, "vgroup" : self.vgroup }
+    d = { "vertices" : {"interleaved" : True, "values" : self.vertices}, "vgroup" : { "grouping" : "triangles", "triangles" : self.vgroup }
     return json.dumps(d, sort_keys=True, indent=i)
 
 def hasOnlyTris(msh):
