@@ -37,8 +37,11 @@ import Photon.Core.Scene ( SceneRel(..) )
 import Photon.Utils.Log
 import System.FilePath
 
+rootPath :: FilePath
+rootPath = "data"
+
 loadJSON :: (FromJSON a,MonadIO m) => FilePath -> m (Either String a)
-loadJSON path = liftM eitherDecode (liftIO $ B.readFile path)
+loadJSON path = liftM eitherDecode (liftIO . B.readFile $ rootPath </> path)
 
 loadMesh :: (MonadIO m,MonadLogger m,MonadPlus m) => String -> m Mesh
 loadMesh n = loadJSON path >>= either loadError ok 
