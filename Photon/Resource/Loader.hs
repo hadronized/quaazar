@@ -59,7 +59,7 @@ loadMesh n = loadJSON path >>= either loadError ok
 loadMaterial :: (MonadIO m,MonadLogger m,MonadPlus m) => String -> m Material
 loadMaterial n = loadJSON path >>= either loadError ok 
   where
-    path = "materials" </> n <.> "ymdl"
+    path = "materials" </> n <.> "ymat"
     loadError e = do
       err CoreLog $ "failed to load material '" ++ path ++ "': " ++ e
       mzero
