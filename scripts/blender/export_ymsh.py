@@ -86,7 +86,7 @@ def toPhotonMesh(msh):
   for vert in msh.vertices:
     pos = [round_(vert.co[0]),round_(vert.co[1]),round_(vert.co[2])]
     nor = [round_(vert.normal[0]),round_(vert.normal[1]),round_(vert.normal[2])]
-    vs.append([pos,nor])
+    vs.append([pos,nor,[]])
 
   # vertex group
   i = 0
