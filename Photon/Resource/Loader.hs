@@ -53,7 +53,7 @@ loadMesh n = loadJSON path >>= either loadError ok
       err CoreLog $ "failed to load mesh '" ++ path ++ "': " ++ e
       mzero
     ok msh = do
-      info CoreLog $ "loaded mesh '" ++ path ++ "'"
+      info CoreLog $ "loaded mesh '" ++ n ++ "'"
       return msh
 
 loadMaterial :: (MonadIO m,MonadLogger m,MonadPlus m) => String -> m Material
@@ -64,7 +64,7 @@ loadMaterial n = loadJSON path >>= either loadError ok
       err CoreLog $ "failed to load material '" ++ path ++ "': " ++ e
       mzero
     ok mat = do
-      info CoreLog $ "loaded material '" ++ path ++ "'"
+      info CoreLog $ "loaded material '" ++ n ++ "'"
       return mat
 
 loadLight :: (MonadIO m,MonadLogger m,MonadPlus m) => String -> m Light
@@ -75,7 +75,7 @@ loadLight n = loadJSON path >>= either loadError ok
       err CoreLog $ "failed to load light '" ++ path ++ "': " ++ e
       mzero
     ok lig = do
-      info CoreLog $ "loaded light '" ++ path ++ "'"
+      info CoreLog $ "loaded light '" ++ n ++ "'"
       return lig
 
 -- FIXME: GHC 7.10 Applicative-Monad proposal
