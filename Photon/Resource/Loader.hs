@@ -24,8 +24,8 @@ module Photon.Resource.Loader (
   ) where
 
 import Control.Applicative
+import Control.Exception ( IOException, catch )
 import Control.Monad ( MonadPlus(..) )
-import Control.Monad ( liftM )
 import Control.Monad.Trans ( MonadIO, liftIO )
 import Data.ByteString.Lazy as B ( readFile )
 import Data.Aeson
@@ -40,8 +40,10 @@ import System.FilePath
 rootPath :: FilePath
 rootPath = "data"
 
-loadJSON :: (FromJSON a,MonadIO m) => FilePath -> m (Either String a)
-loadJSON path = liftM eitherDecode (liftIO . B.readFile $ rootPath </> path)
+loadJSON :: (MonadIO m,FromJSON a) => FilePath -> m (Either String a)
+loadJSON path = liftIO $ catch (fmap eitherDecode . B.readFile $ rootPath </> path) onError
+  where
+    onError ioe = return . Left $ "unable to open '" ++ path ++ "': " ++ show (ioe :: IOException)
 
 loadMesh :: (MonadIO m,MonadLogger m,MonadPlus m) => String -> m Mesh
 loadMesh n = loadJSON path >>= either loadError ok 
