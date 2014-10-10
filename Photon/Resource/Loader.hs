@@ -43,7 +43,7 @@ rootPath = "data"
 loadJSON :: (MonadIO m,FromJSON a) => FilePath -> m (Either String a)
 loadJSON path = liftIO $ catch (fmap eitherDecode . B.readFile $ rootPath </> path) onError
   where
-    onError ioe = return . Left $ "unable to open '" ++ path ++ "': " ++ show (ioe :: IOException)
+    onError ioe = return . Left $ "unable to open file: " ++ show (ioe :: IOException)
 
 loadMesh :: (MonadIO m,MonadLogger m,MonadPlus m) => String -> m Mesh
 loadMesh n = loadJSON path >>= either loadError ok 
