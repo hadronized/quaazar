@@ -26,7 +26,6 @@ module Photon.Core.Light (
     -- * Light properties
   , LightProperties(LightProperties)
   , ligColor
-  , ligShininess
   , ligPower
   ) where
 
@@ -55,10 +54,6 @@ instance FromJSON Light where
 data LightProperties = LightProperties {
     -- |Color of the light.
     _ligColor     :: Color
-    -- |Shininess of the light. That property directly affects the
-    -- specular aspect of the light. The greater it is, the intense
-    -- the specular effect is.
-  , _ligShininess :: Float
     -- |Power of the light – a.k.a. radius. Used to alter the attenuation
     -- of the light over distance.
   , _ligPower     :: Float
@@ -66,6 +61,6 @@ data LightProperties = LightProperties {
 
 instance FromJSON LightProperties where
   parseJSON = withObject "light properties" $ \o ->
-    LightProperties <$> o .: "color" <*> o .: "shininess" <*> o .: "power"
+    LightProperties <$> o .: "color" <*> o .: "power"
 
 makeLenses ''LightProperties
