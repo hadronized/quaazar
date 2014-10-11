@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE BangPatterns, ScopedTypeVariables #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -35,13 +35,22 @@ import Photon.Core.Mesh ( Mesh )
 import Photon.Core.Projection ( Projection )
 import Photon.Core.Scene ( SceneRel(..) )
 import Photon.Utils.Log
+import Photon.Utils.TimePoint
 import System.FilePath
 
 rootPath :: FilePath
 rootPath = "data"
 
-loadJSON :: (MonadIO m,FromJSON a) => FilePath -> m (Either String a)
-loadJSON path = liftIO $ catch (fmap eitherDecode . B.readFile $ rootPath </> path) onError
+loadJSON :: (MonadIO m,MonadLogger m,FromJSON a) => FilePath -> m (Either String a)
+loadJSON path = do
+    deb CoreLog $ "parsing '" ++ path ++ "'"
+    (st,r,et) <- liftIO $ do
+      st <- timePoint
+      !r <- (catch (fmap eitherDecode . B.readFile $ rootPath </> path) onError)
+      et <- timePoint
+      return (st,r,et)
+    deb CoreLog $ "parsing time: " ++ show (et - st)
+    return r
   where
     onError ioe = return . Left $ "unable to open file: " ++ show (ioe :: IOException)
 
