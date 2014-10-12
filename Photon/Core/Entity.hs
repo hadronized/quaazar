@@ -127,7 +127,7 @@ position = set entityPosition
 
 -- |Orient an entity with another orientation.
 orient :: Orientation -> Entity a -> Entity a
-orient o = entityOrientation %~ (*o)
+orient o = entityOrientation %~ (normalize . (o*))
 
 -- |Set the orientation of an entity with a given one.
 orientation :: Orientation -> Entity a -> Entity a
