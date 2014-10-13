@@ -18,6 +18,7 @@ module Photon.Core.Material (
     Material(Material)
   , matColor
   , matShininess
+  , matAlbedo
   ) where
 
 import Control.Applicative
@@ -35,7 +36,7 @@ data Material = Material {
   , _matShininess :: Float
     -- |Albedo of the material. That property controls the amount of
     -- reflected light the surface emits.
-  , _matAlbeda    :: Float
+  , _matAlbedo    :: Float
   } deriving (Eq,Show)
 
 instance FromJSON Material where
