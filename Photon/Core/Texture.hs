@@ -36,3 +36,5 @@ data TexelFormat
   | RGB
   | RGBA
     deriving (Eq,Ord,Show)
+
+-- TODO: add loader from disk image here
