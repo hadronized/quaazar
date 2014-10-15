@@ -39,6 +39,7 @@ library
                      , Photon.Core.Position
                      , Photon.Core.Projection
                      , Photon.Core.Scene
+                     , Photon.Core.Texture
                      , Photon.Core.VGroup
                      , Photon.Core.Vertex
                      , Photon.Core.UV
