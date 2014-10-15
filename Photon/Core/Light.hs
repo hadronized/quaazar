@@ -66,6 +66,6 @@ data LightProperties = LightProperties {
 
 instance FromJSON LightProperties where
   parseJSON = withObject "light properties" $ \o ->
-    LightProperties <$> o .: "color" <*> o .: "power" <*> o .: "radius" <*> o .: "cast_shadows" .!= False
+    LightProperties <$> o .: "color" <*> o .: "power" <*> o .: "radius" <*> o .:? "cast_shadows" .!= False
 
 makeLenses ''LightProperties
