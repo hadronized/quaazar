@@ -28,6 +28,7 @@ module Photon.Core.Light (
   , ligColor
   , ligPower
   , ligRadius
+  , ligCastShadows
   ) where
 
 import Control.Applicative
@@ -54,15 +55,17 @@ instance FromJSON Light where
 -- |Lighting properties. This type is shared by lights.
 data LightProperties = LightProperties {
     -- |Color of the light.
-    _ligColor  :: Color
+    _ligColor       :: Color
     -- |Power of the light – a.k.a. intensity.
-  , _ligPower  :: Float
+  , _ligPower       :: Float
     -- |Radius of the light.
-  , _ligRadius :: Float
+  , _ligRadius      :: Float
+    -- |Does the light cast shadows?
+  , _ligCastShadows :: Bool
   } deriving (Eq,Show)
 
 instance FromJSON LightProperties where
   parseJSON = withObject "light properties" $ \o ->
-    LightProperties <$> o .: "color" <*> o .: "power" <*> o .: "radius"
+    LightProperties <$> o .: "color" <*> o .: "power" <*> o .: "radius" <*> o .: "cast_shadows" .!= False
 
 makeLenses ''LightProperties
