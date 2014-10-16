@@ -23,6 +23,7 @@
 module Photon.Core.Light (
     -- * Light
     Light(..)
+  , extractLightProperties
     -- * Light properties
   , LightProperties(LightProperties)
   , ligColor
@@ -67,5 +68,9 @@ data LightProperties = LightProperties {
 instance FromJSON LightProperties where
   parseJSON = withObject "light properties" $ \o ->
     LightProperties <$> o .: "color" <*> o .: "power" <*> o .: "radius" <*> o .:? "cast_shadows" .!= False
+
+-- |Extract light properties out of 'Light'.
+getLightProperties :: Light -> LightProperties
+getLightProperties (Omni lp) = lp
 
 makeLenses ''LightProperties
