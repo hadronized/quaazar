@@ -23,7 +23,7 @@
 module Photon.Core.Light (
     -- * Light
     Light(..)
-  , extractLightProperties
+  , getLightProperties
     -- * Light properties
   , LightProperties(LightProperties)
   , ligColor
