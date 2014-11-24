@@ -39,6 +39,7 @@ library
                      , Photon.Core.Position
                      , Photon.Core.Projection
                      , Photon.Core.Scene
+                     , Photon.Core.Texture
                      , Photon.Core.VGroup
                      , Photon.Core.Vertex
                      , Photon.Core.UV
@@ -77,5 +78,6 @@ library
                      , nats          >= 0.1   && < 0.3
                      , monad-journal >= 0.2   && < 0.6
                      , filepath      >= 1.3   && < 1.4
+                     , JuicyPixels   >= 3.1   && < 3.2
 
   default-language:    Haskell2010
