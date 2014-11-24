@@ -31,6 +31,7 @@ library
   exposed-modules:     Photon.Control.Monad
                      , Photon.Core.BoundingVolume
                      , Photon.Core.Color
+                     , Photon.Core.Effect
                      , Photon.Core.Entity
                      , Photon.Core.Light
                      , Photon.Core.Material
