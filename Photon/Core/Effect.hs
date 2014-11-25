@@ -53,15 +53,15 @@ class EffectfulManage a s l | a -> s l where
 
 -- |'Effect e m' is a monad 'm 'with a specific effect 'e'.
 class (Monad m) => Effect e m where
-  effect :: e -> m ()
+  react :: e -> m ()
 
 -- |Effectful manage.
 spawn :: (Manager m,EffectfulManage a s l,Effect s m) => a -> m (Managed a)
 spawn a = do
   ma <- manage a
-  effect (spawned ma)
+  react (spawned ma)
   return ma
 
 -- |Effectful drop.
 lose :: (Manager m,EffectfulManage a s l,Effect l m) => Managed a -> m ()
-lose ma = drop ma >> effect (lost ma)
+lose ma = drop ma >> react (lost ma)
