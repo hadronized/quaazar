@@ -24,6 +24,8 @@ data Managed a = Managed {
   , _managed :: a
   } deriving (Eq,Show)
 
+makeLenses ''Managed
+
 -- |A 'Manager m' is a monad with two additional methods: 'manage' and 'drop'.
 --
 -- 'manage' is used to manage any value. It turns 'a' into 'Managed a'. That is

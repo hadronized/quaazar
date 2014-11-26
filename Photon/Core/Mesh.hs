@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   : (C) 2014 Dimitri Sabadie
@@ -27,9 +29,9 @@ module Photon.Core.Mesh (
   ) where
 
 import Control.Applicative
-import Control.Lens ( makeLenses )
+import Control.Lens
 import Data.Aeson
-import Photon.Core.Effect ( Effect(..), EffectfulManage(..), Managed )
+import Photon.Core.Effect
 import Photon.Core.Vertex
 import Photon.Core.VGroup
 
@@ -64,8 +66,8 @@ changeVertices :: (Effect MeshEffect m)
                -> m (Managed Mesh)
 changeVertices msh f = do
     react (VerticesChanged msh newVerts)
-    return (msh . meshVertices .~ newVerts)
-  where newVerts = f (msh^.meshVertices)
+    return (msh & managed . meshVertices .~ newVerts)
+  where newVerts = f (msh^.managed.meshVertices)
 
 changeVGroup :: (Effect MeshEffect m)
              => Managed Mesh
@@ -73,5 +75,5 @@ changeVGroup :: (Effect MeshEffect m)
              -> m (Managed Mesh)
 changeVGroup msh f = do
     react (VGroupChanged msh newVGroup)
-    return (mesh . meshVGroup .~ newVGroup)
-  where newVGroup = f (msh^.meshVGroup)
+    return (msh & managed . meshVGroup .~ newVGroup)
+  where newVGroup = f (msh^.managed.meshVGroup)

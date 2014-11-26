@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   : (C) 2014 Dimitri Sabadie
@@ -29,10 +31,11 @@ module Photon.Core.Material (
   ) where
 
 import Control.Applicative
-import Control.Lens ( makeLenses )
+import Control.Lens
 import Data.Aeson
 import Data.Aeson.Types ( typeMismatch )
 import Linear.V3
+import Photon.Core.Effect
 
 newtype Albedo = Albedo { unAlbedo :: V3 Float } deriving (Eq,Ord,Show)
 
@@ -83,23 +86,24 @@ changeDiffuse :: (Effect MaterialEffect m)
               -> m (Managed Material)
 changeDiffuse m f = do
     react (DiffuseChanged m newDiffuse)
-    return (m . matDiffuseAlbedo .~ newDiffuse)
-  where newDiffuse = f (m^.matDiffuseAlbedo)
+    return (m & managed . matDiffuseAlbedo .~ newDiffuse)
+  where newDiffuse = f (m^.managed.matDiffuseAlbedo)
 
 changeSpecular :: (Effect MaterialEffect m)
                => Managed Material
                -> (Albedo -> Albedo)
                -> m (Managed Material)
 changeSpecular m f = do
-    react (SpecularChanged m newDiffuse)
-    return (m . matSpecularAlbedo .~ newSpecular)
-  where newSpecular = f (m^.matSpecularAlbedo)
+    react (SpecularChanged m newSpecular)
+    return (m & managed . matSpecularAlbedo .~ newSpecular)
+  where newSpecular = f (m^.managed.matSpecularAlbedo)
 
 changeShininess :: (Effect MaterialEffect m)
                 => Managed Material
-                -> (Albedo -> Albedo)
+                -> (Float -> Float)
                 -> m (Managed Material)
 changeShininess m f = do
     react (ShininessChanged m newShn)
-    return (m . matShininess .~ newShn)
-  where newShn = f (m^.matShininess)
+    return (m & managed . matShininess .~ newShn)
+  where
+    newShn = f (m^.managed.matShininess)

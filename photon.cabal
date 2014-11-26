@@ -54,6 +54,7 @@ library
   default-extensions:  DeriveFunctor
                      , FlexibleContexts
                      , FlexibleInstances
+                     , FunctionalDependencies
                      , MultiParamTypeClasses
                      , TemplateHaskell
 
