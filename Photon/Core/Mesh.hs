@@ -29,7 +29,7 @@ module Photon.Core.Mesh (
 import Control.Applicative
 import Control.Lens ( makeLenses )
 import Data.Aeson
-import Photon.Core.Effect ( Effect(..), EffectfulManage(..), Managed(Managed) )
+import Photon.Core.Effect ( Effect(..), EffectfulManage(..), Managed )
 import Photon.Core.Vertex
 import Photon.Core.VGroup
 
