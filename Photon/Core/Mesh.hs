@@ -16,11 +16,11 @@ module Photon.Core.Mesh (
     Mesh(Mesh)
   , meshVertices
   , meshVGroup
-  , changeVertices
-  , changeVGroup
   , MeshSpawned(..)
   , MeshLost(..)
   , MeshEffect(..)
+  , changeVertices
+  , changeVGroup
     -- * Re-exported modules
   , module Photon.Core.Vertex
   , module Photon.Core.VGroup
