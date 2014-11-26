@@ -7,7 +7,6 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- 
 ----------------------------------------------------------------------------
 
 module Photon.Core.Effect where
