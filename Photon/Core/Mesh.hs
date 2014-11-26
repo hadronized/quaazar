@@ -50,8 +50,8 @@ data MeshSpawned = MeshSpawned (Managed Mesh) deriving (Eq,Show)
 data MeshLost = MeshLost (Managed Mesh) deriving (Eq,Show)
 
 data MeshEffect
-  = ChangedVertices (Managed Mesh) Vertices
-  | ChangedVGroup (Managed Mesh) VGroup
+  = VerticesChanged (Managed Mesh) Vertices
+  | VGroupChanged (Managed Mesh) VGroup
     deriving (Eq,Show)
 
 instance EffectfulManage Mesh MeshSpawned MeshLost where
@@ -63,7 +63,7 @@ changeVertices :: (Effect MeshEffect m)
                -> (Vertices -> Vertices)
                -> m (Managed Mesh)
 changeVertices msh f = do
-    react (ChangedVertices msh newVerts)
+    react (VerticesChanged msh newVerts)
     return (msh . meshVertices .~ newVerts)
   where newVerts = f (msh^.meshVertices)
 
@@ -72,6 +72,6 @@ changeVGroup :: (Effect MeshEffect m)
              -> (VGroup -> VGroup)
              -> m (Managed Mesh)
 changeVGroup msh f = do
-    react (ChangedVGroup msh newVGroup)
+    react (VGroupChanged msh newVGroup)
     return (mesh . meshVGroup .~ newVGroup)
   where newVGroup = f (msh^.meshVGroup)
