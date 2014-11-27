@@ -22,41 +22,45 @@
 
 module Photon.Core.Light (
     -- * Light
-    Light(..)
-  , getLightProperties
-    -- * Light properties
-  , LightProperties(LightProperties)
+    Light(Light)
+  , LightType(..)
+  , ligType
   , ligColor
   , ligPower
   , ligRadius
   , ligCastShadows
+    -- * Reaction
+  , LightSpawned(..)
+  , LightLost(..)
+  , LightEffect(..)
+  , changeColor
+  , changePower
+  , changeRadius
+  , changeCastShadows
   ) where
 
 import Control.Applicative
 import Control.Lens
 import Data.Aeson
 import Photon.Core.Color ( Color )
+import Photon.Core.Effect
 
--- |Light. Extra information (cuttoff angle for instance) can be added
--- regarding the type of the light.
-data Light
-  = Omni LightProperties -- ^ Omni light
+data LightType
+  = Omni
     deriving (Eq,Show)
 
-instance FromJSON Light where
-  parseJSON = withObject "light" $ \o -> do
-      t  <- o .: "type"
-      lp <- o .: "properties"
-      withText "light type" (parseType lp) t
+instance FromJSON LightType where
+  parseJSON = withText "light type" parseType
     where
-      parseType lp t
-        | t == "omni" = return (Omni lp)
-        | otherwise   = fail "unknown light type"
+      parseType t
+        | t == "omni" = return Omni
+        | otherwise = fail "unknown light type"
 
--- |Lighting properties. This type is shared by lights.
-data LightProperties = LightProperties {
+data Light = Light {
+    -- |Type of the light.
+    ligType         :: LightType
     -- |Color of the light.
-    _ligColor       :: Color
+  , _ligColor       :: Color
     -- |Power of the light – a.k.a. intensity.
   , _ligPower       :: Float
     -- |Radius of the light.
@@ -65,12 +69,63 @@ data LightProperties = LightProperties {
   , _ligCastShadows :: Bool
   } deriving (Eq,Show)
 
-instance FromJSON LightProperties where
-  parseJSON = withObject "light properties" $ \o ->
-    LightProperties <$> o .: "color" <*> o .: "power" <*> o .: "radius" <*> o .:? "cast_shadows" .!= False
+instance FromJSON Light where
+  parseJSON = withObject "light" $ \o ->
+    Light
+      <$> o .: "type"
+      <*> o .: "color"
+      <*> o .: "power"
+      <*> o .: "radius"
+      <*> o .:? "cast_shadows" .!= False
 
--- |Extract light properties out of 'Light'.
-getLightProperties :: Light -> LightProperties
-getLightProperties (Omni lp) = lp
+makeLenses ''Light
 
-makeLenses ''LightProperties
+data LightSpawned = LightSpawned (Managed Light)
+
+data LightLost = LightLost (Managed Light)
+
+data LightEffect
+  = ColorChanged (Managed Light) Color
+  | PowerChanged (Managed Light) Float
+  | RadiusChanged (Managed Light) Float
+  | CastShadowsChanged (Managed Light) Bool
+
+instance EffectfulManage Light LightSpawned LightLost where
+  spawned = LightSpawned
+  lost = LightLost
+
+changeColor :: (Effect LightEffect m)
+            => Managed Light
+            -> (Color -> Color)
+            -> m (Managed Light)
+changeColor l f = do
+    react (ColorChanged l newColor)
+    return (l & managed . ligColor .~ newColor)
+  where newColor = f (l^.managed.ligColor)
+
+changePower :: (Effect LightEffect m)
+            => Managed Light
+            -> (Float -> Float)
+            -> m (Managed Light)
+changePower l f = do
+    react (PowerChanged l newPower)
+    return (l & managed . ligPower .~ newPower)
+  where newPower = f (l^.managed.ligPower)
+
+changeRadius :: (Effect LightEffect m)
+            => Managed Light
+            -> (Float -> Float)
+            -> m (Managed Light)
+changeRadius l f = do
+    react (RadiusChanged l newRadius)
+    return (l & managed . ligRadius .~ newRadius)
+  where newRadius = f (l^.managed.ligRadius)
+
+changeCastShadows :: (Effect LightEffect m)
+                  => Managed Light
+                  -> (Bool -> Bool)
+                  -> m (Managed Light)
+changeCastShadows l f = do
+    react (CastShadowsChanged l newCastShadows)
+    return (l & managed . ligCastShadows .~ newCastShadows)
+  where newCastShadows = f (l^.managed.ligCastShadows)
