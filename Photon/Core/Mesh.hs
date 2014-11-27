@@ -35,6 +35,7 @@ import Control.Applicative
 import Control.Lens
 import Data.Aeson
 import Photon.Core.Effect
+import Photon.Core.Material ( Material )
 import Photon.Core.Vertex
 import Photon.Core.VGroup
 

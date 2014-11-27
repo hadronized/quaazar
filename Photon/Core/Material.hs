@@ -19,6 +19,7 @@ module Photon.Core.Material (
   , matDiffuseAlbedo
   , matSpecularAlbedo
   , matShininess
+    -- * Reaction
   , MaterialSpawned(..)
   , MaterialLost(..)
   , MaterialEffect(..)
