@@ -54,6 +54,7 @@ data MeshLost = MeshLost (Managed Mesh) deriving (Eq,Show)
 data MeshEffect
   = VerticesChanged (Managed Mesh) Vertices
   | VGroupChanged (Managed Mesh) VGroup
+  | UseMaterial (Managed Mesh) (Managed Material)
     deriving (Eq,Show)
 
 instance EffectfulManage Mesh MeshSpawned MeshLost where
@@ -77,3 +78,9 @@ changeVGroup msh f = do
     react (VGroupChanged msh newVGroup)
     return (msh & managed . meshVGroup .~ newVGroup)
   where newVGroup = f (msh^.managed.meshVGroup)
+
+useMaterial :: (Effect MeshEffect m)
+            => Managed Mesh
+            -> Managed Material
+            -> m ()
+useMaterial msh mat = react (UseMaterial msh mat)
