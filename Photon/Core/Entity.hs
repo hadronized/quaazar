@@ -83,7 +83,7 @@ zAxis = V3 0 0 1
 
 -- |Origin entity.
 origin :: a -> Entity a
-origin = Entity (V3 0 0 0) (axisAngle (-zAxis) 0) (Scale 1 1 1)
+origin = Entity origin3 (axisAngle (-zAxis) 0) (Scale 1 1 1)
 
 -- |Move an entity along a direction.
 move :: Dir -> Entity a -> Entity a
