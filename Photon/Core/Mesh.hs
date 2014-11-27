@@ -23,6 +23,7 @@ module Photon.Core.Mesh (
   , MeshEffect(..)
   , changeVertices
   , changeVGroup
+  , useMaterial
     -- * Re-exported modules
   , module Photon.Core.Vertex
   , module Photon.Core.VGroup
