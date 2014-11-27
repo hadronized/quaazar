@@ -82,7 +82,7 @@ yAxis = V3 0 1 0
 zAxis = V3 0 0 1
 
 -- |Origin entity.
-origin :: a -> Entity a
+origin :: Entity a
 origin = Entity origin3 (axisAngle (-zAxis) 0) (Scale 1 1 1)
 
 -- |Move an entity along a direction.
@@ -114,11 +114,11 @@ data EntitySpawned a = EntitySpawned (Managed (Entity a)) deriving (Eq,Show)
 data EntityLost a = EntityLost (Managed (Entity a)) deriving (Eq,Show)
 
 data EntityEffect a
-  = PositionChanged (? a) Position
-  | OrientationChanged (? a) Orientation
-  | ScaleChanged (? a) Scale
+  = PositionChanged (Managed (Entity a)) Position
+  | OrientationChanged (Managed (Entity a)) Orientation
+  | ScaleChanged (Managed (Entity a)) Scale
     deriving (Eq,Show)
 
-instance EffectfulManage (Entity a) EntitySpawned EntityLost where
+instance EffectfulManage (Entity a) (EntitySpawned a) (EntityLost a) where
   spawned = EntitySpawned
   lost = EntityLost
