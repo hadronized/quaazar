@@ -46,6 +46,7 @@ module Photon.Core.Entity (
 
 import Control.Lens
 import Linear
+import Photon.Core.Effect ( EffectfulManage(..), Managed )
 
 -- |An entity is a typed spatial transformation. So far, entities
 -- enable the use of three space properties:
@@ -108,3 +109,17 @@ rescale (Scale x' y' z') = entityScale %~ \(Scale x y z) -> Scale (x*x') (y*y') 
 -- |Scale an entity.
 scale :: Scale -> Entity a -> Entity a
 scale = set entityScale
+
+data EntitySpawned a = EntitySpawned (Managed (Entity a)) deriving (Eq,Show)
+
+data EntityLost a = EntityLost (Managed (Entity a)) deriving (Eq,Show)
+
+data EntityEffect a
+  = PositionChanged (? a) Position
+  | OrientationChanged (? a) Orientation
+  | ScaleChanged (? a) Scale
+    deriving (Eq,Show)
+
+instance EffectfulManage (Entity a) EntitySpawned EntityLost where
+  spawned = EntitySpawned
+  lost = EntityLost
