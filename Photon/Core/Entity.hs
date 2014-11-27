@@ -35,7 +35,7 @@ module Photon.Core.Entity (
   , yAxis
   , zAxis
     -- * Combinators
-  , entity
+  , originEntity
   , move
   , position
   , orient
