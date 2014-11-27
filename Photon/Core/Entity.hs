@@ -23,7 +23,6 @@ module Photon.Core.Entity (
   , entityPosition
   , entityOrientation
   , entityScale
-  , entityName
     -- * Space information
   , Position
   , Dir
