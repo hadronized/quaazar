@@ -18,12 +18,14 @@ module Photon.Core.Mesh (
     Mesh(Mesh)
   , meshVertices
   , meshVGroup
+    -- * Reaction
   , MeshSpawned(..)
   , MeshLost(..)
   , MeshEffect(..)
   , changeVertices
   , changeVGroup
   , useMaterial
+  , renderMesh
     -- * Re-exported modules
   , module Photon.Core.Vertex
   , module Photon.Core.VGroup
