@@ -51,16 +51,15 @@ instance FromJSON Mesh where
 
 makeLenses ''Mesh
 
-data MeshSpawned = MeshSpawned (Managed Mesh) deriving (Eq,Show)
+data MeshSpawned = MeshSpawned (Managed Mesh)
 
-data MeshLost = MeshLost (Managed Mesh) deriving (Eq,Show)
+data MeshLost = MeshLost (Managed Mesh)
 
 data MeshEffect
   = VerticesChanged (Managed Mesh) Vertices
   | VGroupChanged (Managed Mesh) VGroup
   | UseMaterial (Managed Mesh) (Managed Material)
   | RenderMesh (Managed Mesh)
-    deriving (Eq,Show)
 
 instance EffectfulManage Mesh MeshSpawned MeshLost where
   spawned = MeshSpawned
