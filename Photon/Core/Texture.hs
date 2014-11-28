@@ -10,7 +10,22 @@
 ----------------------------------------------------------------------------
 
 module Photon.Core.Texture (
-    -- *
+    -- * Texture
+    Texture(Texture)
+  , texWidth
+  , texHeight
+  , texFormat
+  , texTexels
+    -- * Texture format
+  , TextureFormat(..)
+    -- * Reaction
+  , TextureSpawned(..)
+  , TextureLost(..)
+  , TextureEffect(..)
+  , changeWidth
+  , changeHeight
+  , changeFormat
+  , changeTexels
   ) where
 
 import Control.Lens
