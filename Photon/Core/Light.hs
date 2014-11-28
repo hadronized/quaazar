@@ -80,15 +80,16 @@ instance FromJSON Light where
 
 makeLenses ''Light
 
-data LightSpawned = LightSpawned (Managed Light)
+data LightSpawned = LightSpawned (Managed Light) deriving (Eq,Show)
 
-data LightLost = LightLost (Managed Light)
+data LightLost = LightLost (Managed Light) deriving (Eq,Show)
 
 data LightEffect
   = ColorChanged (Managed Light) Color
   | PowerChanged (Managed Light) Float
   | RadiusChanged (Managed Light) Float
   | CastShadowsChanged (Managed Light) Bool
+    deriving (Eq,Show)
 
 instance EffectfulManage Light LightSpawned LightLost where
   spawned = LightSpawned
