@@ -15,16 +15,13 @@ import Control.Lens
 import Prelude hiding ( drop )
 
 -- |Handle used to uniquely represent managed values.
-data H a = H {
-    getter :: IO a
-  , setter :: a -> IO ()
-  }
+newtype H a = H Int deriving (Eq,Ord,Show)
 
 -- |'Managed a' is a value glued to a /handle/ ('H').
 data Managed a = Managed {
     _handle  :: H a
   , _managed :: a
-  }
+  } deriving (Eq,Show)
 
 makeLenses ''Managed
 
