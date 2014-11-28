@@ -116,14 +116,15 @@ rescale (Scale x' y' z') = entityScale %~ \(Scale x y z) -> Scale (x*x') (y*y') 
 scale :: Scale -> Entity a -> Entity a
 scale = set entityScale
 
-data EntitySpawned a = EntitySpawned (Managed (Entity a))
+data EntitySpawned a = EntitySpawned (Managed (Entity a)) deriving (Eq,Show)
 
-data EntityLost a = EntityLost (Managed (Entity a))
+data EntityLost a = EntityLost (Managed (Entity a)) deriving (Eq,Show)
 
 data EntityEffect a
   = PositionChanged (Managed (Entity a)) Position
   | OrientationChanged (Managed (Entity a)) Orientation
   | ScaleChanged (Managed (Entity a)) Scale
+    deriving (Eq,Show)
 
 instance EffectfulManage (Entity a) (EntitySpawned a) (EntityLost a) where
   spawned = EntitySpawned
