@@ -55,15 +55,16 @@ data TexelFormat
 
 -- TODO: add loader from disk image here
 
-newtype TextureSpawned = TextureSpawned (Managed Texture)
+newtype TextureSpawned = TextureSpawned (Managed Texture) deriving (Eq,Show)
 
-newtype TextureLost = TextureLost (Managed Texture)
+newtype TextureLost = TextureLost (Managed Texture) deriving (Eq,Show)
 
 data TextureEffect
   = WidthChanged (Managed Texture) Natural
   | HeightChanged (Managed Texture) Natural
   | FormatChanged (Managed Texture) TexelFormat
   | TexelsChanged (Managed Texture) [Float]
+    deriving (Eq,Show)
 
 instance EffectfulManage Texture TextureSpawned TextureLost where
   spawned = TextureSpawned
