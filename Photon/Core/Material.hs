@@ -67,14 +67,15 @@ albedo r g b = Albedo (V3 r g b)
 
 makeLenses ''Material
 
-data MaterialSpawned = MaterialSpawned (Managed Material)
+data MaterialSpawned = MaterialSpawned (Managed Material) deriving (Eq,Show)
 
-data MaterialLost = MaterialLost (Managed Material)
+data MaterialLost = MaterialLost (Managed Material) deriving (Eq,Show)
 
 data MaterialEffect
   = DiffuseChanged (Managed Material) Albedo
   | SpecularChanged (Managed Material) Albedo
   | ShininessChanged (Managed Material) Float
+    deriving (Eq,Show)
 
 instance EffectfulManage Material MaterialSpawned MaterialLost where
   spawned = MaterialSpawned
