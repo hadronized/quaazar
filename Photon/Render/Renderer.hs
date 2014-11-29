@@ -7,35 +7,45 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Renderer interface. A 'Renderer' is an object that exposes a few useful
--- functions:
---   - 'render': perform a render;
---   - 'display': display a render;
---   - 'postfx': apply post-process effects;
---   - 'screenshot': write a render on the disk.
---
--- Furthermore, this module exports the notion of 'PostFX'.
 ----------------------------------------------------------------------------
 
 module Photon.Render.Renderer (
-    -- * Renderer
-    Renderer(..)
+    -- *
   ) where
 
-import Photon.Core.Scene ( IndexPath, Scene )
+import Control.Applicative
+import Photon.Core.Effect
+import Photon.Core.Entity ( Entity )
+import Photon.Core.Light ( Light )
+import Photon.Core.Mesh ( Mesh )
 import Photon.Render.PostFX ( PostFX )
 
--- |Renderers are plain data that host rendering functions. They’re generated
--- for a specific `Scene a`.
-data Renderer frame = Renderer {
-    -- |Render a scene into a frame. This frame is just a rendered version
-    -- of the scene, nothing more.
-    render             :: Scene IndexPath -> frame
-    -- |Apply a list of post-processes on a frame, and return the new frame.
-  , postfx             :: [PostFX frame] -> frame -> frame
-    -- |Display a rendered scene (frame). That function should render the
-    -- frame onto the screen / dedicated area for rendering.
-  , display            :: frame -> IO ()
-    -- |Write a frame in a file as a PNG image.
-  , screenshot         :: FilePath -> frame -> IO ()
-  }
+data RenderEffect
+  = RenderMesh (Managed Mesh) (Managed (Entity Mesh))
+  | UseLight (Managed Light)
+  | UnuseLight (Managed Light)
+  | Postprocess (Managed PostFX)
+  | Display
+  | Screenshot FilePath
+    deriving (Eq,Show)
+
+renderMesh :: (Effect RenderEffect m)
+           => Managed Mesh
+           -> Managed (Entity (Mesh))
+           -> m ()
+renderMesh m e = react (RenderMesh m e)
+
+withLight :: (Effect RenderEffect m) => Managed Light -> m a -> m a
+withLight l a = react (UseLight l) *> a <* react (UnuseLight l)
+
+postfx :: (Effect RenderEffect m) => Managed PostFX -> m ()
+postfx = react . Postprocess
+
+postProcess :: (Effect RenderEffect m) => [Managed PostFX] -> m ()
+postProcess = sequence_ . map postfx
+
+display :: (Effect RenderEffect m) => m ()
+display = react Display
+
+screenshot :: (Effect RenderEffect m) => FilePath -> m ()
+screenshot = react . Screenshot

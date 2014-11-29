@@ -11,6 +11,7 @@
 
 module Photon.Core.Effect where
 
+import Control.Applicative ( Applicative )
 import Control.Lens
 import Prelude hiding ( drop )
 
@@ -31,7 +32,7 @@ makeLenses ''Managed
 -- pretty useful for /managers/ that want to track objects.
 --
 -- 'drop' is used when we want to lose track of a managed value.
-class (Monad m) => Manager m where
+class (Functor m,Applicative m,Monad m) => Manager m where
   manage :: a -> m (Managed a)
   drop   :: Managed a -> m ()
 
@@ -53,7 +54,7 @@ class EffectfulManage a s l | a -> s l where
   lost    :: Managed a -> l
 
 -- |'Effect e m' is a monad 'm 'with a specific effect 'e'.
-class (Monad m) => Effect e m where
+class (Functor m,Applicative m,Monad m) => Effect e m where
   react :: e -> m ()
 
 -- |Effectful manage.
