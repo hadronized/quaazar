@@ -10,7 +10,14 @@
 ----------------------------------------------------------------------------
 
 module Photon.Render.Renderer (
-    -- *
+    -- * Reaction
+    RenderEffect(..)
+  , renderMesh
+  , withLight
+  , postfx
+  , postProcess
+  , display
+  , screenshot
   ) where
 
 import Control.Applicative
