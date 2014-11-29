@@ -29,6 +29,7 @@ import Control.Monad ( MonadPlus(..) )
 import Control.Monad.Trans ( MonadIO, liftIO )
 import Data.ByteString.Lazy as B ( readFile )
 import Data.Aeson
+import Photon.Core.Effect
 import Photon.Core.Light ( Light )
 import Photon.Core.Material ( Material )
 import Photon.Core.Mesh ( Mesh )
@@ -40,6 +41,9 @@ import System.FilePath
 
 rootPath :: FilePath
 rootPath = "data"
+
+class Load a e where
+  load :: (MonadIO m,MonadLogger m,FromJSON a,Effect e m) => m a
 
 loadJSON :: (MonadIO m,MonadLogger m,FromJSON a) => FilePath -> m (Either String a)
 loadJSON path = do
