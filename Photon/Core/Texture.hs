@@ -16,8 +16,8 @@ module Photon.Core.Texture (
   , texHeight
   , texFormat
   , texTexels
-    -- * Texture format
-  , TextureFormat(..)
+    -- * Texel format
+  , TexelFormat(..)
     -- * Reaction
   , TextureSpawned(..)
   , TextureLost(..)
@@ -52,6 +52,8 @@ data TexelFormat
   | RGB
   | RGBA
     deriving (Eq,Ord,Show)
+
+makeLenses ''Texture
 
 -- TODO: add loader from disk image here
 
@@ -90,7 +92,7 @@ changeHeight t f = do
 
 changeFormat :: (Effect TextureEffect m)
              => Managed Texture
-             -> (TextureFormat -> TextureFormat)
+             -> (TexelFormat -> TexelFormat)
              -> m (Managed Texture)
 changeFormat t f = do
     react (FormatChanged t nf)
