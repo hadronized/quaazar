@@ -26,8 +26,8 @@ import Control.Monad.Trans ( MonadIO, liftIO )
 import Data.ByteString.Lazy as B ( readFile )
 import Data.Aeson
 import Photon.Core.Effect
-import Photon.Core.Light ( Light )
-import Photon.Core.Material ( Material )
+import Photon.Core.Light ( Light, LightSpawned )
+import Photon.Core.Material ( Material, MaterialSpawned )
 import Photon.Core.Mesh ( Mesh, MeshSpawned )
 import Photon.Utils.Log
 import Photon.Utils.TimePoint
@@ -43,6 +43,12 @@ class Load a e where
 
 instance Load Mesh MeshSpawned where
   load = loadMesh >=> spawn
+
+instance Load Material MaterialSpawned where
+  load = loadMaterial >=> spawn
+
+instance Load Light LightSpawned where
+  load = loadLight >=> spawn
 
 loadJSON :: (MonadIO m,MonadLogger m,FromJSON a) => FilePath -> m (Either String a)
 loadJSON path = do
