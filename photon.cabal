@@ -46,7 +46,7 @@ library
                      , Photon.Core.UV
                      , Photon.Render.PostFX
                      , Photon.Render.Renderer
-                     -- , Photon.Resource.Loader
+                     , Photon.Resource.Loader
                      , Photon.Utils.Directory
                      , Photon.Utils.Log
                      , Photon.Utils.TimePoint

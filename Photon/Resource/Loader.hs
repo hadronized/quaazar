@@ -11,30 +11,24 @@
 ----------------------------------------------------------------------------
 
 module Photon.Resource.Loader (
-    -- * Resource loaders
-    loadMesh
+    -- * Loading resources
+    loadJSON
+  , load 
+    -- * Loaders
+  , loadMesh
   , loadMaterial
   , loadLight
-    -- * More complex loaders
-  , loadLights
-  , loadMeshes
-  , loadObjectsPerMaterial
-  , loadObjects
-  , loadSceneRel
   ) where
 
-import Control.Applicative
 import Control.Exception ( IOException, catch )
-import Control.Monad ( MonadPlus(..) )
+import Control.Monad ( (>=>), MonadPlus(..) )
 import Control.Monad.Trans ( MonadIO, liftIO )
 import Data.ByteString.Lazy as B ( readFile )
 import Data.Aeson
 import Photon.Core.Effect
 import Photon.Core.Light ( Light )
 import Photon.Core.Material ( Material )
-import Photon.Core.Mesh ( Mesh )
-import Photon.Core.Projection ( Projection )
-import Photon.Core.Scene ( SceneRel(..) )
+import Photon.Core.Mesh ( Mesh, MeshSpawned )
 import Photon.Utils.Log
 import Photon.Utils.TimePoint
 import System.FilePath
@@ -43,7 +37,12 @@ rootPath :: FilePath
 rootPath = "data"
 
 class Load a e where
-  load :: (MonadIO m,MonadLogger m,FromJSON a,Effect e m) => m a
+  load :: (MonadIO m,MonadLogger m,MonadPlus m,Manager m,FromJSON a,Effect e m)
+       => String
+       -> m (Managed a)
+
+instance Load Mesh MeshSpawned where
+  load = loadMesh >=> spawn
 
 loadJSON :: (MonadIO m,MonadLogger m,FromJSON a) => FilePath -> m (Either String a)
 loadJSON path = do
@@ -90,19 +89,3 @@ loadLight n = loadJSON path >>= either loadError ok
     ok lig = do
       info CoreLog $ "loaded light '" ++ n ++ "'"
       return lig
-
--- FIXME: GHC 7.10 Applicative-Monad proposal
-loadLights :: (Applicative m,MonadIO m,MonadLogger m,MonadPlus m) => [String] -> m [(String,Light)]
-loadLights = fmap <$> zip <*> mapM loadLight
-
-loadMeshes :: (Applicative m,MonadIO m,MonadLogger m,MonadPlus m) => [String] -> m [(String,Mesh)]
-loadMeshes = fmap <$> zip <*> mapM loadMesh
-
-loadObjectsPerMaterial :: (Applicative m,MonadIO m,MonadLogger m,MonadPlus m) => String -> [String] -> m (Material,[(String,Mesh)])
-loadObjectsPerMaterial mat objs = (,) <$> loadMaterial mat <*> loadMeshes objs
-
-loadObjects :: (Applicative m,MonadIO m,MonadLogger m,MonadPlus m) => [(String,[String])] -> m [(Material,[(String,Mesh)])]
-loadObjects = mapM (uncurry loadObjectsPerMaterial)
-
-loadSceneRel :: (Applicative m,MonadIO m,MonadLogger m,MonadPlus m) => [String] -> [(String,[String])] -> Projection -> m (SceneRel String)
-loadSceneRel ligs objs proj = SceneRel proj <$> loadLights ligs <*> loadObjects objs
