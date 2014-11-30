@@ -28,6 +28,8 @@ cabal-version:       >= 1.10
 library
   ghc-options:         -W -Wall -O2
 
+  hs-source-dirs:      src
+
   exposed-modules:     Photon.Control.Monad
                      , Photon.Core.BoundingVolume
                      , Photon.Core.Color
