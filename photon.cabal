@@ -34,19 +34,18 @@ library
                      , Photon.Core.Effect
                      , Photon.Core.Entity
                      , Photon.Core.Light
+                     , Photon.Core.Loader
                      , Photon.Core.Material
                      , Photon.Core.Mesh
                      , Photon.Core.Normal
                      , Photon.Core.Position
                      , Photon.Core.Projection
-                     --, Photon.Core.Scene
                      , Photon.Core.Texture
                      , Photon.Core.VGroup
                      , Photon.Core.Vertex
                      , Photon.Core.UV
                      , Photon.Render.PostFX
                      , Photon.Render.Renderer
-                     , Photon.Resource.Loader
                      , Photon.Utils.Directory
                      , Photon.Utils.Log
                      , Photon.Utils.TimePoint

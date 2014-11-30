@@ -10,7 +10,7 @@
 -- Portability : portable
 ----------------------------------------------------------------------------
 
-module Photon.Resource.Loader (
+module Photon.Core.Loader (
     -- * Loading resources
     loadJSON
   , load 
