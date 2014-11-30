@@ -11,7 +11,9 @@
 
 module Photon.Core.Effect where
 
-import Control.Applicative ( Applicative )
+import Control.Applicative
+import Control.Monad.State.Class
+import Control.Monad.Trans.State ( StateT )
 import Control.Lens
 import Prelude hiding ( drop )
 
@@ -67,3 +69,7 @@ spawn a = do
 -- |Effectful drop.
 lose :: (Manager m,EffectfulManage a s l,Effect l m) => Managed a -> m ()
 lose ma = drop ma >> react (lost ma)
+
+instance (Functor m,Monad m) => Manager (StateT [Int] m) where
+  manage a = fmap (flip Managed a) $ gets (H . head) <* modify tail
+  drop (Managed (H h) _) = modify $ (:) h
