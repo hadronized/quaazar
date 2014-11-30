@@ -52,6 +52,17 @@ library
                      , Photon.Utils.Log
                      , Photon.Utils.TimePoint
 
+  other-modules:       Photon.Render.GL.Buffer
+                     --, Photon.Render.GL.Forward
+                     , Photon.Render.GL.Framebuffer
+                     , Photon.Render.GL.GLObject
+                     , Photon.Render.GL.Offscreen
+                     , Photon.Render.GL.Primitive
+                     , Photon.Render.GL.Renderbuffer
+                     , Photon.Render.GL.Shader
+                     , Photon.Render.GL.Texture
+                     , Photon.Render.GL.VertexArray
+
   default-extensions:  DeriveFunctor
                      , FlexibleContexts
                      , FlexibleInstances
@@ -82,6 +93,7 @@ library
                      , monad-journal >= 0.2   && < 0.6
                      , filepath      >= 1.3   && < 1.4
                      , JuicyPixels   >= 3.1   && < 3.2
+                     , OpenGLRaw     >= 4.4   && < 4.5
                      , filepath      >= 0.1   && < 1.4
 
   default-language:    Haskell2010
