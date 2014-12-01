@@ -37,6 +37,7 @@ module Photon.Core.Light (
   , changePower
   , changeRadius
   , changeCastShadows
+  , withLight
   ) where
 
 import Control.Applicative
@@ -89,6 +90,8 @@ data LightEffect
   | PowerChanged (Managed Light) Float
   | RadiusChanged (Managed Light) Float
   | CastShadowsChanged (Managed Light) Bool
+  | UseLight (Managed Light)
+  | UnuseLight (Managed Light)
     deriving (Eq,Show)
 
 instance EffectfulManage Light LightSpawned LightLost where
@@ -130,3 +133,6 @@ changeCastShadows l f = do
     react (CastShadowsChanged l newCastShadows)
     return (l & managed . ligCastShadows .~ newCastShadows)
   where newCastShadows = f (l^.managed.ligCastShadows)
+
+withLight :: (Effect LightEffect m) => Managed Light -> m a -> m a
+withLight lig a = react (UseLight lig) *> a <* react (UnuseLight lig)

@@ -61,12 +61,14 @@ library
                      , Photon.Render.GL.Renderbuffer
                      , Photon.Render.GL.Shader
                      , Photon.Render.GL.Texture
+                     , Photon.Render.GL.Trans
                      , Photon.Render.GL.VertexArray
 
   default-extensions:  DeriveFunctor
                      , FlexibleContexts
                      , FlexibleInstances
                      , FunctionalDependencies
+                     , GeneralizedNewtypeDeriving
                      , MultiParamTypeClasses
                      , TemplateHaskell
 

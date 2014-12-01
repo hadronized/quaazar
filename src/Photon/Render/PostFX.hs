@@ -28,6 +28,25 @@ module Photon.Render.PostFX (
 
 import Data.Word ( Word32 )
 import Numeric.Natural ( Natural )
+import Photon.Core.Effect
 
 -- |A post-process  effect is an endomorphism between two frames.
 newtype PostFX = PostFX String deriving (Eq,Show)
+
+data PostFXSpawned = PostFXSpawned (Managed PostFX) deriving (Eq,Show)
+
+data PostFXLost = PostFXLost (Managed PostFX) deriving (Eq,Show)
+
+data PostFXEffect
+  = ApplyPostFX (Managed PostFX)
+    deriving (Eq,Show)
+
+instance EffectfulManage PostFX PostFXSpawned PostFXLost where
+  spawned = PostFXSpawned
+  lost = PostFXLost
+
+postfx :: (Effect PostFXEffect m) => Managed PostFX -> m ()
+postfx = react . ApplyPostFX 
+
+postProcess :: (Effect PostFXEffect m) => [Managed PostFX] -> m ()
+postProcess = sequence_ . map postfx
