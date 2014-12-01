@@ -53,9 +53,9 @@ library
                      , Photon.Utils.TimePoint
 
   other-modules:       Photon.Render.GL.Buffer
-                     --, Photon.Render.GL.Forward
                      , Photon.Render.GL.Framebuffer
                      , Photon.Render.GL.GLObject
+                     , Photon.Render.GL.Mesh
                      , Photon.Render.GL.Offscreen
                      , Photon.Render.GL.Primitive
                      , Photon.Render.GL.Renderbuffer
