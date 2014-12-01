@@ -9,7 +9,7 @@
 --
 ----------------------------------------------------------------------------
 
-module Photon.Render.OpenGL.Forward.Mesh where
+module Photon.Render.GL.Mesh where
 
 import Control.Lens
 import Data.Word ( Word32 )
@@ -20,29 +20,29 @@ import Photon.Core.Mesh hiding ( Line, Triangle )
 import Photon.Core.Normal
 import Photon.Core.Position
 import Photon.Core.UV
-import Photon.Render.OpenGL.Buffer
-import Photon.Render.OpenGL.Primitive
-import Photon.Render.OpenGL.VertexArray
+import Photon.Render.GL.Buffer
+import Photon.Render.GL.Primitive
+import Photon.Render.GL.VertexArray
 
-data FMesh = FMesh {
+data GPUMesh = GPUMesh {
     -- |VBO.
-    _fmeshVBO    :: Buffer
+    _gpuMeshVBO    :: Buffer
     -- |IBO.
-  , _fmeshIBO    :: Buffer
+  , _gpuMeshIBO    :: Buffer
     -- |VAO.
-  , _fmeshVAO    :: VertexArray
+  , _gpuMeshVAO    :: VertexArray
     -- |Primitive.
-  , _fmeshPrim   :: Primitive
+  , _gpuMeshPrim   :: Primitive
     -- |Vertices number.
-  , _fmeshVertNB :: Int
+  , _gpuMeshVertNB :: Int
   } deriving (Eq,Show)
 
-makeLenses ''FMesh
+makeLenses ''GPUMesh
 
--- |OpenGL forward renderer’s `Mesh` representation.
-forwardMesh :: Mesh -> IO FMesh
-forwardMesh msh = case msh^.meshVertices of
-    Interleaved v -> forwardMesh (msh & meshVertices .~ deinterleaved v)
+-- |OpenGL 'Mesh' representation.
+gpuMesh :: Mesh -> IO GPUMesh
+gpuMesh msh = case msh^.meshVertices of
+    Interleaved v -> gpuMesh (msh & meshVertices .~ deinterleaved v)
     Deinterleaved vnb positions normals uvs -> do
       vb <- genBuffer
       ib <- genBuffer
@@ -92,7 +92,7 @@ forwardMesh msh = case msh^.meshVertices of
 
       unbindBuffer IndexBuffer
 
-      return $ FMesh vb ib va prim verticesNb
+      return $ GPUMesh vb ib va prim verticesNb
   where
     inds          = msh^.meshVGroup.to fromVGroup
     verticesNb    = length inds
