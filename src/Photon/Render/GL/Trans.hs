@@ -16,7 +16,7 @@ module Photon.Render.GL.Trans (
 import Control.Applicative
 import Control.Lens
 import Control.Monad.Trans ( MonadIO(..) )
-import Control.Monad.Trans.State ( StateT, runStateT )
+import Control.Monad.Trans.State ( StateT, evalStateT )
 import Data.Vector as V ( Vector, length )
 import Photon.Core.Effect
 import Photon.Core.Light
@@ -24,7 +24,10 @@ import Photon.Core.Material
 import Photon.Core.Mesh
 import Photon.Render.GL.Mesh
 
-newtype OpenGLT m a = OpenGLT { runOpenGLT :: StateT OpenGLSt m a } deriving (Applicative,Functor,Monad)
+newtype OpenGLT m a = OpenGLT (StateT OpenGLSt m a) deriving (Applicative,Functor,Monad)
+
+evalOpenGLT :: (Monad m) => OpenGLT m a -> m a
+evalOpenGLT (OpenGLT st) = evalStateT st (OpenGLSt empty empty empty empty)
 
 data OpenGLSt = OpenGLSt {
     _glStLights    :: Vector Light    -- ^ lights
