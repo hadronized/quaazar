@@ -62,7 +62,7 @@ instance (Functor m,Monad m) => Effect LightSpawned (OpenGLT m) where
   react (LightSpawned (Managed (H dHandle) l)) = OpenGLT $ do
     -- light handle
     (lightHandle,lightFL) <- uses (glStLights._1) nextFree
-    glStLights._1 .= lightFL
+    glStLights . _1 .= lightFL
     -- double indirection
     glStDispatch . _2 . ix dHandle .= lightHandle
     -- storing
@@ -98,7 +98,7 @@ instance (Functor m,Monad m) => Effect MaterialSpawned (OpenGLT m) where
   react (MaterialSpawned (Managed (H dHandle) m)) = OpenGLT $ do
     -- material handle
     (matHandle,matFL) <- uses (glStMaterials._1) nextFree
-    glStMaterials._1 .= matFL
+    glStMaterials . _1 .= matFL
     -- double indirection
     glStDispatch . _2 . ix dHandle .= matHandle
     -- storing
@@ -125,26 +125,35 @@ instance (Functor m,Monad m) => Effect MaterialEffect (OpenGLT m) where
       mh <- dispatchHandle m
       glStMaterials . _2 . ix mh . matShininess .= shn
 
-{-
 -------------------------------------------------------------------------------
 -- Mesh support
 instance (Functor m,MonadIO m) => Effect MeshSpawned (OpenGLT m) where
-  react (MeshSpawned (Managed (H h) m)) = OpenGLT $ do
-    sz <- uses glStMeshes V.length
+  react (MeshSpawned (Managed (H dHandle) m)) = OpenGLT $ do
+    -- mesh handle
+    (meshHandle,meshFL) <- uses (glStMeshes._1) nextFree
+    glStMeshes . _1 .= meshFL
+    -- double indirection
+    glStDispatch . _2 . ix dHandle .= meshHandle
+    -- storing
     gpuData <- liftIO (gpuMesh m)
-    if h < sz then
-      glStMeshes . ix h .= gpuData
+    sz <- uses (glStMeshes._2) V.length
+    if meshHandle < sz then
+      glStMeshes . _2 . ix meshHandle .= gpuData
       else
-        glStMeshes %= flip snoc gpuData
+        glStMeshes . _2 %= flip snoc gpuData
+
 
 instance (Functor m,Monad m) => Effect MeshLost (OpenGLT m) where
-  react = const $ return ()
+  react (MeshLost m) = OpenGLT $ do
+    meshHandle <- dispatchHandle m
+    glStMeshes . _1 %= recycleFree meshHandle
 
+{-
 instance (Functor m,MonadIO m) => Effect MeshEffect (OpenGLT m) where
   react e = OpenGLT $ case e of
     UseMaterial msh mat -> glStMatMeshes . ix (unManage mat) %= (:) (msh^.handle)
-
 -}
+
 -------------------------------------------------------------------------------
 -- Miscellaneous
 
