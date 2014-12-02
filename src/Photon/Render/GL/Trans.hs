@@ -38,6 +38,20 @@ data OpenGLSt = OpenGLSt {
 
 makeLenses ''OpenGLSt
 
+newtype FreeList = FreeList { unFreeList :: [Int] } deriving (Eq,Ord,Show)
+
+freeListMin :: Int -> FreeList
+freeListMin m = FreeList [m..]
+
+freeList :: FreeList
+freeList = freeListMin 0
+
+nextFree :: FreeList -> (Int,FreeList)
+nextFree (FreeList f) = (head f,FreeList $ tail f)
+
+recycleFree :: Int -> FreeList -> FreeList
+recycleFree f (FreeList fl) = FreeList (f : fl)
+
 -------------------------------------------------------------------------------
 -- Light support
 instance (Functor m,Monad m) => Effect LightSpawned (OpenGLT m) where

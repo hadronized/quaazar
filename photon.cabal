@@ -49,6 +49,7 @@ library
                      , Photon.Render.PostFX
                      , Photon.Render.Renderer
                      , Photon.Utils.Directory
+                     , Photon.Utils.FreeList
                      , Photon.Utils.Log
                      , Photon.Utils.TimePoint
 
