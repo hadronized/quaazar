@@ -10,10 +10,11 @@
 ----------------------------------------------------------------------------
 
 module Photon.Utils.FreeList (
+    -- * Free lists
+    FreeList(..)
     -- * Creating free lists
-    freeList
+  , freeList
   , freeListMin
-  , toList
     -- * Using free lists
   , nextFree
   , recycleFree

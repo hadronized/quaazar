@@ -27,10 +27,11 @@ import Photon.Render.GL.Mesh
 newtype OpenGLT m a = OpenGLT (StateT OpenGLSt m a) deriving (Applicative,Functor,Monad)
 
 evalOpenGLT :: (Monad m) => OpenGLT m a -> m a
-evalOpenGLT (OpenGLT st) = evalStateT st (OpenGLSt empty empty empty empty)
+evalOpenGLT (OpenGLT st) = evalStateT st (OpenGLSt empty empty empty empty empty)
 
 data OpenGLSt = OpenGLSt {
-    _glStLights    :: Vector Light    -- ^ lights
+    _glStDispatch  :: Vector Int      -- ^ objects dispatcher
+  , _glStLights    :: Vector Light    -- ^ lights
   , _glStMaterials :: Vector Material -- ^ materials
   , _glStMeshes    :: Vector GPUMesh  -- ^ meshes
   , _glStMatMeshes :: Vector [H Mesh] -- ^ meshes handles per material

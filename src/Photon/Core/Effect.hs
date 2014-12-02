@@ -16,6 +16,7 @@ import Control.Monad.State.Class
 import Control.Monad.Trans.State ( StateT )
 import Control.Lens
 import Prelude hiding ( drop )
+import Photon.Utils.FreeList
 
 -- |Handle used to uniquely represent managed values.
 newtype H a = H Int deriving (Eq,Ord,Show)
@@ -70,6 +71,10 @@ spawn a = do
 lose :: (Manager m,EffectfulManage a s l,Effect l m) => Managed a -> m ()
 lose ma = drop ma >> react (lost ma)
 
-instance (Functor m,Monad m) => Manager (StateT [Int] m) where
-  manage a = fmap (flip Managed a) $ gets (H . head) <* modify tail
-  drop (Managed (H h) _) = modify $ (:) h
+instance (Functor m,Monad m) => Manager (StateT FreeList m) where
+  manage a = do
+    (h,fl) <- gets nextFree
+    put fl
+    return (Managed (H h) a)
+
+  drop (Managed (H h) _) = modify (recycleFree h)
