@@ -15,6 +15,7 @@ module Photon.Render.GL.Trans (
 
 import Control.Applicative
 import Control.Lens
+import Control.Monad ( unless )
 import Control.Monad.Trans ( MonadIO(..) )
 import Control.Monad.Trans.State ( StateT, evalStateT )
 import Data.Vector as V ( Vector, length )
@@ -23,58 +24,77 @@ import Photon.Core.Light
 import Photon.Core.Material
 import Photon.Core.Mesh
 import Photon.Render.GL.Mesh
+import Photon.Utils.FreeList
+import Prelude hiding ( drop )
 
 newtype OpenGLT m a = OpenGLT (StateT OpenGLSt m a) deriving (Applicative,Functor,Monad)
 
-evalOpenGLT :: (Monad m) => OpenGLT m a -> m a
-evalOpenGLT (OpenGLT st) = evalStateT st (OpenGLSt empty empty empty empty empty)
-
 data OpenGLSt = OpenGLSt {
-    _glStDispatch  :: Vector Int      -- ^ objects dispatcher
-  , _glStLights    :: Vector Light    -- ^ lights
-  , _glStMaterials :: Vector Material -- ^ materials
-  , _glStMeshes    :: Vector GPUMesh  -- ^ meshes
-  , _glStMatMeshes :: Vector [H Mesh] -- ^ meshes handles per material
+    _glStDispatch  :: (FreeList,Vector Int)      -- ^ objects dispatcher
+  , _glStLights    :: (FreeList,Vector Light)    -- ^ lights
+  , _glStMaterials :: (FreeList,Vector Material) -- ^ materials
+  , _glStMeshes    :: (FreeList,Vector GPUMesh)  -- ^ meshes
+  , _glStMatMeshes :: (FreeList,Vector [H Mesh]) -- ^ meshes handles per material
   } deriving (Eq,Show)
 
 makeLenses ''OpenGLSt
 
-newtype FreeList = FreeList { unFreeList :: [Int] } deriving (Eq,Ord,Show)
+evalOpenGLT :: (Monad m) => OpenGLT m a -> m a
+evalOpenGLT (OpenGLT st) = evalStateT st (OpenGLSt empty2 empty2 empty2 empty2 empty2)
 
-freeListMin :: Int -> FreeList
-freeListMin m = FreeList [m..]
+dispatchHandle :: (Monad m) => Managed a -> StateT OpenGLSt m Int
+dispatchHandle (Managed (H h) _) = use $ singular $ glStDispatch . _2 . ix h
 
-freeList :: FreeList
-freeList = freeListMin 0
-
-nextFree :: FreeList -> (Int,FreeList)
-nextFree (FreeList f) = (head f,FreeList $ tail f)
-
-recycleFree :: Int -> FreeList -> FreeList
-recycleFree f (FreeList fl) = FreeList (f : fl)
+-------------------------------------------------------------------------------
+-- Manager
+instance (Functor m,Monad m) => Manager (OpenGLT m) where
+  manage a = OpenGLT $ do
+    (h,fl) <- uses (glStDispatch._1) nextFree
+    glStDispatch . _1 .= fl
+    sz <- uses (glStDispatch . _2) V.length
+    unless (h < sz) (glStDispatch . _2 %= flip snoc 0)
+    return (Managed (H h) a)
+  drop (Managed (H h) _) = OpenGLT (glStDispatch . _1 %= recycleFree h)
 
 -------------------------------------------------------------------------------
 -- Light support
 instance (Functor m,Monad m) => Effect LightSpawned (OpenGLT m) where
-  react (LightSpawned (Managed (H h) l)) = OpenGLT $ do
-    sz <- uses glStLights V.length
-    if h < sz then
-      glStLights . ix h .= l
+  react (LightSpawned (Managed (H dHandle) l)) = OpenGLT $ do
+    -- light handle
+    (lightHandle,lightFL) <- uses (glStLights._1) nextFree
+    glStLights._1 .= lightFL
+    -- double indirection
+    glStDispatch . _2 . ix dHandle .= lightHandle
+    -- storing
+    sz <- uses (glStLights._2) V.length
+    if lightHandle < sz then
+      glStLights . _2 . ix lightHandle .= l
       else
-        glStLights %= flip snoc l
+        glStLights . _2 %= flip snoc l
 
 instance (Functor m,Monad m) => Effect LightLost (OpenGLT m) where
-  react = const $ return ()
+  react (LightLost lig) = OpenGLT $ do
+    lightHandle <- dispatchHandle lig
+    glStLights . _1 %= recycleFree lightHandle
 
 instance (Functor m,Monad m) => Effect LightEffect (OpenGLT m) where
   react e = OpenGLT $ case e of
-    ColorChanged lig color -> glStLights . ix (unManage lig) . ligColor .= color
-    PowerChanged lig power -> glStLights . ix (unManage lig) . ligPower .= power
-    RadiusChanged lig radius -> glStLights . ix (unManage lig) . ligRadius .= radius
-    CastShadowsChanged lig sh -> glStLights . ix (unManage lig) . ligCastShadows .= sh
+    ColorChanged lig color -> do
+      lh <- dispatchHandle lig
+      glStLights . _2 . ix lh . ligColor .= color
+    PowerChanged lig power -> do
+      lh <- dispatchHandle lig
+      glStLights . _2 . ix lh . ligPower .= power
+    RadiusChanged lig radius -> do
+      lh <- dispatchHandle lig
+      glStLights . _2 . ix lh . ligRadius .= radius
+    CastShadowsChanged lig sh -> do
+      lh <- dispatchHandle lig
+      glStLights . _2 . ix lh . ligCastShadows .= sh
 
 -------------------------------------------------------------------------------
 -- Material support
+{-
 instance (Functor m,Monad m) => Effect MaterialSpawned (OpenGLT m) where
   react (MaterialSpawned (Managed (H h) m)) = OpenGLT $ do
     sz <- uses glStMaterials V.length
@@ -111,9 +131,14 @@ instance (Functor m,Monad m) => Effect MeshLost (OpenGLT m) where
 instance (Functor m,MonadIO m) => Effect MeshEffect (OpenGLT m) where
   react e = OpenGLT $ case e of
     UseMaterial msh mat -> glStMatMeshes . ix (unManage mat) %= (:) (msh^.handle)
-    
+
+-}
 -------------------------------------------------------------------------------
 -- Miscellaneous
+
 unManage :: Managed a -> Int
 unManage m = m^.handle.to unH
   where unH (H i) = i
+
+empty2 :: (FreeList,Vector a)
+empty2 = (freeList,empty)
