@@ -94,26 +94,38 @@ instance (Functor m,Monad m) => Effect LightEffect (OpenGLT m) where
 
 -------------------------------------------------------------------------------
 -- Material support
-{-
 instance (Functor m,Monad m) => Effect MaterialSpawned (OpenGLT m) where
-  react (MaterialSpawned (Managed (H h) m)) = OpenGLT $ do
-    sz <- uses glStMaterials V.length
-    if h < sz then do
-      glStMaterials . ix h .= m
-      glStMatMeshes . ix h .= []
-      else do
-        glStMaterials %= flip snoc m
-        glStMatMeshes %= flip snoc []
+  react (MaterialSpawned (Managed (H dHandle) m)) = OpenGLT $ do
+    -- material handle
+    (matHandle,matFL) <- uses (glStMaterials._1) nextFree
+    glStMaterials._1 .= matFL
+    -- double indirection
+    glStDispatch . _2 . ix dHandle .= matHandle
+    -- storing
+    sz <- uses (glStMaterials._2) V.length
+    if matHandle < sz then
+      glStMaterials . _2 . ix matHandle .= m
+      else
+        glStMaterials . _2 %= flip snoc m
 
 instance (Functor m,Monad m) => Effect MaterialLost (OpenGLT m) where
-  react = const $ return ()
+  react (MaterialLost m) = OpenGLT $ do
+    matHandle <- dispatchHandle m
+    glStMaterials . _1 %= recycleFree matHandle
 
 instance (Functor m,Monad m) => Effect MaterialEffect (OpenGLT m) where
   react e = OpenGLT $ case e of
-    DiffuseChanged m diff -> glStMaterials . ix (unManage m) . matDiffuseAlbedo .= diff
-    SpecularChanged m spec -> glStMaterials . ix (unManage m) . matSpecularAlbedo .= spec
-    ShininessChanged m shn -> glStMaterials . ix (unManage m) . matShininess .= shn
+    DiffuseChanged m diff -> do
+      mh <- dispatchHandle m
+      glStMaterials . _2 . ix mh . matDiffuseAlbedo .= diff
+    SpecularChanged m spec -> do
+      mh <- dispatchHandle m
+      glStMaterials . _2 . ix mh . matSpecularAlbedo .= spec
+    ShininessChanged m shn -> do
+      mh <- dispatchHandle m
+      glStMaterials . _2 . ix mh . matShininess .= shn
 
+{-
 -------------------------------------------------------------------------------
 -- Mesh support
 instance (Functor m,MonadIO m) => Effect MeshSpawned (OpenGLT m) where
