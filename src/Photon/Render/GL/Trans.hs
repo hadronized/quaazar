@@ -18,7 +18,7 @@ import Control.Lens
 import Control.Monad ( unless )
 import Control.Monad.Trans ( MonadIO(..) )
 import Control.Monad.Trans.State ( StateT, evalStateT )
-import Data.Vector as V ( Vector, length )
+import Data.Vector as V ( Vector, fromList, length )
 import Photon.Core.Effect
 import Photon.Core.Light
 import Photon.Core.Material
@@ -30,17 +30,16 @@ import Prelude hiding ( drop )
 newtype OpenGLT m a = OpenGLT (StateT OpenGLSt m a) deriving (Applicative,Functor,Monad)
 
 data OpenGLSt = OpenGLSt {
-    _glStDispatch  :: (FreeList,Vector Int)      -- ^ objects dispatcher
-  , _glStLights    :: (FreeList,Vector Light)    -- ^ lights
-  , _glStMaterials :: (FreeList,Vector Material) -- ^ materials
-  , _glStMeshes    :: (FreeList,Vector GPUMesh)  -- ^ meshes
-  , _glStMatMeshes :: (FreeList,Vector [H Mesh]) -- ^ meshes handles per material
+    _glStDispatch  :: (FreeList,Vector Int)                  -- ^ objects dispatcher
+  , _glStLights    :: (FreeList,Vector Light)                -- ^ lights
+  , _glStMaterials :: (FreeList,Vector Material)             -- ^ materials
+  , _glStMeshes    :: (FreeList,Vector (GPUMesh,H Material)) -- ^ meshes with material
   } deriving (Eq,Show)
 
 makeLenses ''OpenGLSt
 
 evalOpenGLT :: (Monad m) => OpenGLT m a -> m a
-evalOpenGLT (OpenGLT st) = evalStateT st (OpenGLSt empty2 empty2 empty2 empty2 empty2)
+evalOpenGLT (OpenGLT st) = evalStateT st (OpenGLSt empty2 empty2 initMaterials empty2)
 
 dispatchHandle :: (Monad m) => Managed a -> StateT OpenGLSt m Int
 dispatchHandle (Managed (H h) _) = use $ singular $ glStDispatch . _2 . ix h
@@ -94,6 +93,12 @@ instance (Functor m,Monad m) => Effect LightEffect (OpenGLT m) where
 
 -------------------------------------------------------------------------------
 -- Material support
+initMaterials :: (FreeList,Vector Material)
+initMaterials = (freeListMin 1,fromList [Material diff spec 10])
+  where
+    diff = albedo 0.6 0.6 0.6
+    spec = albedo 0.6 0.6 0.6
+
 instance (Functor m,Monad m) => Effect MaterialSpawned (OpenGLT m) where
   react (MaterialSpawned (Managed (H dHandle) m)) = OpenGLT $ do
     -- material handle
@@ -138,9 +143,9 @@ instance (Functor m,MonadIO m) => Effect MeshSpawned (OpenGLT m) where
     gpuData <- liftIO (gpuMesh m)
     sz <- uses (glStMeshes._2) V.length
     if meshHandle < sz then
-      glStMeshes . _2 . ix meshHandle .= gpuData
+      glStMeshes . _2 . ix meshHandle . _1 .= gpuData
       else
-        glStMeshes . _2 %= flip snoc gpuData
+        glStMeshes . _2 %= flip snoc (gpuData,H 0)
 
 
 instance (Functor m,Monad m) => Effect MeshLost (OpenGLT m) where
