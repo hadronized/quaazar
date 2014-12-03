@@ -11,7 +11,20 @@
 --
 ----------------------------------------------------------------------------
 
-module Photon.Core.Effect where
+module Photon.Core.Effect (
+    -- * Effect
+    Effect(..)
+  , AnyEffect
+    -- * Manage
+  , H(..)
+  , Managed(Managed)
+  , handle
+  , managed
+  , Manager(..)
+  , EffectfulManage(..)
+  , spawn
+  , lose
+  ) where
 
 import Control.Applicative
 import Control.Monad.State.Class
