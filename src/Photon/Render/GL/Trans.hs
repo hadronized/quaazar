@@ -34,12 +34,13 @@ data OpenGLSt = OpenGLSt {
   , _glStLights    :: (FreeList,Vector Light)                -- ^ lights
   , _glStMaterials :: (FreeList,Vector Material)             -- ^ materials
   , _glStMeshes    :: (FreeList,Vector (GPUMesh,H Material)) -- ^ meshes with material
+  , _glStMeshCache :: Vector [H Mesh]
   } deriving (Eq,Show)
 
 makeLenses ''OpenGLSt
 
 evalOpenGLT :: (Monad m) => OpenGLT m a -> m a
-evalOpenGLT (OpenGLT st) = evalStateT st (OpenGLSt empty2 empty2 initMaterials empty2)
+evalOpenGLT (OpenGLT st) = evalStateT st (OpenGLSt empty2 empty2 initMaterials empty2 empty)
 
 dispatchHandle :: (Monad m) => Managed a -> StateT OpenGLSt m Int
 dispatchHandle (Managed (H h) _) = use $ singular $ glStDispatch . _2 . ix h
@@ -110,8 +111,9 @@ instance (Functor m,Monad m) => Effect MaterialSpawned (OpenGLT m) where
     sz <- uses (glStMaterials._2) V.length
     if matHandle < sz then
       glStMaterials . _2 . ix matHandle .= m
-      else
+      else do
         glStMaterials . _2 %= flip snoc m
+        glStMeshCache %= flip snoc []
 
 instance (Functor m,Monad m) => Effect MaterialLost (OpenGLT m) where
   react (MaterialLost m) = OpenGLT $ do

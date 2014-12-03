@@ -35,6 +35,7 @@ import Control.Applicative
 import Control.Lens
 import Data.Aeson
 import Photon.Core.Effect
+import Photon.Core.Entity ( Entity )
 import Photon.Core.Material ( Material )
 import Photon.Core.Vertex
 import Photon.Core.VGroup
@@ -59,7 +60,7 @@ data MeshEffect
   = VerticesChanged (Managed Mesh) Vertices
   | VGroupChanged (Managed Mesh) VGroup
   | UseMaterial (Managed Mesh) (Managed Material)
-  | RenderMesh (Managed Mesh)
+  | RenderMesh (Managed Mesh) (Managed (Entity Mesh))
     deriving (Eq,Show)
 
 instance EffectfulManage Mesh MeshSpawned MeshLost where
@@ -92,5 +93,6 @@ useMaterial msh mat = react (UseMaterial msh mat)
 
 renderMesh :: (Effect MeshEffect m)
            => Managed Mesh
+           -> Managed (Entity Mesh)
            -> m ()
-renderMesh = react . RenderMesh
+renderMesh m e = react (RenderMesh m e)
