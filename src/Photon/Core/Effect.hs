@@ -1,3 +1,5 @@
+{-# LANGUAGE ConstraintKinds, RankNTypes #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   : (C) 2014 Dimitri Sabadie
@@ -59,6 +61,8 @@ class EffectfulManage a s l | a -> s l where
 -- |'Effect e m' is a monad 'm 'with a specific effect 'e'.
 class (Functor m,Applicative m,Monad m) => Effect e m where
   react :: e -> m ()
+
+type AnyEffect m = forall e. (Effect e m,Functor m,Applicative m,Monad m)
 
 -- |Effectful manage.
 spawn :: (Manager m,EffectfulManage a s l,Effect s m) => a -> m (Managed a)
