@@ -153,11 +153,12 @@ instance (Functor m,Monad m) => Effect MeshLost (OpenGLT m) where
     meshHandle <- dispatchHandle m
     glStMeshes . _1 %= recycleFree meshHandle
 
-{-
 instance (Functor m,MonadIO m) => Effect MeshEffect (OpenGLT m) where
   react e = OpenGLT $ case e of
-    UseMaterial msh mat -> glStMatMeshes . ix (unManage mat) %= (:) (msh^.handle)
--}
+    UseMaterial msh mat -> do
+      h <- dispatchHandle msh
+      m <- dispatchHandle mat
+      glStMeshes . _2 . ix h . _2 .= H m
 
 -------------------------------------------------------------------------------
 -- Miscellaneous
