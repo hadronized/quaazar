@@ -161,6 +161,10 @@ instance (Functor m,MonadIO m) => Effect MeshEffect (OpenGLT m) where
       h <- dispatchHandle msh
       m <- dispatchHandle mat
       glStMeshes . _2 . ix h . _2 .= H m
+    RenderMesh m e -> do
+      mshh <- dispatchHandle m
+      H math <- use (singular $ glStMeshes . _2 . ix mshh . _2)
+      glStMeshCache . ix math %= flip snoc (H mshh)
 
 -------------------------------------------------------------------------------
 -- Miscellaneous
