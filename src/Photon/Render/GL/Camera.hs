@@ -9,12 +9,10 @@
 --
 ----------------------------------------------------------------------------
 
-module Photon.Render.OpenGL.Forward.Camera where
+module Photon.Render.GL.Camera where
 
 import Linear.Matrix ( M44 )
 import Photon.Core.Projection ( Projection, projectionMatrix )
 
-newtype FCamera = FCamera (M44 Float) deriving (Eq,Show)
-
-forwardCamera :: Projection -> FCamera
-forwardCamera = FCamera . projectionMatrix
+gpuProjection :: Projection -> M44 Float
+gpuProjection = projectionMatrix

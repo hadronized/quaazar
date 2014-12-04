@@ -18,16 +18,18 @@ module Photon.Render.Renderer (
 
 import Control.Applicative
 import Photon.Core.Effect
+import Photon.Core.Entity ( Entity )
 import Photon.Core.Light ( Light )
+import Photon.Core.Projection ( Projection )
 import Photon.Render.PostFX ( PostFX )
 
 data RenderEffect
-  = Display
-  | Screenshot FilePath
+  = Display (Entity Projection)
+  | Screenshot (Entity Projection) FilePath
     deriving (Eq,Show)
 
-display :: (Effect RenderEffect m) => m ()
-display = react Display
+display :: (Effect RenderEffect m) => Entity Projection -> m ()
+display = react . Display
 
-screenshot :: (Effect RenderEffect m) => FilePath -> m ()
-screenshot = react . Screenshot
+screenshot :: (Effect RenderEffect m) => Entity Projection -> FilePath -> m ()
+screenshot proj path = react (Screenshot proj path)
