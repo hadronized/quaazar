@@ -61,15 +61,24 @@ data OpenGLSt = OpenGLSt {
     -- |A table that turns dispatch handles into specfic handles.
     -- That table is used per-type to resolve values at lookups.
     _glStDispatch      :: (FreeList,Vector Int)
-    -- |OpenGL side lights are just lights with entities.
+    -- |OpenGL side lights are just lights.
   , _glStLights        :: (FreeList,Vector Light)
+    -- |OpenGL side materiels are just materials as well.
   , _glStMaterials     :: (FreeList,Vector Material)
+    -- |OpenGL meshes are gpu data glued with a material (through lookup).
   , _glStMeshes        :: (FreeList,Vector (GPUMesh,H Material))
+    -- |The OpenGL mesh cache has the same size that the materials. The cache
+    -- is used to instantiate meshes in space
   , _glStMeshCache     :: Vector [(H Mesh,Entity)]
+    -- |The OpenGL light cache is used to instantiate lights in space.
   , _glStLightCache    :: Vector (H Light,Entity)
+    -- |Accumulation buffer.
   , _glStAccumOff      :: Offscreen
+    -- |Shadow buffer.
   , _glStShadowOff     :: Offscreen
+    -- |Lighting shader.
   , _glStLightShader   :: Shader
+    -- |Scene uniforms.
   , _glStSceneUniforms :: SceneUniforms
   }
 
@@ -278,6 +287,5 @@ instance (Functor m,MonadIO m) => Effect RenderEffect (OpenGLT m) where
                   
 -------------------------------------------------------------------------------
 -- Miscellaneous
-
 empty2 :: (FreeList,Vector a)
 empty2 = (freeList,empty)
