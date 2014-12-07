@@ -18,33 +18,56 @@ import Control.Lens
 import Control.Monad ( unless )
 import Control.Monad.Trans ( MonadIO(..) )
 import Control.Monad.Trans.State ( StateT, evalStateT )
-import Data.Vector as V ( Vector, fromList, length )
+import Data.Vector as V ( Vector, forM_, fromList, length )
 import Graphics.Rendering.OpenGL.Raw
-import Linear.Matrix ( M44 )
+import Linear
 import Photon.Core.Effect
+import Photon.Core.Entity
 import Photon.Core.Light
 import Photon.Core.Material
 import Photon.Core.Mesh
+import Photon.Core.Projection ( projectionMatrix )
 import Photon.Render.GL.Camera
+import Photon.Render.GL.Entity
 import Photon.Render.GL.Framebuffer
 import Photon.Render.GL.Mesh
 import Photon.Render.GL.Offscreen
+import Photon.Render.GL.Shader
 import Photon.Render.Renderer ( RenderEffect(..) )
 import Photon.Utils.FreeList
 import Prelude hiding ( drop )
 
-newtype OpenGLT m a = OpenGLT (StateT OpenGLSt m a) deriving (Applicative,Functor,Monad)
+data SceneUniforms = SceneUniforms {
+    _sceneUniEye        :: Uniform (V3 Float)
+  , _sceneUniForward    :: Uniform (V3 Float)
+  , _sceneUniProjView   :: Uniform (M44 Float)
+  , _sceneUniInstance   :: Uniform (M44 Float)
+  , _sceneUniMatDiffAlb :: Uniform (V3 Float)
+  , _sceneUniMatSpecAlb :: Uniform (V3 Float)
+  , _sceneUniMatShn     :: Uniform Float
+  , _sceneUniLigPos     :: Uniform (V3 Float)
+  , _sceneUniLigCol     :: Uniform (V3 Float)
+  , _sceneUniLigPow     :: Uniform Float
+  , _sceneUniLigRad     :: Uniform Float
+  }
+
+makeLenses ''SceneUniforms
 
 data OpenGLSt = OpenGLSt {
-    _glStDispatch  :: (FreeList,Vector Int)                  -- ^ objects dispatcher
-  , _glStLights    :: (FreeList,Vector Light)                -- ^ lights
-  , _glStMaterials :: (FreeList,Vector Material)             -- ^ materials
-  , _glStMeshes    :: (FreeList,Vector (GPUMesh,H Material)) -- ^ meshes with material
-  , _glStMeshCache :: Vector [H Mesh]
-  , _glAccumOff    :: Offscreen
-  } deriving (Eq)
+    _glStDispatch      :: (FreeList,Vector Int)                  -- ^ objects dispatcher
+  , _glStLights        :: (FreeList,Vector Light)                -- ^ lights
+  , _glStMaterials     :: (FreeList,Vector Material)             -- ^ materials
+  , _glStMeshes        :: (FreeList,Vector (GPUMesh,H Material)) -- ^ meshes with material
+  , _glStMeshCache     :: Vector [(H Mesh,Entity Mesh)]          -- ^ render-optimised cache (meshes)
+  , _glStLightCache    :: Vector [(H Light,Entity Light)]        -- ^ render-optimised cache (lights)
+  , _glStAccumOff      :: Offscreen                              -- ^ accumulation buffer
+  , _glStLightShader   :: Shader                                 -- ^ lighting shader
+  , _glStSceneUniforms :: SceneUniforms                          -- ^ scene semantics
+  }
 
 makeLenses ''OpenGLSt
+
+newtype OpenGLT m a = OpenGLT (StateT OpenGLSt m a) deriving (Applicative,Functor,Monad)
 
 dispatchHandle :: (Monad m) => Managed a -> StateT OpenGLSt m Int
 dispatchHandle (Managed (H h) _) = use $ singular $ glStDispatch . _2 . ix h
@@ -167,20 +190,36 @@ instance (Functor m,MonadIO m) => Effect MeshEffect (OpenGLT m) where
     RenderMesh m e -> do
       mshh <- dispatchHandle m
       H math <- use (singular $ glStMeshes . _2 . ix mshh . _2)
-      glStMeshCache . ix math %= flip snoc (H mshh)
+      glStMeshCache . ix math %= flip snoc (H mshh,e)
 
 -------------------------------------------------------------------------------
 -- Render support
 instance (Functor m,MonadIO m) => Effect RenderEffect (OpenGLT m) where
-  react e = OpenGLT $ case e of
-    Display -> do
-      -- clear the accumulation buffer before starting
-      accumOff <- use glAccumOff
-      liftIO $ do
-        bindFramebuffer (accumOff^.offscreenFB) Write
-        glClearColor 0 0 0 1
-        glClear gl_COLOR_BUFFER_BIT
-        -- FIXME: we could also enable blending here, and set ONE ZERO for each light
+  react e = OpenGLT $ do
+      accumOff <- use glStAccumOff
+      lightShader <- use glStLightShader
+      ligs <- use (glStLights._2)
+      cache <- use glStMeshCache
+      sceneUnis <- use glStSceneUniforms
+      case e of
+        Display proj view -> do
+          -- clear the accumulation buffer before starting
+          liftIO $ do
+            bindFramebuffer (accumOff^.offscreenFB) Write
+            glClearColor 0 0 0 1
+            glClear gl_COLOR_BUFFER_BIT
+            -- FIXME: we could also enable blending here, and set ONE ZERO for each light
+
+            -- first, send camera information
+            useShader lightShader
+            let
+              projMatrix = projectionMatrix proj
+              viewMatrix = cameraTransform view
+            sceneUnis^.sceneUniEye @= view^.entityPosition
+            sceneUnis^.sceneUniProjView @= projMatrix !*! viewMatrix
+
+ --           V.forM_ ligs
+        
 
 -------------------------------------------------------------------------------
 -- Miscellaneous
