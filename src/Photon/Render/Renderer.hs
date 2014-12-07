@@ -23,8 +23,8 @@ import Photon.Core.Projection ( Projection )
 import Photon.Render.PostFX ( PostFX )
 
 data RenderEffect
-  = Display Projection (Entity Projection)
+  = Display Float Float Float Projection Entity
     deriving (Eq,Show)
 
-display :: (Effect RenderEffect m) => Projection -> Entity Projection -> m ()
-display proj e = react (Display proj e)
+display :: (Effect RenderEffect m) => Float -> Float -> Float -> Projection -> Entity -> m ()
+display cr cg cb proj e = react (Display cr cg cb proj e)

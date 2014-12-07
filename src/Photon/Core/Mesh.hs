@@ -60,7 +60,7 @@ data MeshEffect
   = VerticesChanged (Managed Mesh) Vertices
   | VGroupChanged (Managed Mesh) VGroup
   | UseMaterial (Managed Mesh) (Managed Material)
-  | RenderMesh (Managed Mesh) (Entity Mesh)
+  | RenderMesh (Managed Mesh) Entity
     deriving (Eq,Show)
 
 instance EffectfulManage Mesh MeshSpawned MeshLost where
@@ -93,6 +93,6 @@ useMaterial msh mat = react (UseMaterial msh mat)
 
 renderMesh :: (Effect MeshEffect m)
            => Managed Mesh
-           -> Entity Mesh
+           -> Entity
            -> m ()
 renderMesh m e = react (RenderMesh m e)

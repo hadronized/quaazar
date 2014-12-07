@@ -15,12 +15,15 @@ module Photon.Render.GL.Trans (
 
 import Control.Applicative
 import Control.Lens
-import Control.Monad ( unless )
+import Control.Monad as M ( forM_, unless, when )
 import Control.Monad.Trans ( MonadIO(..) )
 import Control.Monad.Trans.State ( StateT, evalStateT )
-import Data.Vector as V ( Vector, forM_, fromList, length )
+import Data.Bits ( (.|.) )
+import Data.Vector as V ( Vector, (!), forM_, fromList, length, zip )
+import Foreign.Ptr ( nullPtr )
 import Graphics.Rendering.OpenGL.Raw
 import Linear
+import Photon.Core.Color
 import Photon.Core.Effect
 import Photon.Core.Entity
 import Photon.Core.Light
@@ -32,7 +35,10 @@ import Photon.Render.GL.Entity
 import Photon.Render.GL.Framebuffer
 import Photon.Render.GL.Mesh
 import Photon.Render.GL.Offscreen
+import Photon.Render.GL.Primitive
 import Photon.Render.GL.Shader
+import Photon.Render.GL.Texture
+import Photon.Render.GL.VertexArray
 import Photon.Render.Renderer ( RenderEffect(..) )
 import Photon.Utils.FreeList
 import Prelude hiding ( drop )
@@ -41,7 +47,7 @@ data SceneUniforms = SceneUniforms {
     _sceneUniEye        :: Uniform (V3 Float)
   , _sceneUniForward    :: Uniform (V3 Float)
   , _sceneUniProjView   :: Uniform (M44 Float)
-  , _sceneUniInstance   :: Uniform (M44 Float)
+  , _sceneUniModel      :: Uniform (M44 Float)
   , _sceneUniMatDiffAlb :: Uniform (V3 Float)
   , _sceneUniMatSpecAlb :: Uniform (V3 Float)
   , _sceneUniMatShn     :: Uniform Float
@@ -54,15 +60,19 @@ data SceneUniforms = SceneUniforms {
 makeLenses ''SceneUniforms
 
 data OpenGLSt = OpenGLSt {
-    _glStDispatch      :: (FreeList,Vector Int)                  -- ^ objects dispatcher
-  , _glStLights        :: (FreeList,Vector Light)                -- ^ lights
-  , _glStMaterials     :: (FreeList,Vector Material)             -- ^ materials
-  , _glStMeshes        :: (FreeList,Vector (GPUMesh,H Material)) -- ^ meshes with material
-  , _glStMeshCache     :: Vector [(H Mesh,Entity Mesh)]          -- ^ render-optimised cache (meshes)
-  , _glStLightCache    :: Vector [(H Light,Entity Light)]        -- ^ render-optimised cache (lights)
-  , _glStAccumOff      :: Offscreen                              -- ^ accumulation buffer
-  , _glStLightShader   :: Shader                                 -- ^ lighting shader
-  , _glStSceneUniforms :: SceneUniforms                          -- ^ scene semantics
+    -- |A table that turns dispatch handles into specfic handles.
+    -- That table is used per-type to resolve values at lookups.
+    _glStDispatch      :: (FreeList,Vector Int)
+    -- |OpenGL side lights are just lights with entities.
+  , _glStLights        :: (FreeList,Vector Light)
+  , _glStMaterials     :: (FreeList,Vector Material)
+  , _glStMeshes        :: (FreeList,Vector (GPUMesh,H Material))
+  , _glStMeshCache     :: Vector [(H Mesh,Entity)]
+  , _glStLightCache    :: Vector (H Light,Entity)
+  , _glStAccumOff      :: Offscreen
+  , _glStShadowOff     :: Offscreen
+  , _glStLightShader   :: Shader
+  , _glStSceneUniforms :: SceneUniforms
   }
 
 makeLenses ''OpenGLSt
@@ -199,10 +209,14 @@ instance (Functor m,MonadIO m) => Effect RenderEffect (OpenGLT m) where
       accumOff <- use glStAccumOff
       lightShader <- use glStLightShader
       ligs <- use (glStLights._2)
-      cache <- use glStMeshCache
+      meshCache <- use glStMeshCache
+      ligCache <- use glStLightCache
+      meshes <- use (glStMeshes._2)
+      materials <- use (glStMaterials._2)
       sceneUnis <- use glStSceneUniforms
+      shadowOff <- use glStShadowOff
       case e of
-        Display proj view -> do
+        Display cr cg cb proj view -> do
           -- clear the accumulation buffer before starting
           liftIO $ do
             bindFramebuffer (accumOff^.offscreenFB) Write
@@ -218,9 +232,52 @@ instance (Functor m,MonadIO m) => Effect RenderEffect (OpenGLT m) where
             sceneUnis^.sceneUniEye @= view^.entityPosition
             sceneUnis^.sceneUniProjView @= projMatrix !*! viewMatrix
 
- --           V.forM_ ligs
-        
+            V.forM_ ligCache $ \(H ligh,ligE) -> do
+              let lig = ligs ! ligh
+              useShader lightShader
+              sceneUnis^.sceneUniLigCol @= unColor (lig^.ligColor)
+              sceneUnis^.sceneUniLigPow @= lig^.ligPower
+              sceneUnis^.sceneUniLigRad @= lig^.ligRadius
 
+              -- clear the shadow offscreen
+              bindFramebuffer (shadowOff^.offscreenFB) Write
+              glClearColor 1 1 1 1
+              glClear (gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT)
+
+              -- if the light casts shadows, we can modify the shadow map
+              -- TODO: this can be preprocessed while generating the cache
+              when (lig^.ligCastShadows) $ do
+                return ()
+ 
+              -- prepare the render of the scene
+              bindFramebuffer (accumOff^.offscreenFB) Write
+              bindTextureAt (shadowOff^.offscreenTex) 0
+
+              -- this part ensures we leave the scene framebuffer clean and that
+              -- no blending will occur during the scene render
+              glEnable gl_DEPTH_TEST
+              glDisable gl_BLEND
+              glClearColor (realToFrac cr) (realToFrac cb) (realToFrac cb) 1
+              glClear (gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT)
+
+              sceneUnis^.sceneUniLigPos @= ligE^.entityPosition
+
+              -- the zip might be slow
+              V.forM_ (V.zip materials meshCache) $ \(mat,mshs) -> do
+                -- send the material
+                let Material dalb salb shn = mat
+                sceneUnis^.sceneUniMatDiffAlb @= unAlbedo dalb
+                sceneUnis^.sceneUniMatSpecAlb @= unAlbedo salb
+                sceneUnis^.sceneUniMatShn @= shn
+                -- then proceed to the render of all concerned meshes
+                M.forM_ mshs $ \(H mshh,mshE) -> do
+                  let
+                    msh = fst (meshes ! mshh)
+                    vnb = fromIntegral (msh^.gpuMeshVertNB)
+                  bindVertexArray (msh^.gpuMeshVAO)
+                  sceneUnis^.sceneUniModel @= entityTransform mshE
+                  glDrawElements (fromPrimitive $ msh^.gpuMeshPrim) vnb gl_UNSIGNED_INT nullPtr
+                  
 -------------------------------------------------------------------------------
 -- Miscellaneous
 

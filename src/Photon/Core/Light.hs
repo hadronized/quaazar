@@ -91,7 +91,7 @@ data LightEffect
   | PowerChanged (Managed Light) Float
   | RadiusChanged (Managed Light) Float
   | CastShadowsChanged (Managed Light) Bool
-  | UseLight (Managed Light) (Entity Light)
+  | UseLight (Managed Light)
   | UnuseLight (Managed Light)
     deriving (Eq,Show)
 
@@ -135,5 +135,5 @@ changeCastShadows l f = do
     return (l & managed . ligCastShadows .~ newCastShadows)
   where newCastShadows = f (l^.managed.ligCastShadows)
 
-withLight :: (Effect LightEffect m) => Managed Light -> Entity Light -> m a -> m a
-withLight lig e a = react (UseLight lig e) *> a <* react (UnuseLight lig)
+withLight :: (Effect LightEffect m) => Managed Light -> m a -> m a
+withLight lig a = react (UseLight lig) *> a <* react (UnuseLight lig)
