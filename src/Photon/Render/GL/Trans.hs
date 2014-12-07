@@ -14,7 +14,7 @@ module Photon.Render.GL.Trans (
   ) where
 
 import Control.Applicative
-import Control.Lens
+import Control.Lens hiding ( view )
 import Control.Monad as M ( forM_, unless, when )
 import Control.Monad.Trans ( MonadIO(..) )
 import Control.Monad.Trans.State ( StateT, evalStateT )
@@ -30,7 +30,6 @@ import Photon.Core.Light
 import Photon.Core.Material
 import Photon.Core.Mesh
 import Photon.Core.Projection ( projectionMatrix )
-import Photon.Render.GL.Camera
 import Photon.Render.GL.Entity
 import Photon.Render.GL.Framebuffer
 import Photon.Render.GL.Mesh
@@ -45,7 +44,6 @@ import Prelude hiding ( drop )
 
 data SceneUniforms = SceneUniforms {
     _sceneUniEye        :: Uniform (V3 Float)
-  , _sceneUniForward    :: Uniform (V3 Float)
   , _sceneUniProjView   :: Uniform (M44 Float)
   , _sceneUniModel      :: Uniform (M44 Float)
   , _sceneUniMatDiffAlb :: Uniform (V3 Float)
@@ -116,9 +114,9 @@ instance (Functor m,Monad m) => Effect LightLost (OpenGLT m) where
 
 instance (Functor m,Monad m) => Effect LightEffect (OpenGLT m) where
   react e = OpenGLT $ case e of
-    ColorChanged lig color -> do
+    ColorChanged lig col -> do
       lh <- dispatchHandle lig
-      glStLights . _2 . ix lh . ligColor .= color
+      glStLights . _2 . ix lh . ligColor .= col
     PowerChanged lig power -> do
       lh <- dispatchHandle lig
       glStLights . _2 . ix lh . ligPower .= power
@@ -197,10 +195,10 @@ instance (Functor m,MonadIO m) => Effect MeshEffect (OpenGLT m) where
       h <- dispatchHandle msh
       m <- dispatchHandle mat
       glStMeshes . _2 . ix h . _2 .= H m
-    RenderMesh m e -> do
+    RenderMesh m ent -> do
       mshh <- dispatchHandle m
       H math <- use (singular $ glStMeshes . _2 . ix mshh . _2)
-      glStMeshCache . ix math %= flip snoc (H mshh,e)
+      glStMeshCache . ix math %= flip snoc (H mshh,ent)
 
 -------------------------------------------------------------------------------
 -- Render support
@@ -257,7 +255,7 @@ instance (Functor m,MonadIO m) => Effect RenderEffect (OpenGLT m) where
               -- no blending will occur during the scene render
               glEnable gl_DEPTH_TEST
               glDisable gl_BLEND
-              glClearColor (realToFrac cr) (realToFrac cb) (realToFrac cb) 1
+              glClearColor (realToFrac cr) (realToFrac cb) (realToFrac cg) 1
               glClear (gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT)
 
               sceneUnis^.sceneUniLigPos @= ligE^.entityPosition
@@ -280,10 +278,6 @@ instance (Functor m,MonadIO m) => Effect RenderEffect (OpenGLT m) where
                   
 -------------------------------------------------------------------------------
 -- Miscellaneous
-
-unManage :: Managed a -> Int
-unManage m = m^.handle.to unH
-  where unH (H i) = i
 
 empty2 :: (FreeList,Vector a)
 empty2 = (freeList,empty)
