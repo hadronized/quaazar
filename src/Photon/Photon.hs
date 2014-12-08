@@ -13,6 +13,7 @@ module Photon.Photon (
     -- *
   ) where
 
+import Control.Lens
 import Control.Monad.Trans.State ( StateT )
 import Photon.Core.Effect
 import Photon.Core.Light ( Light )
