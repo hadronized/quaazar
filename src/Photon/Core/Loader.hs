@@ -37,7 +37,7 @@ rootPath :: FilePath
 rootPath = "data"
 
 class Load a e | a -> e where
-  load :: (MonadIO m,MonadLogger m,MonadPlus m,Manager m,FromJSON a,Effect e m)
+  load :: (MonadIO m,MonadLogger m,MonadPlus m,Manageable a m,FromJSON a,Effect e m)
        => String
        -> m (Managed a)
 
