@@ -40,3 +40,17 @@ instance Manageable Light where
     _1 . flLights .~ fl
     return (Managed (H h) a)
   drop (Managed (H h) _) = _1 . flLights %~ recycleFree h
+
+instance Manageable Material where
+  manage a = do
+    (h,fl) <- uses (_1.flMaterials) nextFree
+    _1 . flMaterials .~ fl
+    return (Managed (H h) a)
+  drop (Managed (H h) _) = _1 . flMaterials %~ recycleFree h
+
+instance Manageable Mesh where
+  manage a = do
+    (h,fl) <- uses (_1.flMeshes) nextFree
+    _1 . flMeshes .~ fl
+    return (Managed (H h) a)
+  drop (Managed (H h) _) = _1 . flMeshes %~ recycleFree h
