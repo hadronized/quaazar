@@ -30,16 +30,13 @@ data FreeLists = FreeLists {
 
 makeLenses ''FreeLists
 
-manage_ :: Photon FreeList
-        -> ((FreeList -> FreeList) -> Photon ())
-        -> a
-        -> Photon (Managed a)
-manage_ getFreeList' modifyFreeList' a = do
-  (h,fl) <- fmap nextFree getFreeList'
-  modifyFreeList' (const fl)
-  return (Managed (H h) a)
+class Manageable a where
+  manage :: a -> Photon (Managed a)
+  drop :: Managed a -> Photon ()
 
-drop_ :: ((FreeList -> FreeList) -> Photon ())
-     -> Managed a
-     -> Photon ()
-drop_ modifyFreeList' (Managed (H h) _) = modifyFreeList' (recycleFree h)
+instance Manageable Light where
+  manage a = do
+    (h,fl) <- uses (_1.flLights) nextFree
+    _1 . flLights .~ fl
+    return (Managed (H h) a)
+  drop (Managed (H h) _) = _1 . flLights %~ recycleFree h
