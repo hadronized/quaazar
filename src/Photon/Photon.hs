@@ -30,9 +30,6 @@ data FreeLists = FreeLists {
 
 makeLenses ''FreeLists
 
-instance Manager Light Photon where
-  manage = manage_ (Photon $ uses . _1 . flLights) (\f -> Photon $ uses . _1 . flLights %~ f)
-
 manage_ :: Photon FreeList
         -> ((FreeList -> FreeList) -> Photon ())
         -> a
