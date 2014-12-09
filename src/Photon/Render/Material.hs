@@ -23,7 +23,7 @@ import Photon.Render.Shader ( GPUShader )
 
 newtype GPUMaterial = GPUMaterial { runMaterial :: GPUShader -> IO () } deriving (Eq,Show)
 
-gpuMaterial :: Material -> IO GPUMaterial
+gpuMaterial :: (Monad m) => Material -> m GPUMaterial
 gpuMaterial (Material dalb salb shn) = return . GPUMaterial $ \program -> do
    let sem = programSemantic program
    sem materialDiffuseAlbedoSem @?= dalb
