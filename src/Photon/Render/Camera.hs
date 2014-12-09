@@ -21,7 +21,7 @@ import Photon.Render.Shader
 
 data GPUCamera = GPUCamera { runGPUCamera :: GPUProgram -> IO () }
 
-gpuCamera :: Projection -> Entity -> IO GPUCamera
+gpuCamera :: (Monad m) => Projection -> Entity -> m GPUCamera
 gpuCamera proj ent = return . GPUCamera $ \program -> do
   let sem = programSemantic program
   sem cameraProjectionSem @?= projectionMatrix proj
