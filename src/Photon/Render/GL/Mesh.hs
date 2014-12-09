@@ -9,7 +9,7 @@
 --
 ----------------------------------------------------------------------------
 
-module Photon.Render.GL.Mesh where
+module Photon.Render.Mesh where
 
 import Control.Lens
 import Data.Word ( Word32 )
@@ -97,6 +97,11 @@ gpuMesh msh = case msh^.meshVertices of
     inds          = msh^.meshVGroup.to fromVGroup
     verticesNb    = length inds
     prim          = toGLPrimitive (msh^.meshVGroup)
+
+renderMesh :: GPUMesh -> IO ()
+renderMesh msh = do
+  bindVertexArray (msh^.gpuMeshVAO)
+  glDrawElements (fromPrimitive $ msh^.gpuMeshPrim) vnb gl_UNSIGNED_INT nullPtr
 
 toGLPrimitive :: VGroup -> Primitive
 toGLPrimitive vg = case vg of
