@@ -27,7 +27,7 @@ data GPUProgram = GPUProgram {
 
 makeLenses ''GPUProgram
 
-gpuProgram :: [(ShaderType,String)] -> [String] -> IO GPUProgram
+gpuProgram :: (MonadIO m,MonadLogger m,MonadError String m) => [(ShaderType,String)] -> [String] -> m GPUProgram
 gpuProgram shaders semantics = do
   program <- mapM (uncurry genShader) shaders >>= genProgram
   semantics' <- mapM (getUniformLocation program) semantics)
@@ -36,5 +36,5 @@ gpuProgram shaders semantics = do
 programSemantic :: GPUProgram -> Int -> Maybe (Uniform a)
 programSemantic (GPUProgram semantics _) sem = fmap uniform (semantics !? sem)
 
-useProgram :: GPUProgram -> IO ()
-useProgram (GPUProgram p _) = GL.useProgram p
+useProgram :: (MonadIO m) => GPUProgram -> m ()
+useProgram (GPUProgram p _) = liftIO (GL.useProgram p)
