@@ -15,6 +15,8 @@ module Photon.Render.Material (
   , gpuMaterial
   ) where
 
+import Photon.Core.Material ( Material )
+
 newtype GPUMaterial = GPUMaterial { unGPUMaterial :: Material }
 
 gpuMaterial :: Material -> IO GPUMaterial
