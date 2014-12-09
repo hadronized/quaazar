@@ -1,20 +1,8 @@
 name:                photon
 version:             0.1
-synopsis:            Scene engine
-description:         "photon" is a realtime scene engine designed to be
-                     simple to use, powerful and flexible. It’s designed as a
-                     core package – the one you’ll use – and several backends
-                     that implements the core features. Just pick a backend and
-                     you’re good to go!
-
-                     The "photon" package exposes several *core* concepts
-                     you’ll have to be familiar with. The power of **photon**
-                     is the fact the *core* package is quite lightweight so
-                     that you don’t have that much to know.
-
-                     Up to now, the engine is designed to be very simple, with
-                     no textures no shading customization. I’ll enhance all
-                     that as I get better projects to work on! :)
+synopsis:            Realtime 3D engine
+description:         "photon" is a realtime 3D engine designed to be
+                     simple to use, powerful and flexible.
 homepage:            https://github.com/phaazon/photon
 license:             BSD3
 license-file:        LICENSE
