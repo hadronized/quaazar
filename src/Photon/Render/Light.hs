@@ -21,7 +21,7 @@ import Photon.Render.Shader ( GPUShader, programSemantic )
 
 newtype GPULight = GPULight { runLight :: GPUShader -> IO () } deriving (Eq,Show)
 
-gpuLight :: Light -> IO GPULight
+gpuLight :: (Monad m) => Light -> m GPULight
 gpuLight (Light t col power radius castShadows) = return . GPULight $ \program -> do
   let sem = programSemantic program
   sem lightCastShadowsSem @?= castShadows
