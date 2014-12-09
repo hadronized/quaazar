@@ -21,8 +21,8 @@ import Photon.Render.GL.Texture ( genTexture2D )
 
 newtype GPUTexture = GPUTexture { bindTextureAt :: Natural -> IO () }
 
-gpuTexture :: Texture -> Wrap -> Filter -> IO GPUTexture
-gpuTexture (Texture width height format texels) wrap flt = do
+gpuTexture :: (MonadIO m) => Texture -> Wrap -> Filter -> m GPUTexture
+gpuTexture (Texture width height format texels) wrap flt = liftIO $ do
     tex <- genTexture2D
     GL.bindTextureAt tex 0
     setTextureWrap tex wrap
