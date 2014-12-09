@@ -19,13 +19,6 @@ module Photon.Core.Material (
   , matDiffuseAlbedo
   , matSpecularAlbedo
   , matShininess
-    -- * Reaction
-  , MaterialSpawned(..)
-  , MaterialLost(..)
-  , MaterialEffect(..)
-  , changeDiffuse
-  , changeSpecular
-  , changeShininess
     -- * Albedo
   , Albedo(..)
   , albedo
@@ -36,7 +29,6 @@ import Control.Lens
 import Data.Aeson
 import Data.Aeson.Types ( typeMismatch )
 import Linear.V3
-import Photon.Core.Effect
 
 newtype Albedo = Albedo { unAlbedo :: V3 Float } deriving (Eq,Ord,Show)
 
@@ -66,44 +58,3 @@ albedo :: Float -> Float -> Float -> Albedo
 albedo r g b = Albedo (V3 r g b)
 
 makeLenses ''Material
-
-data MaterialSpawned = MaterialSpawned (Managed Material) deriving (Eq,Show)
-
-data MaterialLost = MaterialLost (Managed Material) deriving (Eq,Show)
-
-data MaterialEffect
-  = DiffuseChanged (Managed Material) Albedo
-  | SpecularChanged (Managed Material) Albedo
-  | ShininessChanged (Managed Material) Float
-    deriving (Eq,Show)
-
-instance EffectfulManage Material MaterialSpawned MaterialLost where
-  spawned = MaterialSpawned
-  lost = MaterialLost
-
-changeDiffuse :: (Effect MaterialEffect m)
-              => Managed Material
-              -> (Albedo -> Albedo)
-              -> m (Managed Material)
-changeDiffuse m f = do
-    react (DiffuseChanged m newDiffuse)
-    return (m & managed . matDiffuseAlbedo .~ newDiffuse)
-  where newDiffuse = f (m^.managed.matDiffuseAlbedo)
-
-changeSpecular :: (Effect MaterialEffect m)
-               => Managed Material
-               -> (Albedo -> Albedo)
-               -> m (Managed Material)
-changeSpecular m f = do
-    react (SpecularChanged m newSpecular)
-    return (m & managed . matSpecularAlbedo .~ newSpecular)
-  where newSpecular = f (m^.managed.matSpecularAlbedo)
-
-changeShininess :: (Effect MaterialEffect m)
-                => Managed Material
-                -> (Float -> Float)
-                -> m (Managed Material)
-changeShininess m f = do
-    react (ShininessChanged m newShn)
-    return (m & managed . matShininess .~ newShn)
-  where newShn = f (m^.managed.matShininess)
