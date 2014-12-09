@@ -13,11 +13,19 @@ module Photon.Render.Shader (
     -- * GPU-side program
   ) where
 
-import Graphics.Rendering.
+import Data.Vector ( Vector, (!) )
+import Graphics.Rendering.OpenGL.Raw
+import Photon.Render.GL.Shader
+
 data GPUProgram = GPUProgram {
     _gpuShaderProgram   :: Program
   , _gpuShaderSemantics :: Vector GLInt
   }
 
-gpuProgram :: Program -> [String] -> IO GPUProgram
-gpuProgram p semantics = fmap (GPU Program) (mapM getUniformLocation semantics)
+makeLenses ''GPUProgram
+
+gpuProgram :: [(ShaderType,String)] -> [String] -> IO GPUProgram
+gpuProgram shaders semantics = do
+  program <- mapM (uncurry genShader) shaders >>= genProgram
+  semantics' <- mapM (getUniformLocation program) semantics)
+  return (GPUProgram program semantics')
