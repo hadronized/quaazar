@@ -15,17 +15,19 @@ module Photon.Render.Light (
   , gpuLight
   ) where
 
+import Photon.Core.Entity ( Entity )
 import Photon.Render.Semantics ( lightCastShadowsSem, lightColorSem
                                , lightPowerSem, lightRadiusSem, lightTypeSem )
 import Photon.Render.Shader ( GPUProgram, programSemantic )
 
-newtype GPULight = GPULight { runLight :: GPUProgram -> IO () } deriving (Eq,Show)
+newtype GPULight = GPULight { runLight :: GPUProgram -> Entity -> IO () } deriving (Eq,Show)
 
 gpuLight :: (Monad m) => Light -> m GPULight
-gpuLight (Light t col power radius castShadows) = return . GPULight $ \program -> do
+gpuLight (Light t col power radius castShadows) = return . GPULight $ \program ent -> do
   let sem = programSemantic program
   sem lightCastShadowsSem @?= castShadows
   sem lightColorSem @?= col
   sem lightPowerSem @?= power
   sem lightRadiusSem @?= radius
   sem lightTypeSem @?= t
+  sem lightPositionSem @?= ent^.entityPosition
