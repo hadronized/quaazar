@@ -13,6 +13,7 @@ module Photon.Render.Shader (
     -- * GPU-side program
   ) where
 
+import Control.Lens ( makeLenses )
 import Data.Vector ( Vector, (!) )
 import Graphics.Rendering.OpenGL.Raw
 import Photon.Render.GL.Shader
@@ -29,3 +30,6 @@ gpuProgram shaders semantics = do
   program <- mapM (uncurry genShader) shaders >>= genProgram
   semantics' <- mapM (getUniformLocation program) semantics)
   return (GPUProgram program semantics')
+
+programSemantic :: GPUProgram -> Int -> Maybe (Uniform a)
+programSemantic (GPUProgram semantics _) sem = uniform (semantics !? sem)
