@@ -17,9 +17,9 @@ module Photon.Render.Light (
 
 import Photon.Render.Semantics ( lightCastShadowsSem, lightColorSem
                                , lightPowerSem, lightRadiusSem, lightTypeSem )
-import Photon.Render.Shader ( GPUShader, programSemantic )
+import Photon.Render.Shader ( GPUProgram, programSemantic )
 
-newtype GPULight = GPULight { runLight :: GPUShader -> IO () } deriving (Eq,Show)
+newtype GPULight = GPULight { runLight :: GPUProgram -> IO () } deriving (Eq,Show)
 
 gpuLight :: (Monad m) => Light -> m GPULight
 gpuLight (Light t col power radius castShadows) = return . GPULight $ \program -> do
