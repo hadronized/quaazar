@@ -7,46 +7,36 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- This module exports 'PostFX', a useful type used to alter a frame after
--- it’s been fulfilled with a render. It enables enhancing the final
--- aspect of a render, or alter it in fancy ways.
---
--- You can’t directly build a 'PostFX' since this type is backend’s
--- renderer-dependent. In order to abstract that away, a new type is
--- introduced: 'FrameShader'. A 'FrameShader' can be seen as a function
--- from a /pixel/ to its updated pixel version. A few extra stuff is
--- available, like time, nearby pixels lookup functions and so on.
---
--- In order to turn a 'FrameShader' into a 'PostFX', use the 'Renderer'’s
--- 'compileFrameShader' function.
 ----------------------------------------------------------------------------
 
 module Photon.Render.PostFX (
-    -- * Post effects
-    PostFX(..)
   ) where
 
-import Data.Word ( Word32 )
-import Numeric.Natural ( Natural )
-import Photon.Core.Effect
+import Photon.Render.GL.Shader ( ShaderType(..), genShader, genProgram
+                               , useProgram )
+import Photon.Render.GL.VertexArray ( bindVertexArray, genVertexArray
+                                    , unbindVertexArray )
+import Photon.Render.Texture ( GPUTexture(..) )
 
--- |A post-process  effect is an endomorphism between two frames.
 newtype PostFX = PostFX String deriving (Eq,Show)
 
-data PostFXSpawned = PostFXSpawned (Managed PostFX) deriving (Eq,Show)
+newtype GPUPostFXScreen = GPUPostFXScreen { runPostFXScreen :: IO () }
 
-data PostFXLost = PostFXLost (Managed PostFX) deriving (Eq,Show)
+gpuPostFXScreen :: IO GPUPostFXScreen
+gpuPostFXScreen = do
+  va <- genVertexArray
+  bindVertexArray va
+  unbindVertexArray
+  return $ do
+    bindVertexArray va
+    glDrawArrays gl_TRIANGLE_STRIP 0 4
+  
+newtype GPUPostFX = GPUPostFX { runPostFX :: GPUScreen -> GPUTexture -> IO () }
 
-data PostFXEffect
-  = ApplyPostFX (Managed PostFX)
-    deriving (Eq,Show)
-
-instance EffectfulManage PostFX PostFXSpawned PostFXLost where
-  spawned = PostFXSpawned
-  lost = PostFXLost
-
-postfx :: (Effect PostFXEffect m) => Managed PostFX -> m ()
-postfx = react . ApplyPostFX 
-
-postProcess :: (Effect PostFXEffect m) => [Managed PostFX] -> m ()
-postProcess = sequence_ . map postfx
+gpuPostFX :: PostFX -> IO GPUPostFX
+gpuPostFX (PostFX src) = do
+    program <- sequence [genShader (VertexShader,vsSrc),genShader (FragmentShader,src)] >>= genProgram
+    return $ \screen texture -> do
+      useProgram program
+      bindTextureAt texture 0
+      runPostFXScreen screen
