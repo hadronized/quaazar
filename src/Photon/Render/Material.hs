@@ -23,9 +23,7 @@ newtype GPUMaterial = GPUMaterial { runMaterial :: GPUShader -> IO () } deriving
 
 gpuMaterial :: Material -> IO GPUMaterial
 gpuMaterial (Material dalb salb shn) = return . GPUMaterial $ \program -> do
-  case mapM (programSemantic program) materialSemantics of
-    Just [dalbSem,salbSem,shnSem] -> do
-      dalbSem @= unAlbedo dalb
-      salbSem @= unAlbedo salb
-      shnSem @= shn
-    Nothing -> return ()
+   let sem = programSemantic program
+   sem materialDiffuseAlbedoSem @?= dalb
+   sem materialSpecularAlbedoSem @?= salb
+   sem materialShininessSem @?= shn
