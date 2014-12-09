@@ -19,9 +19,9 @@ import Photon.Core.Material ( Material )
 import Photon.Render.Semantics ( materialDiffuseAlbedoSem
                                , materialShininessSem
                                , materialSpecularAlbedoSem )
-import Photon.Render.Shader ( GPUShader )
+import Photon.Render.Shader ( GPUProgram )
 
-newtype GPUMaterial = GPUMaterial { runMaterial :: GPUShader -> IO () } deriving (Eq,Show)
+newtype GPUMaterial = GPUMaterial { runMaterial :: GPUProgram -> IO () } deriving (Eq,Show)
 
 gpuMaterial :: (Monad m) => Material -> m GPUMaterial
 gpuMaterial (Material dalb salb shn) = return . GPUMaterial $ \program -> do
