@@ -43,8 +43,8 @@ data GPUMesh = GPUMesh {
 makeLenses ''GPUMesh
 
 -- |OpenGL 'Mesh' representation.
-gpuMesh :: Mesh -> IO GPUMesh
-gpuMesh msh = case msh^.meshVertices of
+gpuMesh :: (MonadIO m) => Mesh -> m GPUMesh
+gpuMesh msh = liftIO $ case msh^.meshVertices of
     Interleaved v -> gpuMesh (msh & meshVertices .~ deinterleaved v)
     Deinterleaved vnb positions normals uvs -> do
       vb <- genBuffer
@@ -101,7 +101,7 @@ gpuMesh msh = case msh^.meshVertices of
     verticesNb    = length inds
     prim          = toGLPrimitive (msh^.meshVGroup)
 
-renderMesh :: Program -> GPUMesh -> Entity -> IO ()
+renderMesh :: (MonadIO m) => Program -> GPUMesh -> Entity -> m ()
 renderMesh program msh ent = do
     sem modelMatrixSemantic @?= entityTransfrom ent
     bindVertexArray (msh^.gpuMeshVAO)
