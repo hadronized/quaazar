@@ -16,7 +16,9 @@ module Photon.Render.Shader (
 import Control.Lens ( makeLenses )
 import Data.Vector ( Vector, (!) )
 import Graphics.Rendering.OpenGL.Raw
-import Photon.Render.GL.Shader
+import Photon.Render.GL.Shader ( Uniform, genProgram, genShader
+                               , getUniformLocation, uniform )
+import qualified Photon.Render.GL.Shader as GL ( useProgram )
 
 data GPUProgram = GPUProgram {
     _gpuShaderProgram   :: Program
@@ -33,3 +35,6 @@ gpuProgram shaders semantics = do
 
 programSemantic :: GPUProgram -> Int -> Maybe (Uniform a)
 programSemantic (GPUProgram semantics _) sem = fmap uniform (semantics !? sem)
+
+useProgram :: GPUProgram -> IO ()
+useProgram (GPUProgram p _) = GL.useProgram p
