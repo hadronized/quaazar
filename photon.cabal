@@ -45,18 +45,23 @@ library
                      , Photon.Core.VGroup
                      , Photon.Core.Vertex
                      , Photon.Core.UV
+                     , Photon.Render.Camera
+                     , Photon.Render.Light
+                     , Photon.Render.Material
+                     , Photon.Render.Mesh
                      , Photon.Render.PostFX
-                     , Photon.Render.Renderer
+                     , Photon.Render.Shader
+                     , Photon.Render.Texture
                      , Photon.Utils.Directory
                      , Photon.Utils.FreeList
                      , Photon.Utils.Log
                      , Photon.Utils.TimePoint
 
-  other-modules:       Photon.Render.GL.Buffer
+  other-modules:       
+                     , Photon.Render.GL.Buffer
                      , Photon.Render.GL.Entity
                      , Photon.Render.GL.Framebuffer
                      , Photon.Render.GL.GLObject
-                     , Photon.Render.GL.Mesh
                      , Photon.Render.GL.Offscreen
                      , Photon.Render.GL.Primitive
                      , Photon.Render.GL.Renderbuffer
@@ -64,6 +69,7 @@ library
                      , Photon.Render.GL.Texture
                      , Photon.Render.GL.Trans
                      , Photon.Render.GL.VertexArray
+                     , Photon.Render.Semantics
 
   default-extensions:  DeriveFunctor
                      , FlexibleContexts
