@@ -29,15 +29,6 @@ module Photon.Core.Light (
   , ligPower
   , ligRadius
   , ligCastShadows
-    -- * Reaction
-  , LightSpawned(..)
-  , LightLost(..)
-  , LightEffect(..)
-  , changeColor
-  , changePower
-  , changeRadius
-  , changeCastShadows
-  , withLight
   ) where
 
 import Control.Applicative
@@ -81,59 +72,3 @@ instance FromJSON Light where
       <*> o .:? "cast_shadows" .!= False
 
 makeLenses ''Light
-
-data LightSpawned = LightSpawned (Managed Light) deriving (Eq,Show)
-
-data LightLost = LightLost (Managed Light) deriving (Eq,Show)
-
-data LightEffect
-  = ColorChanged (Managed Light) Color
-  | PowerChanged (Managed Light) Float
-  | RadiusChanged (Managed Light) Float
-  | CastShadowsChanged (Managed Light) Bool
-  | UseLight (Managed Light)
-  | UnuseLight (Managed Light)
-    deriving (Eq,Show)
-
-instance EffectfulManage Light LightSpawned LightLost where
-  spawned = LightSpawned
-  lost = LightLost
-
-changeColor :: (Effect LightEffect m)
-            => Managed Light
-            -> (Color -> Color)
-            -> m (Managed Light)
-changeColor l f = do
-    react (ColorChanged l newColor)
-    return (l & managed . ligColor .~ newColor)
-  where newColor = f (l^.managed.ligColor)
-
-changePower :: (Effect LightEffect m)
-            => Managed Light
-            -> (Float -> Float)
-            -> m (Managed Light)
-changePower l f = do
-    react (PowerChanged l newPower)
-    return (l & managed . ligPower .~ newPower)
-  where newPower = f (l^.managed.ligPower)
-
-changeRadius :: (Effect LightEffect m)
-            => Managed Light
-            -> (Float -> Float)
-            -> m (Managed Light)
-changeRadius l f = do
-    react (RadiusChanged l newRadius)
-    return (l & managed . ligRadius .~ newRadius)
-  where newRadius = f (l^.managed.ligRadius)
-
-changeCastShadows :: (Effect LightEffect m)
-                  => Managed Light
-                  -> (Bool -> Bool)
-                  -> m (Managed Light)
-changeCastShadows l f = do
-    react (CastShadowsChanged l newCastShadows)
-    return (l & managed . ligCastShadows .~ newCastShadows)
-  where newCastShadows = f (l^.managed.ligCastShadows)
-
-withLight :: (Effect LightEffect m) => Managed Light -> m a -> m a
-withLight lig a = react (UseLight lig) *> a <* react (UnuseLight lig)
