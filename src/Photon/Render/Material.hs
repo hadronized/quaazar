@@ -18,8 +18,7 @@ module Photon.Render.Material (
 import Photon.Core.Material ( Material )
 import Photon.Render.Semantics ( materialDiffuseAlbedoSem
                                , materialShininessSem
-                               , materialSpecularAlbedoSem
-                               )
+                               , materialSpecularAlbedoSem )
 import Photon.Render.Shader ( GPUShader )
 
 newtype GPUMaterial = GPUMaterial { runMaterial :: GPUShader -> IO () } deriving (Eq,Show)
