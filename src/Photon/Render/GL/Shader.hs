@@ -115,6 +115,9 @@ getUniform prog name = do
   l <- getUniformLocation prog name
   return $ Uniform l (sendUniform l)
 
+(@?=) :: Maybe (Uniform a) -> a -> IO ()
+u @?= a = traverse_ (@= a) u
+
 class Uniformable a where
   sendUniform :: GLint -> a -> IO ()
 
