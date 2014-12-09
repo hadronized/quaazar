@@ -22,7 +22,7 @@ newtype PostFX = PostFX String deriving (Eq,Show)
 
 newtype GPUPostFXScreen = GPUPostFXScreen { runPostFXScreen :: IO () }
 
-gpuPostFXScreen :: IO GPUPostFXScreen
+gpuPostFXScreen :: (MonadIO m) => m GPUPostFXScreen
 gpuPostFXScreen = do
   va <- genVertexArray
   bindVertexArray va
@@ -33,7 +33,7 @@ gpuPostFXScreen = do
   
 newtype GPUPostFX = GPUPostFX { runPostFX :: GPUScreen -> GPUTexture -> IO () }
 
-gpuPostFX :: PostFX -> IO GPUPostFX
+gpuPostFX :: (MonadIO m,MonadLogger m,MonadError String m) => PostFX -> m GPUPostFX
 gpuPostFX (PostFX src) = do
     program <- sequence [genShader (VertexShader,vsSrc),genShader (FragmentShader,src)] >>= genProgram
     return $ \screen texture -> do
