@@ -32,4 +32,4 @@ gpuProgram shaders semantics = do
   return (GPUProgram program semantics')
 
 programSemantic :: GPUProgram -> Int -> Maybe (Uniform a)
-programSemantic (GPUProgram semantics _) sem = uniform (semantics !? sem)
+programSemantic (GPUProgram semantics _) sem = fmap uniform (semantics !? sem)
