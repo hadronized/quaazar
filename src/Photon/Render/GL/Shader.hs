@@ -15,6 +15,7 @@ import Control.Applicative
 import Control.Monad ( unless )
 import Control.Monad.Trans ( MonadIO(..) )
 import Control.Monad.Error.Class ( MonadError(..) )
+import Data.Foldable ( traverse_ )
 import Data.Word ( Word32 )
 import Foreign.Concurrent
 import Foreign.C.String ( peekCString, withCString )
@@ -26,8 +27,10 @@ import Foreign.Storable ( peek, poke )
 import Linear
 import Graphics.Rendering.OpenGL.Raw
 import Photon.Render.GL.GLObject
-import Photon.Render.GL.Forward.Log
 import Photon.Utils.Log
+
+gllog :: LogCommitter
+gllog = BackendLog "gl"
 
 newtype Shader = Shader { unShader :: GLObject } deriving (Eq,Show)
 
@@ -79,7 +82,7 @@ genProgram shaders = do
       p <- malloc
       sp <- glCreateProgram
       poke p sp
-      mapM_ (\shd -> withGLObject (unShaderStage shd) $ glAttachShader sp) shaders
+      mapM_ (\shd -> withGLObject (unShader shd) $ glAttachShader sp) shaders
       glLinkProgram sp
       linked <- isLinked sp
       ll <- clogLength sp
@@ -105,7 +108,7 @@ instance Show (Uniform a) where
   show (Uniform l _) = show l
 
 getUniformLocation :: Program -> String -> IO GLint
-getUniformLocation (Program program) name = withGLObject program (withCSTring name . glGetUniformLocation)
+getUniformLocation (Program program) name = withGLObject program (withCString name . glGetUniformLocation)
 
 uniform :: (Uniformable a) => GLint -> Uniform a
 uniform l = Uniform l (sendUniform l)

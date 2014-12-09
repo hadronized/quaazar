@@ -19,35 +19,38 @@ lightCastShadowsSem = 0
 lightColorSem :: Int
 lightColorSem = 1
 
+lightPositionSem :: Int
+lightPositionSem = 2
+
 lightPowerSem :: Int
-lightPowerSem = 2
+lightPowerSem = 3
 
 lightRadiusSem :: Int
-lightRadiusSem = 3
+lightRadiusSem = 4
 
 lightTypeSem :: Int
-lightTypeSem = 4
+lightTypeSem = 5
 
 ----------------------------------------------------------------------------
 -- Material semantics
 materialDiffuseAlbedoSem :: Int
-materialDiffuseAlbedoSem = 5
-
-materialShininessSem :: Int
 materialDiffuseAlbedoSem = 6
 
+materialShininessSem :: Int
+materialShininessSem = 7
+
 materialSpecularAlbedoSem :: Int
-materialSpecularAlbedoSem = 7
+materialSpecularAlbedoSem = 8
 
 ----------------------------------------------------------------------------
 -- Mesh semantics
 modelMatrixSem :: Int
-modelMatrixSem = 8
+modelMatrixSem = 9
 
 ----------------------------------------------------------------------------
 -- Camera semantics
 cameraProjectionSem :: Int
-cameraProjectionSem = 9
+cameraProjectionSem = 10
 
 cameraViewSem :: Int
-cameraViewSem = 10
+cameraViewSem = 11

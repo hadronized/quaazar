@@ -15,17 +15,20 @@ module Photon.Render.Material (
   , gpuMaterial
   ) where
 
-import Photon.Core.Material ( Material )
+import Photon.Core.Material ( MaterialLayer(..), unAlbedo )
+import Photon.Render.GL.Shader ( Uniform, Uniformable, (@?=) )
 import Photon.Render.Semantics ( materialDiffuseAlbedoSem
                                , materialShininessSem
                                , materialSpecularAlbedoSem )
-import Photon.Render.Shader ( GPUProgram )
+import Photon.Render.Shader ( GPUProgram, programSemantic )
 
-newtype GPUMaterial = GPUMaterial { runMaterial :: GPUProgram -> IO () } deriving (Eq,Show)
+newtype GPUMaterial = GPUMaterial { runMaterial :: GPUProgram -> IO () }
 
-gpuMaterial :: (Monad m) => Material -> m GPUMaterial
-gpuMaterial (Material dalb salb shn) = return . GPUMaterial $ \program -> do
-   let sem = programSemantic program
-   sem materialDiffuseAlbedoSem @?= dalb
-   sem materialSpecularAlbedoSem @?= salb
+gpuMaterial :: (Monad m) => MaterialLayer -> m GPUMaterial
+gpuMaterial (MaterialLayer dalb salb shn) = return . GPUMaterial $ \program -> do
+   let
+     sem :: (Uniformable a) => Int -> Maybe (Uniform a)
+     sem = programSemantic program
+   sem materialDiffuseAlbedoSem @?= unAlbedo dalb
+   sem materialSpecularAlbedoSem @?= unAlbedo salb
    sem materialShininessSem @?= shn

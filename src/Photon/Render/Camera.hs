@@ -9,13 +9,12 @@
 --
 ----------------------------------------------------------------------------
 
-module Photon.Render.Camera (
-    -- *
-  ) where
+module Photon.Render.Camera where
 
 import Photon.Core.Entity ( Entity )
-import Photon.Core.Projection ( Projection )
+import Photon.Core.Projection ( Projection, projectionMatrix )
 import Photon.Render.GL.Entity ( cameraTransform )
+import Photon.Render.GL.Shader ( Uniform, Uniformable, (@?=) )
 import Photon.Render.Semantics ( cameraProjectionSem, cameraViewSem )
 import Photon.Render.Shader
 
@@ -23,6 +22,8 @@ data GPUCamera = GPUCamera { runGPUCamera :: GPUProgram -> IO () }
 
 gpuCamera :: (Monad m) => Projection -> Entity -> m GPUCamera
 gpuCamera proj ent = return . GPUCamera $ \program -> do
-  let sem = programSemantic program
+  let
+    sem :: (Uniformable a) => Int -> Maybe (Uniform a)
+    sem = programSemantic program
   sem cameraProjectionSem @?= projectionMatrix proj
   sem cameraViewSem @?= cameraTransform ent

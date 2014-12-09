@@ -38,7 +38,7 @@ rootPath = "data"
 class Load a where
   load :: (MonadIO m,MonadLogger m,MonadPlus m,FromJSON a)
        => String
-       -> m (Managed a)
+       -> m a
 
 instance Load Mesh where
   load = loadMesh

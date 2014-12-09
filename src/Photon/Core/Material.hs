@@ -16,6 +16,7 @@
 module Photon.Core.Material (
     -- * Material and layers
     Material(..)
+  , material
   , MaterialLayer(MaterialLayer)
   , matDiffuseAlbedo
   , matSpecularAlbedo
@@ -29,6 +30,7 @@ import Control.Applicative
 import Control.Lens
 import Data.Aeson
 import Data.Aeson.Types ( typeMismatch )
+import Data.List.NonEmpty ( toList )
 import Data.Semigroup ( Semigroup(..) )
 import Linear.V3
 
@@ -67,7 +69,7 @@ instance FromJSON Material where
 
 instance Semigroup Material where
   Material a <> Material b = Material (a ++ b)
-  sconcat = Material . concatMap materialLayers
+  sconcat = Material . concatMap materialLayers . toList
 
 material :: Albedo -> Albedo -> Float -> Material
 material diff spec shn = Material [MaterialLayer diff spec shn]
@@ -75,4 +77,4 @@ material diff spec shn = Material [MaterialLayer diff spec shn]
 albedo :: Float -> Float -> Float -> Albedo
 albedo r g b = Albedo (V3 r g b)
 
-makeLenses ''Material
+makeLenses ''MaterialLayer

@@ -9,15 +9,16 @@
 --
 ----------------------------------------------------------------------------
 
-module Photon.Render.Texture (
-    -- *
-  ) where
+module Photon.Render.Texture where
 
+import Control.Monad.Trans ( MonadIO(..) )
 import Numeric.Natural ( Natural )
 import Photon.Core.Texture ( TexelFormat(..), Texture(..) )
-import qualified Photon.Core.Texture as GL ( Format(..), InternalFormat(..)
+import qualified Photon.Render.GL.Texture as GL ( Format(..), InternalFormat(..)
                                            , bindTextureAt )
-import Photon.Render.GL.Texture ( genTexture2D )
+import Photon.Render.GL.Texture ( Filter(..), Wrap(..), genTexture2D
+                                , setTextureFilters, setTextureImage
+                                , setTextureWrap )
 
 newtype GPUTexture = GPUTexture { bindTextureAt :: Natural -> IO () }
 
@@ -28,9 +29,9 @@ gpuTexture (Texture width height format texels) wrap flt = liftIO $ do
     setTextureWrap tex wrap
     setTextureFilters tex flt
     setTextureImage tex ift width height ft texels
-    return (GL.bindTextureAt tex)
+    return . GPUTexture $ GL.bindTextureAt tex
   where
-    (ift,ft) = case format of
+    (ft,ift) = case format of
       R -> (GL.R,GL.R32F)
       RG -> (GL.RG,GL.RG32F)
       RGB -> (GL.RGB,GL.RGB32F)

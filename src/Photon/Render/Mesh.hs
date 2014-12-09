@@ -12,9 +12,12 @@
 module Photon.Render.Mesh where
 
 import Control.Lens
+import Control.Monad.Trans ( MonadIO(..) )
 import Data.Word ( Word32 )
+import Foreign.Ptr ( nullPtr )
 import Foreign.Storable ( sizeOf )
 import Linear ( V2, V3 )
+import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Photon.Core.Entity ( Entity )
 import Photon.Core.Mesh hiding ( Line, Triangle )
@@ -22,10 +25,12 @@ import Photon.Core.Normal
 import Photon.Core.Position
 import Photon.Core.UV
 import Photon.Render.GL.Buffer
+import Photon.Render.GL.Entity ( entityTransform )
 import Photon.Render.GL.Primitive
-import Photon.Render.GL.Shader ( (@?=) )
+import Photon.Render.GL.Shader ( Program, (@?=) )
 import Photon.Render.GL.VertexArray
-import Photon.Render.Shader ( Program, programSemantic )
+import Photon.Render.Semantics ( modelMatrixSem )
+import Photon.Render.Shader ( programSemantic )
 
 data GPUMesh = GPUMesh {
     -- |VBO.
@@ -103,11 +108,12 @@ gpuMesh msh = liftIO $ case msh^.meshVertices of
 
 renderMesh :: (MonadIO m) => Program -> GPUMesh -> Entity -> m ()
 renderMesh program msh ent = liftIO $ do
-    sem modelMatrixSemantic @?= entityTransfrom ent
+    sem modelMatrixSem @?= entityTransform ent
     bindVertexArray (msh^.gpuMeshVAO)
     glDrawElements (fromPrimitive $ msh^.gpuMeshPrim) vnb gl_UNSIGNED_INT nullPtr
   where
     sem = programSemantic program
+    vnb = fromIntegral (msh^.gpuMeshVertNB)
 
 toGLPrimitive :: VGroup -> Primitive
 toGLPrimitive vg = case vg of

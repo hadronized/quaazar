@@ -35,7 +35,6 @@ import Control.Applicative
 import Control.Lens
 import Data.Aeson
 import Photon.Core.Color ( Color )
-import Photon.Core.Effect
 import Photon.Core.Entity ( Entity )
 
 data LightType

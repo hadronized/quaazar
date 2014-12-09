@@ -9,20 +9,23 @@
 --
 ----------------------------------------------------------------------------
 
-module Photon.Render.Shader (
-    -- * GPU-side program
-  ) where
+module Photon.Render.Shader where
 
 import Control.Lens ( makeLenses )
-import Data.Vector ( Vector, (!) )
+import Control.Monad.Error.Class ( MonadError )
+import Control.Monad.Trans ( MonadIO(..) )
+import Data.Traversable ( traverse )
+import Data.Vector ( Vector, (!?), fromList )
 import Graphics.Rendering.OpenGL.Raw
-import Photon.Render.GL.Shader ( Uniform, genProgram, genShader
-                               , getUniformLocation, uniform )
+import Photon.Render.GL.Shader ( Program, ShaderType(..), Uniform, Uniformable
+                               , genProgram, genShader, getUniformLocation
+                               , uniform )
 import qualified Photon.Render.GL.Shader as GL ( useProgram )
+import Photon.Utils.Log ( MonadLogger )
 
 data GPUProgram = GPUProgram {
     _gpuShaderProgram   :: Program
-  , _gpuShaderSemantics :: Vector GLInt
+  , _gpuShaderSemantics :: Vector GLint
   }
 
 makeLenses ''GPUProgram
@@ -30,11 +33,11 @@ makeLenses ''GPUProgram
 gpuProgram :: (MonadIO m,MonadLogger m,MonadError String m) => [(ShaderType,String)] -> [String] -> m GPUProgram
 gpuProgram shaders semantics = do
   program <- mapM (uncurry genShader) shaders >>= genProgram
-  semantics' <- mapM (getUniformLocation program) semantics)
+  semantics' <- liftIO . fmap fromList $ traverse (getUniformLocation program) semantics
   return (GPUProgram program semantics')
 
-programSemantic :: GPUProgram -> Int -> Maybe (Uniform a)
-programSemantic (GPUProgram semantics _) sem = fmap uniform (semantics !? sem)
+programSemantic :: (Uniformable a) => GPUProgram -> Int -> Maybe (Uniform a)
+programSemantic (GPUProgram _ semantics) sem = fmap uniform (semantics !? sem)
 
 useProgram :: (MonadIO m) => GPUProgram -> m ()
 useProgram (GPUProgram p _) = liftIO (GL.useProgram p)

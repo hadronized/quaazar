@@ -22,7 +22,6 @@ module Photon.Core.Texture (
 
 import Control.Lens
 import Numeric.Natural ( Natural )
-import Photon.Core.Effect
 
 -- |A texture gathers texels (encoded with a specific format). Textures have
 -- a /width/ and a /height/.
