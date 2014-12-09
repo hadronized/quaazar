@@ -16,8 +16,15 @@ module Photon.Render.Material (
   ) where
 
 import Photon.Core.Material ( Material )
+import Photon.Render.Shader ( GPUShader )
 
-newtype GPUMaterial = GPUMaterial { unGPUMaterial :: Material } deriving (Eq,Show)
+newtype GPUMaterial = GPUMaterial { runMaterial :: GPUShader -> IO () } deriving (Eq,Show)
 
 gpuMaterial :: Material -> IO GPUMaterial
-gpuMaterial = return . GPUMaterial
+gpuMaterial (Material dalb salb shn) = return . GPUMaterial $ \program -> do
+  case mapM (programSemantic program) materialSemantics of
+    Just [dalbSem,salbSem,shnSem] -> do
+      dalbSem @= unAlbedo dalb
+      salbSem @= unAlbedo salb
+      shnSem @= shn
+    Nothing -> return ()
