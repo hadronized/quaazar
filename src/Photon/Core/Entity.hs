@@ -41,18 +41,10 @@ module Photon.Core.Entity (
   , orientation
   , rescale
   , scale
-    -- * Reaction
-  , EntitySpawned(..)
-  , EntityLost(..)
-  , EntityEffect(..)
-  , changePosition
-  , changeOrientation
-  , changeScale
   ) where
 
 import Control.Lens
 import Linear
-import Photon.Core.Effect
 
 -- |An entity is a typed spatial transformation. So far, entities
 -- enable the use of three space properties:
@@ -115,44 +107,3 @@ rescale (Scale x' y' z') = entityScale %~ \(Scale x y z) -> Scale (x*x') (y*y') 
 -- |Scale an entity.
 scale :: Scale -> Entity -> Entity
 scale = set entityScale
-
-data EntitySpawned = EntitySpawned (Managed Entity) deriving (Eq,Show)
-
-data EntityLost = EntityLost (Managed Entity) deriving (Eq,Show)
-
-data EntityEffect
-  = PositionChanged (Managed Entity) Position
-  | OrientationChanged (Managed Entity) Orientation
-  | ScaleChanged (Managed Entity) Scale
-    deriving (Eq,Show)
-
-instance EffectfulManage Entity EntitySpawned EntityLost where
-  spawned = EntitySpawned
-  lost = EntityLost
-
-changePosition :: (Effect EntityEffect m)
-               => Managed Entity
-               -> (Position -> Position)
-               -> m (Managed Entity)
-changePosition e f = do
-    react (PositionChanged e newPos)
-    return (e & managed . entityPosition .~ newPos)
-  where newPos = f (e^.managed.entityPosition)
-
-changeOrientation :: (Effect EntityEffect m)
-                  => Managed Entity
-                  -> (Orientation -> Orientation)
-                  -> m (Managed Entity)
-changeOrientation e f = do
-    react (OrientationChanged e newOrient)
-    return (e & managed . entityOrientation .~ newOrient)
-  where newOrient = f (e^.managed.entityOrientation)
-
-changeScale :: (Effect EntityEffect m)
-            => Managed Entity
-            -> (Scale -> Scale)
-            -> m (Managed Entity)
-changeScale e f = do
-    react (ScaleChanged e newScale)
-    return (e & managed . entityScale .~ newScale)
-  where newScale = f (e^.managed.entityScale)
