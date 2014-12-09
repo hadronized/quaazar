@@ -21,14 +21,13 @@ module Photon.Core.Loader (
   ) where
 
 import Control.Exception ( IOException, catch )
-import Control.Monad ( (>=>), MonadPlus(..) )
+import Control.Monad ( MonadPlus(..) )
 import Control.Monad.Trans ( MonadIO, liftIO )
 import Data.ByteString.Lazy as B ( readFile )
 import Data.Aeson
-import Photon.Core.Effect
-import Photon.Core.Light ( Light, LightSpawned )
-import Photon.Core.Material ( Material, MaterialSpawned )
-import Photon.Core.Mesh ( Mesh, MeshSpawned )
+import Photon.Core.Light ( Light )
+import Photon.Core.Material ( Material )
+import Photon.Core.Mesh ( Mesh )
 import Photon.Utils.Log
 import Photon.Utils.TimePoint
 import System.FilePath
@@ -36,19 +35,19 @@ import System.FilePath
 rootPath :: FilePath
 rootPath = "data"
 
-class Load a e | a -> e where
-  load :: (MonadIO m,MonadLogger m,MonadPlus m,Manageable a m,FromJSON a,Effect e m)
+class Load a where
+  load :: (MonadIO m,MonadLogger m,MonadPlus m,FromJSON a)
        => String
        -> m (Managed a)
 
-instance Load Mesh MeshSpawned where
-  load = loadMesh >=> spawn
+instance Load Mesh where
+  load = loadMesh
 
-instance Load Material MaterialSpawned where
-  load = loadMaterial >=> spawn
+instance Load Material where
+  load = loadMaterial
 
-instance Load Light LightSpawned where
-  load = loadLight >=> spawn
+instance Load Light where
+  load = loadLight
 
 loadJSON :: (MonadIO m,MonadLogger m,FromJSON a) => FilePath -> m (Either String a)
 loadJSON path = do
