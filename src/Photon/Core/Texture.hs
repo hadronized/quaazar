@@ -18,14 +18,6 @@ module Photon.Core.Texture (
   , texTexels
     -- * Texel format
   , TexelFormat(..)
-    -- * Reaction
-  , TextureSpawned(..)
-  , TextureLost(..)
-  , TextureEffect(..)
-  , changeWidth
-  , changeHeight
-  , changeFormat
-  , changeTexels
   ) where
 
 import Control.Lens
@@ -56,54 +48,3 @@ data TexelFormat
 makeLenses ''Texture
 
 -- TODO: add loader from disk image here
-
-newtype TextureSpawned = TextureSpawned (Managed Texture) deriving (Eq,Show)
-
-newtype TextureLost = TextureLost (Managed Texture) deriving (Eq,Show)
-
-data TextureEffect
-  = WidthChanged (Managed Texture) Natural
-  | HeightChanged (Managed Texture) Natural
-  | FormatChanged (Managed Texture) TexelFormat
-  | TexelsChanged (Managed Texture) [Float]
-    deriving (Eq,Show)
-
-instance EffectfulManage Texture TextureSpawned TextureLost where
-  spawned = TextureSpawned
-  lost = TextureLost
-
-changeWidth :: (Effect TextureEffect m)
-            => Managed Texture
-            -> (Natural -> Natural)
-            -> m (Managed Texture)
-changeWidth t f = do
-    react (WidthChanged t nw)
-    return (t & managed . texWidth .~ nw)
-  where nw = f (t^.managed.texWidth)
-
-changeHeight :: (Effect TextureEffect m)
-             => Managed Texture
-             -> (Natural -> Natural)
-             -> m (Managed Texture)
-changeHeight t f = do
-    react (HeightChanged t nh)
-    return (t & managed . texHeight .~ nh)
-  where nh = f (t^.managed.texHeight)
-
-changeFormat :: (Effect TextureEffect m)
-             => Managed Texture
-             -> (TexelFormat -> TexelFormat)
-             -> m (Managed Texture)
-changeFormat t f = do
-    react (FormatChanged t nf)
-    return (t & managed . texFormat .~ nf)
-  where nf = f (t^.managed.texFormat)
-
-changeTexels :: (Effect TextureEffect m)
-             => Managed Texture
-             -> ([Float] -> [Float])
-             -> m (Managed Texture)
-changeTexels t f = do
-    react (TexelsChanged t nt)
-    return (t & managed . texTexels .~ nt)
-  where nt = f (t^.managed.texTexels)
