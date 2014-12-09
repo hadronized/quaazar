@@ -104,9 +104,15 @@ data Uniform a = Uniform { uniLoc :: GLint, (@=) :: a -> IO () }
 instance Show (Uniform a) where
   show (Uniform l _) = show l
 
+getUniformLocation :: Program -> String -> IO GLint
+getUniformLocation (Program program) name = withGLObject program (withCSTring name . glGetUniformLocation)
+
+uniform :: (Uniformable a) => GLint -> Uniform a
+uniform l = Uniform l (sendUniform l)
+
 getUniform :: (Uniformable a) => Program -> String -> IO (Uniform a)
-getUniform (Program program) name = do
-  l <- withGLObject program $ withCString name . glGetUniformLocation
+getUniform prog name = do
+  l <- getUniformLocation prog name
   return $ Uniform l (sendUniform l)
 
 class Uniformable a where
