@@ -16,13 +16,16 @@ import Data.Word ( Word32 )
 import Foreign.Storable ( sizeOf )
 import Linear ( V2, V3 )
 import Numeric.Natural ( Natural )
+import Photon.Core.Entity ( Entity )
 import Photon.Core.Mesh hiding ( Line, Triangle )
 import Photon.Core.Normal
 import Photon.Core.Position
 import Photon.Core.UV
 import Photon.Render.GL.Buffer
 import Photon.Render.GL.Primitive
+import Photon.Render.GL.Shader ( (@?=) )
 import Photon.Render.GL.VertexArray
+import Photon.Render.Shader ( Program, programSemantic )
 
 data GPUMesh = GPUMesh {
     -- |VBO.
@@ -98,10 +101,13 @@ gpuMesh msh = case msh^.meshVertices of
     verticesNb    = length inds
     prim          = toGLPrimitive (msh^.meshVGroup)
 
-renderMesh :: GPUMesh -> IO ()
-renderMesh msh = do
-  bindVertexArray (msh^.gpuMeshVAO)
-  glDrawElements (fromPrimitive $ msh^.gpuMeshPrim) vnb gl_UNSIGNED_INT nullPtr
+renderMesh :: Program -> GPUMesh -> Entity -> IO ()
+renderMesh program msh ent = do
+    sem modelMatrixSemantic @?= entityTransfrom ent
+    bindVertexArray (msh^.gpuMeshVAO)
+    glDrawElements (fromPrimitive $ msh^.gpuMeshPrim) vnb gl_UNSIGNED_INT nullPtr
+  where
+    sem = programSemantic program
 
 toGLPrimitive :: VGroup -> Primitive
 toGLPrimitive vg = case vg of
