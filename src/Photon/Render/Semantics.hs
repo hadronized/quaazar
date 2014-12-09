@@ -13,6 +13,8 @@ module Photon.Render.Semantics (
     -- *
   ) where
 
+----------------------------------------------------------------------------
+-- Light semantics
 lightCastShadowsSem :: Int
 lightCastShadowsSem = 0
 
@@ -27,3 +29,14 @@ lightRadiusSem = 3
 
 lightTypeSem :: Int
 lightTypeSem = 4
+
+----------------------------------------------------------------------------
+-- Material semantics
+materialDiffuseAlbedoSem :: Int
+materialDiffuseAlbedoSem = 5
+
+materialShininessSem :: Int
+materialDiffuseAlbedoSem = 6
+
+materialSpecularAlbedoSem :: Int
+materialSpecularAlbedoSem = 7
