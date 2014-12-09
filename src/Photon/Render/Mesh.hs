@@ -102,7 +102,7 @@ gpuMesh msh = liftIO $ case msh^.meshVertices of
     prim          = toGLPrimitive (msh^.meshVGroup)
 
 renderMesh :: (MonadIO m) => Program -> GPUMesh -> Entity -> m ()
-renderMesh program msh ent = do
+renderMesh program msh ent = liftIO $ do
     sem modelMatrixSemantic @?= entityTransfrom ent
     bindVertexArray (msh^.gpuMeshVAO)
     glDrawElements (fromPrimitive $ msh^.gpuMeshPrim) vnb gl_UNSIGNED_INT nullPtr
