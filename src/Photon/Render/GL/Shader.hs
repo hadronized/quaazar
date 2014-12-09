@@ -29,17 +29,17 @@ import Photon.Render.GL.GLObject
 import Photon.Render.GL.Forward.Log
 import Photon.Utils.Log
 
-newtype ShaderStage = ShaderStage { unShaderStage :: GLObject } deriving (Eq,Show)
+newtype Shader = Shader { unShader :: GLObject } deriving (Eq,Show)
 
 data ShaderType
   = VertexShader
   | FragmentShader
     deriving (Eq,Show)
 
-newtype Shader = Shader { unShader :: GLObject } deriving (Eq,Show)
+newtype Program = Program { unProgram :: GLObject } deriving (Eq,Show)
 
-genShaderStage :: (MonadIO m,MonadLogger m,MonadError String m) => ShaderType -> String -> m ShaderStage
-genShaderStage stype src = do
+genShader :: (MonadIO m,MonadLogger m,MonadError String m) => ShaderType -> String -> m Shader
+genShader stype src = do
     deb gllog "shader source is:"
     deb gllog src
     info gllog $ "compiling " ++ shaderType ++ " shader source..."
@@ -55,7 +55,7 @@ genShaderStage stype src = do
       return (p,s,compiled,cl)
     unless compiled $ throwError cl
     info gllog "done..."
-    liftIO $ ShaderStage . GLObject <$> newForeignPtr p (glDeleteShader s >> free p)
+    liftIO $ Shader . GLObject <$> newForeignPtr p (glDeleteShader s >> free p)
   where
     shaderType
         | stype == VertexShader   = "vertex"
@@ -73,8 +73,8 @@ fromShaderType shaderType = case shaderType of
   VertexShader   -> gl_VERTEX_SHADER
   FragmentShader -> gl_FRAGMENT_SHADER
 
-genShader :: (MonadIO m,MonadError String m) => [ShaderStage] -> m Shader
-genShader shaders = do
+genProgram :: (MonadIO m,MonadError String m) => [Shader] -> m Program
+genProgram shaders = do
     (p,sp,linked,cl) <- liftIO $ do
       p <- malloc
       sp <- glCreateProgram
@@ -86,7 +86,7 @@ genShader shaders = do
       cl <- clog ll sp
       return (p,sp,linked,cl)
     unless linked $ throwError cl
-    liftIO $ Shader . GLObject <$> newForeignPtr p (glDeleteProgram sp >> free p)
+    liftIO $ Program . GLObject <$> newForeignPtr p (glDeleteProgram sp >> free p)
   where
     isLinked s   = fmap ((==gl_TRUE) . fromIntegral) .
         alloca $ liftA2 (*>) (glGetProgramiv s gl_LINK_STATUS) peek
@@ -95,8 +95,8 @@ genShader shaders = do
     clog l s     = allocaArray l $
         liftA2 (*>) (glGetProgramInfoLog s (fromIntegral l) nullPtr) (peekCString . castPtr)
 
-useShader :: Shader -> IO ()
-useShader (Shader s) = withGLObject s glUseProgram
+useProgram :: Program -> IO ()
+useProgram (Program s) = withGLObject s glUseProgram
 
 infixr 1 @=
 data Uniform a = Uniform { uniLoc :: GLint, (@=) :: a -> IO () }
@@ -104,9 +104,9 @@ data Uniform a = Uniform { uniLoc :: GLint, (@=) :: a -> IO () }
 instance Show (Uniform a) where
   show (Uniform l _) = show l
 
-getUniform :: (Uniformable a) => Shader -> String -> IO (Uniform a)
-getUniform (Shader shader) name = do
-  l <- withGLObject shader $ withCString name . glGetUniformLocation
+getUniform :: (Uniformable a) => Program -> String -> IO (Uniform a)
+getUniform (Program program) name = do
+  l <- withGLObject program $ withCString name . glGetUniformLocation
   return $ Uniform l (sendUniform l)
 
 class Uniformable a where
