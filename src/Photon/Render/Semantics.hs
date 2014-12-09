@@ -9,9 +9,7 @@
 --
 ----------------------------------------------------------------------------
 
-module Photon.Render.Semantics (
-    -- *
-  ) where
+module Photon.Render.Semantics where
 
 ----------------------------------------------------------------------------
 -- Light semantics
@@ -40,3 +38,16 @@ materialDiffuseAlbedoSem = 6
 
 materialSpecularAlbedoSem :: Int
 materialSpecularAlbedoSem = 7
+
+----------------------------------------------------------------------------
+-- Mesh semantics
+modelMatrixSem :: Int
+modelMatrixSem = 8
+
+----------------------------------------------------------------------------
+-- Camera semantics
+cameraProjectionSem :: Int
+cameraProjectionSem = 9
+
+cameraViewSem :: Int
+cameraViewSem = 10
