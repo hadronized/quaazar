@@ -18,14 +18,6 @@ module Photon.Core.Mesh (
     Mesh(Mesh)
   , meshVertices
   , meshVGroup
-    -- * Reaction
-  , MeshSpawned(..)
-  , MeshLost(..)
-  , MeshEffect(..)
-  , changeVertices
-  , changeVGroup
-  , useMaterial
-  , renderMesh
     -- * Re-exported modules
   , module Photon.Core.Vertex
   , module Photon.Core.VGroup
@@ -51,48 +43,3 @@ instance FromJSON Mesh where
   parseJSON = withObject "mesh" $ \o -> Mesh <$> o .: "vertices" <*> o .: "vgroup"
 
 makeLenses ''Mesh
-
-data MeshSpawned = MeshSpawned (Managed Mesh) deriving (Eq,Show)
-
-data MeshLost = MeshLost (Managed Mesh) deriving (Eq,Show)
-
-data MeshEffect
-  = VerticesChanged (Managed Mesh) Vertices
-  | VGroupChanged (Managed Mesh) VGroup
-  | UseMaterial (Managed Mesh) (Managed Material)
-  | RenderMesh (Managed Mesh) Entity
-    deriving (Eq,Show)
-
-instance EffectfulManage Mesh MeshSpawned MeshLost where
-  spawned = MeshSpawned
-  lost = MeshLost
-
-changeVertices :: (Effect MeshEffect m)
-               => Managed Mesh
-               -> (Vertices -> Vertices)
-               -> m (Managed Mesh)
-changeVertices msh f = do
-    react (VerticesChanged msh newVerts)
-    return (msh & managed . meshVertices .~ newVerts)
-  where newVerts = f (msh^.managed.meshVertices)
-
-changeVGroup :: (Effect MeshEffect m)
-             => Managed Mesh
-             -> (VGroup -> VGroup)
-             -> m (Managed Mesh)
-changeVGroup msh f = do
-    react (VGroupChanged msh newVGroup)
-    return (msh & managed . meshVGroup .~ newVGroup)
-  where newVGroup = f (msh^.managed.meshVGroup)
-
-useMaterial :: (Effect MeshEffect m)
-            => Managed Mesh
-            -> Managed Material
-            -> m ()
-useMaterial msh mat = react (UseMaterial msh mat)
-
-renderMesh :: (Effect MeshEffect m)
-           => Managed Mesh
-           -> Entity
-           -> m ()
-renderMesh m e = react (RenderMesh m e)
