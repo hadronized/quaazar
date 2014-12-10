@@ -27,10 +27,10 @@ import Photon.Core.UV
 import Photon.Render.GL.Buffer
 import Photon.Render.GL.Entity ( entityTransform )
 import Photon.Render.GL.Primitive
-import Photon.Render.GL.Shader ( Program, (@?=) )
+import Photon.Render.GL.Shader ( (@?=) )
 import Photon.Render.GL.VertexArray
 import Photon.Render.Semantics ( modelMatrixSem )
-import Photon.Render.Shader ( programSemantic )
+import Photon.Render.Shader ( GPUProgram, programSemantic )
 
 data GPUMesh = GPUMesh {
     -- |VBO.
@@ -106,7 +106,7 @@ gpuMesh msh = liftIO $ case msh^.meshVertices of
     verticesNb    = length inds
     prim          = toGLPrimitive (msh^.meshVGroup)
 
-renderMesh :: (MonadIO m) => Program -> GPUMesh -> Entity -> m ()
+renderMesh :: (MonadIO m) => GPUProgram -> GPUMesh -> Entity -> m ()
 renderMesh program msh ent = liftIO $ do
     sem modelMatrixSem @?= entityTransform ent
     bindVertexArray (msh^.gpuMeshVAO)
