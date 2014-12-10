@@ -18,13 +18,13 @@ import Photon.Core.Light ( Light(..) )
 import Photon.Render.GL.Shader ( Uniform, Uniformable, (@?=) )
 import Photon.Render.Semantics ( lightCastShadowsSem, lightColorSem
                                , lightPositionSem, lightPowerSem, lightRadiusSem
-                               , lightTypeSem )
+                               )
 import Photon.Render.Shader ( GPUProgram, programSemantic )
 
 newtype GPULight = GPULight { runLight :: GPUProgram -> Entity -> IO () }
 
 gpuLight :: (Monad m) => Light -> m GPULight
-gpuLight (Light t col power radius castShadows) = return . GPULight $ \program ent -> do
+gpuLight (Light _ col power radius castShadows) = return . GPULight $ \program ent -> do
   let
     sem :: (Uniformable a) => Int -> Maybe (Uniform a)
     sem = programSemantic program

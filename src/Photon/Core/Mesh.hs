@@ -26,8 +26,6 @@ module Photon.Core.Mesh (
 import Control.Applicative
 import Control.Lens
 import Data.Aeson
-import Photon.Core.Entity ( Entity )
-import Photon.Core.Material ( Material )
 import Photon.Core.Vertex
 import Photon.Core.VGroup
 

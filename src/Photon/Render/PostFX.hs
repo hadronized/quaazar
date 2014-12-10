@@ -9,8 +9,7 @@
 --
 ----------------------------------------------------------------------------
 
-module Photon.Render.PostFX (
-  ) where
+module Photon.Render.PostFX where
 
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
