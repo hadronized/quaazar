@@ -99,8 +99,8 @@ handleKey :: TVar [Event] -> Window -> GLFW.Key -> Int -> GLFW.KeyState -> Modif
 handleKey events _ k _ s _ = atomically . modifyTVar events $ (++ keys)
   where
     keys = case s of
-      KeyState'Pressed -> key KeyPressed
-      KeyState'Released -> key KeyReleased
+      KeyState'Pressed   -> key KeyPressed
+      KeyState'Released  -> key KeyReleased
       KeyState'Repeating -> key KeyReleased
     key s = case k of
         Key'Unknown      -> []
