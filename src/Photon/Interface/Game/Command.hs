@@ -12,7 +12,18 @@
 ----------------------------------------------------------------------------
 
 module Photon.Interface.Game.Command (
-    -- *
+    -- * Game commands
+    GameCmd(..)
+  , Game
+  , registerMesh
+  , load
+  , registerMaterial
+  , renderMeshes
+  , registerLight
+  , switchLightOn
+  , registerCamera
+  , look
+  , log_
   ) where
 
 import Control.Monad.Free
@@ -26,7 +37,7 @@ import Photon.Render.Camera ( GPUCamera )
 import Photon.Render.Light ( GPULight )
 import Photon.Render.Material ( GPUMaterial )
 import Photon.Render.Mesh ( GPUMesh )
-import Photon.Utils.Log ( Log, LogType )
+import Photon.Utils.Log ( LogType )
 
 data GameCmd n
   = RegisterMesh Mesh (GPUMesh -> n)
