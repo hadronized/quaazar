@@ -13,6 +13,7 @@
 module Photon.Core.Loader (
     -- * Loading resources
     loadJSON
+  , Load
   , load 
     -- * Loaders
   , loadMesh
