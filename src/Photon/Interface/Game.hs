@@ -82,8 +82,8 @@ type Game = Free GameAction
 registerMesh :: Mesh -> Game GPUMesh
 registerMesh m = Free (RegisterMesh m Pure)
 
-load_ :: (Load a) => String -> Game a
-load_ name = Free (LoadObject name Pure)
+load :: (Load a) => String -> Game a
+load name = Free (LoadObject name Pure)
 
 registerMaterial :: Material -> Game GPUMaterial
 registerMaterial m = Free (RegisterMaterial m Pure)
