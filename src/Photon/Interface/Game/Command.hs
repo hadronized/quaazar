@@ -1,9 +1,21 @@
 {-# LANGUAGE ExistentialQuantification #-}
 
-module Photon.Interface.Game where
+-----------------------------------------------------------------------------
+-- |
+-- Copyright   : (C) 2014 Dimitri Sabadie
+-- License     : BSD3
+--
+-- Maintainer  : Dimitri Sabadie <dimitri.sabadie@gmail.com>
+-- Stability   : experimental
+-- Portability : portable
+--
+----------------------------------------------------------------------------
+
+module Photon.Interface.Game.Command (
+    -- *
+  ) where
 
 import Control.Monad.Free
-import Data.List.NonEmpty ( NonEmpty(..) )
 import Photon.Core.Entity ( Entity )
 import Photon.Core.Light ( Light )
 import Photon.Core.Loader ( Load )
@@ -14,49 +26,9 @@ import Photon.Render.Camera ( GPUCamera )
 import Photon.Render.Light ( GPULight )
 import Photon.Render.Material ( GPUMaterial )
 import Photon.Render.Mesh ( GPUMesh )
+import Photon.Utils.Log ( Log, LogType )
 
-newtype Key = Key { unKey :: Char } deriving (Eq,Ord,Read,Show)
-
-data KeyState
-  = KeyPressed Key
-  | KeyReleased Key
-    deriving (Eq,Read,Show)
-
-data MouseButton
-  = MouseLeft
-  | MouseMiddle
-  | MouseRight
-    deriving (Eq,Ord,Read,Show)
-
-data MouseMotion = MouseMotion {
-    mouseX  :: Double
-  , mouseY  :: Double
-  , mouseRX :: Double
-  , mouseRY :: Double
-  } deriving (Eq,Read,Show)
-
-data WindowState
-  = Closed
-  | Opened
-  | FocusLost
-  | FocusGained
-    deriving (Eq,Read,Show)
-
-data SystemState
-  = Quit
-    deriving (Eq,Read,Show)
-
-data Event
-  = KeyEvent KeyState
-  | MouseButtonEvent [MouseButton]
-  | MouseMotionEvent MouseMotion
-  | WindowEvent WindowState
-  | SystemEvent SystemState
-    deriving (Eq,Read,Show)
-
-type EventHandler a = NonEmpty Event -> a -> Maybe a
-
-data GameAction n
+data GameCmd n
   = RegisterMesh Mesh (GPUMesh -> n)
   | forall a. (Load a) => LoadObject String (a -> n)
   | RegisterMaterial Material (GPUMaterial -> n)
@@ -65,8 +37,9 @@ data GameAction n
   | SwitchLightOn GPULight n
   | RegisterCamera Projection Entity (GPUCamera -> n)
   | Look GPUCamera n
+  | Log LogType String n
   
-instance Functor GameAction where
+instance Functor GameCmd where
   fmap f a = case a of
     RegisterMesh m g -> RegisterMesh m (f . g)
     LoadObject n g -> LoadObject n (f . g)
@@ -76,8 +49,9 @@ instance Functor GameAction where
     SwitchLightOn l n -> SwitchLightOn l (f n)
     RegisterCamera proj view g -> RegisterCamera proj view (f . g)
     Look c n -> Look c (f n)
+    Log t s n -> Log t s (f n)
 
-type Game = Free GameAction
+type Game = Free GameCmd
 
 registerMesh :: Mesh -> Game GPUMesh
 registerMesh m = Free (RegisterMesh m Pure)
@@ -103,12 +77,5 @@ registerCamera proj view = Free (RegisterCamera proj view Pure)
 look :: GPUCamera -> Game ()
 look c = Free . Look c $ Pure ()
 
--- TODO: replace all resulting a with Game a
-runGame :: IO [Event] -> EventHandler a -> (a -> a) -> (a -> IO ()) -> a -> IO ()
-runGame pollEvents handler logic sink = run
-  where
-    run app = pollEvents >>= forwardEvents app >>= maybe (return ()) runLogic
-    forwardEvents app events = return $ case events of
-      [] -> Just app
-      (x:xs) -> handler (x :| xs) app
-    runLogic = sequence_ . sequence [sink,run] . logic
+log_ :: LogType -> String -> Game ()
+log_ t s = Free . Log t s $ Pure ()
