@@ -84,11 +84,20 @@ runGame w h title pollUserEvents eventHandler step initApp = do
 
 runWithWindow :: Window -> IO ()
 runWithWindow window = do
+    -- transaction variables
     events <- newTVarIO []
+    mouseXY <- newTVarIO (0,0)
+    
+    -- callbacks
     setKeyCallback window (Just $ handleKey events)
     setMouseButtonCallback window (Just $ handleMouseButton events)
+    setCursorPosCallback window (Just $ handleMouseMotion mouseXY events)
     setWindowCloseCallback window (Just $ handleWindowClose events)
     setWindowFocusCallback window (Just $ handleWindowFocus events)
+    
+    -- pre-process
+    getCursorPos window >>= atomically . writeTVar mouseXY
+
     run_
   where
     run_ = do
@@ -244,6 +253,11 @@ handleMouseButton events _ b s _ = atomically . modifyTVar events $ (++ [MouseBu
       MouseButton'6 -> Mouse6
       MouseButton'7 -> Mouse7
       MouseButton'8 -> Mouse8
+
+handleMouseMotion :: TVar (Double,Double) -> TVar [Event] -> Window -> Double -> Double -> IO ()
+handleMouseMotion xy' events _ x y = do
+    (x',y') <- atomically (readTVar xy')
+    atomically . modifyTVar events $ (++ [MouseMotionEvent $ MouseMotion x y (x-x') (y-y')])
 
 handleWindowClose :: TVar [Event] -> Window -> IO ()
 handleWindowClose events _ = atomically . modifyTVar events $ (++ [WindowEvent Closed,SystemEvent Quit])
