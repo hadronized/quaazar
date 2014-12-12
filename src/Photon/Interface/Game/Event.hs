@@ -25,6 +25,7 @@ module Photon.Interface.Game.Event (
   , SystemState(..)
   ) where
 
+-- |Keyboard key. The keys are not documented because they’re self-explanatory.
 data Key
   = Unknown
   | Space
@@ -149,11 +150,16 @@ data Key
   | Menu
     deriving (Eq,Ord,Read,Show)
 
+-- |If a key has an event attached to it, it might be 'KeyPressed' or
+-- 'KeyReleased'. If your application has /repeating/ enabled, several
+-- 'KeyPressed' 'KeyReleased' event pairs are generated after the first to
+-- emulate the repeating.
 data KeyState
-  = KeyPressed Key
-  | KeyReleased Key
+  = KeyPressed Key -- ^ Occurs when a key is pressed 
+  | KeyReleased Key -- ^ Occurs when a key is released
     deriving (Eq,Read,Show)
 
+-- |Mouse button.
 data MouseButton
   = MouseLeft
   | MouseMiddle
@@ -165,18 +171,27 @@ data MouseButton
   | Mouse8
     deriving (Eq,Ord,Read,Show)
 
+-- |If a mouse button has an event attached to it, it might be 'ButtonPressed'
+-- or 'ButtonReleased'.
 data MouseButtonState
   = ButtonPressed MouseButton
   | ButtonReleased MouseButton
     deriving (Eq,Ord,Read,Show)
 
+-- |When the mouse moves, it generates a 'MouseMotion' event. That event
+-- gathers the new position of the mouse (use 'mouseX' and 'mouseY' to get
+-- them) along with its relative movement (use 'mouseRX' and 'mouseRY' to get
+-- them).
 data MouseMotion = MouseMotion {
-    mouseX  :: Double
-  , mouseY  :: Double
-  , mouseRX :: Double
-  , mouseRY :: Double
+    mouseX  :: Double -- ^ Mouse position on X
+  , mouseY  :: Double -- ^ Mouse position on Y
+  , mouseRX :: Double -- ^ Mouse relative movement on X
+  , mouseRY :: Double -- ^ Mouse relative movement on Y
   } deriving (Eq,Read,Show)
 
+-- |A window can emit several events: 'Closed' when the user closes it,
+-- 'Opened' when the application starts, 'FocusLost' when the window loses the
+-- focus and 'FocusGained' and it gets the focus back.
 data WindowState
   = Closed
   | Opened
@@ -184,10 +199,12 @@ data WindowState
   | FocusGained
     deriving (Eq,Read,Show)
 
+-- |System state are other kind of events.
 data SystemState
-  = Quit
+  = Quit -- ^ The application is quitting
     deriving (Eq,Read,Show)
 
+-- |Gather all core events.
 data Event
   = KeyEvent KeyState
   | MouseButtonEvent MouseButtonState
@@ -196,4 +213,6 @@ data Event
   | SystemEvent SystemState
     deriving (Eq,Read,Show)
 
+-- |An 'EventHandler u a' handles core event 'Event' and user event 'u' in
+-- an application 'a'.
 type EventHandler u a = Either u Event -> a -> Maybe a
