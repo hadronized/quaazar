@@ -24,6 +24,7 @@ module Photon.Interface.Game.Command (
   , registerCamera
   , look
   , log_
+  , time
   ) where
 
 import Control.Monad.Free
@@ -38,6 +39,7 @@ import Photon.Render.Light ( GPULight )
 import Photon.Render.Material ( GPUMaterial )
 import Photon.Render.Mesh ( GPUMesh )
 import Photon.Utils.Log ( LogType )
+import Photon.Utils.TimePoint ( TimePoint )
 
 data GameCmd n
   = RegisterMesh Mesh (GPUMesh -> n)
@@ -49,6 +51,7 @@ data GameCmd n
   | RegisterCamera Projection Entity (GPUCamera -> n)
   | Look GPUCamera n
   | Log LogType String n
+  | Time (TimePoint -> n)
   
 instance Functor GameCmd where
   fmap f a = case a of
@@ -61,6 +64,7 @@ instance Functor GameCmd where
     RegisterCamera proj view g -> RegisterCamera proj view (f . g)
     Look c n -> Look c (f n)
     Log t s n -> Log t s (f n)
+    Time g -> Time (f . g)
 
 type Game = Free GameCmd
 
@@ -90,3 +94,6 @@ look c = Free . Look c $ Pure ()
 
 log_ :: LogType -> String -> Game ()
 log_ t s = Free . Log t s $ Pure ()
+
+time :: Game TimePoint
+time = Free (Time Pure)
