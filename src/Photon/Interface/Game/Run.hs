@@ -43,8 +43,8 @@ data GameDriver = GameDriver {
   , drvRegisterLight    :: Light -> IO GPULight
   , drvRegisterCamera   :: (Projection,Entity) -> IO GPUCamera
   , drvLoadObject       :: (Load a) => String -> IO a
-  , drvRenderMeshes     :: GPUMaterial -> [GPUMesh] -> IO ()
-  , drvSwitchLightOn    :: GPULight -> IO ()
+  , drvRenderMeshes     :: GPUMaterial -> [(GPUMesh,Entity)] -> IO ()
+  , drvSwitchLightOn    :: (GPULight,Entity) -> IO ()
   , drvLook             :: GPUCamera -> IO ()
   , drvLog              :: LogType -> String -> IO ()
   }
@@ -116,6 +116,21 @@ runWithWindow window pollUserEvents eventHandler step initializedApp = do
 
 -------------------------------------------------------------------------------
 -- Game interpreter
+
+-- |This function generates the 'GameDriver'. It uses **OpenGL** to get all the
+-- required functions. The width and the height of the window are required in
+-- order to be able to generate framebuffers, textures or any kind of object
+-- viewport-related.
+--
+-- If the window’s dimensions change, the game driver should be recreated.
+gameDriver :: Natural -> Natural -> Bool -> IO GameDriver
+gameDriver width height fullscreen = do
+    -- create light program here
+    -- map light program’s uniforms here as well
+  where
+    renderMeshes_ mat meshes = do
+      runMaterial mat lightProgram
+      liftIO $ traverse_ (uncurry $ renderMesh lightProgram) meshes
 
 -------------------------------------------------------------------------------
 -- Callbacks
