@@ -25,8 +25,6 @@ module Photon.Interface.Game.Event (
   , SystemState(..)
   ) where
 
-import Data.List.NonEmpty ( NonEmpty(..) )
-
 data Key
   = Unknown
   | Space
@@ -198,4 +196,4 @@ data Event
   | SystemEvent SystemState
     deriving (Eq,Read,Show)
 
-type EventHandler u a = NonEmpty (Either u Event) -> a -> Maybe a
+type EventHandler u a = Either u Event -> a -> Maybe a
