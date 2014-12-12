@@ -188,4 +188,4 @@ data Event
   | SystemEvent SystemState
     deriving (Eq,Read,Show)
 
-type EventHandler a = NonEmpty Event -> a -> Maybe a
+type EventHandler u a = NonEmpty (Either u Event) -> a -> Maybe a
