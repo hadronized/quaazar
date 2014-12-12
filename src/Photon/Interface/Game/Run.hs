@@ -49,20 +49,41 @@ data GameDriver = GameDriver {
   , drvLog              :: LogType -> String -> IO ()
   }
 
+-- |Helper function to show 'GLSL.Version' type, because they didn’t pick the
+-- one from "Data.Version"…
 showGLFWVersion :: Version -> String
 showGLFWVersion (Version major minor rev) = intercalate "." $ map show [major,minor,rev]
 
 -------------------------------------------------------------------------------
 -- Run game
-runGame :: Natural
-        -> Natural
-        -> String
-        -> IO [e]
-        -> EventHandler e a
-        -> (a -> Game a)
-        -> (Natural -> Natural -> a)
+
+-- |Run a game session. This is the entry point of a photon-powered game. It
+-- spawns a standalone window in windowed or fullscreen mode. If you want to
+-- embed **photon** in a /GUI/ container, you shouldn’t use 'runGame'.
+--
+-- You’ll be asked for an event poller. This is optional; if you don’t want
+-- any specific events, just use @return []@. If you do, you’ll be placed in
+-- 'IO' so that you can do whatever you want, like socket-based communication
+-- or anything 'IO'-related.
+--
+-- Nevertheless, **photon** does generate core events. You have to react to
+-- them if you want your application to correctly behave. That’s done via an
+-- /event handler/ which type is 'EventHandler u a', where 'u' is your event
+-- type and 'a' your application.
+--
+-- The application runs in a special isolated monad, 'Game'. That type gives
+-- you everything you need for game-development. Feel free to read the 'Game'
+-- documentation for further understanding.
+runGame :: Natural -- ^ Width of the window
+        -> Natural -- ^ Height of the window
+        -> Bool -- ^ Should the window be fullscreen?
+        -> String -- ^ Title of the window
+        -> IO [u] -- ^ User-spefic events poller
+        -> EventHandler u a -- ^ Event handler
+        -> (a -> Game a) -- ^ Your application logic
+        -> a -- ^ Initial application
         -> IO ()
-runGame w h title pollUserEvents eventHandler step initApp = do
+runGame w h fullscreen title pollUserEvents eventHandler step app = do
     initiated <- GLFW.init
     if initiated then do
       glfwVersion <- fmap showGLFWVersion getVersion
@@ -77,10 +98,8 @@ runGame w h title pollUserEvents eventHandler step initApp = do
       terminate
       else do
         print (Log ErrorLog CoreLog "unable to init :(")
-  where
-    app = initApp w h
 
-runWithWindow :: Window -> IO [e] -> EventHandler e a -> (a -> Game a) -> a -> IO ()
+runWithWindow :: Window -> IO [u] -> EventHandler u a -> (a -> Game a) -> a -> IO ()
 runWithWindow window pollUserEvents eventHandler step initializedApp = do
     -- transaction variables
     events <- newTVarIO []
