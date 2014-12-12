@@ -160,6 +160,11 @@ data MouseButton
   = MouseLeft
   | MouseMiddle
   | MouseRight
+  | Mouse4
+  | Mouse5
+  | Mouse6
+  | Mouse7
+  | Mouse8
     deriving (Eq,Ord,Read,Show)
 
 data MouseButtonState
