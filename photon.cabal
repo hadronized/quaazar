@@ -36,6 +36,7 @@ library
                      , Photon.Interface.Game.Command
                      , Photon.Interface.Game.Event
                      , Photon.Interface.Game.Run
+                     , Photon.Interface.Game.Shaders
                      , Photon.Render.Camera
                      , Photon.Render.Light
                      , Photon.Render.Material

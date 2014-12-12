@@ -49,8 +49,11 @@ modelMatrixSem = 9
 
 ----------------------------------------------------------------------------
 -- Camera semantics
-cameraProjectionSem :: Int
-cameraProjectionSem = 10
+cameraProjViewSem :: Int
+cameraProjViewSem = 10
 
-cameraViewSem :: Int
-cameraViewSem = 11
+cameraEyeSem :: Int
+cameraEyeSem = 11
+
+cameraForwardSem :: Int
+cameraForwardSem = 12
