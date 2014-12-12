@@ -162,6 +162,11 @@ data MouseButton
   | MouseRight
     deriving (Eq,Ord,Read,Show)
 
+data MouseButtonState
+  = ButtonPressed MouseButton
+  | ButtonReleased MouseButton
+    deriving (Eq,Ord,Read,Show)
+
 data MouseMotion = MouseMotion {
     mouseX  :: Double
   , mouseY  :: Double
@@ -182,7 +187,7 @@ data SystemState
 
 data Event
   = KeyEvent KeyState
-  | MouseButtonEvent MouseButton
+  | MouseButtonEvent MouseButtonState
   | MouseMotionEvent MouseMotion
   | WindowEvent WindowState
   | SystemEvent SystemState
