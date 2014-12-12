@@ -12,12 +12,14 @@
 module Photon.Interface.Game.Event (
     -- * Events
     Event(..)
+  , CoreEvent(..)
   , EventHandler
     -- * Key
   , Key(..)
   , KeyState(..)
     -- * Mouse
   , MouseButton(..)
+  , MouseButtonState(..)
   , MouseMotion(..)
     -- * Window
   , WindowState(..)
@@ -205,7 +207,7 @@ data SystemState
     deriving (Eq,Read,Show)
 
 -- |Gather all core events.
-data Event
+data CoreEvent
   = KeyEvent KeyState
   | MouseButtonEvent MouseButtonState
   | MouseMotionEvent MouseMotion
@@ -213,6 +215,8 @@ data Event
   | SystemEvent SystemState
     deriving (Eq,Read,Show)
 
+data Event u = CoreEvent CoreEvent | UserEvent u deriving (Eq,Read,Show)
+
 -- |An 'EventHandler u a' handles core event 'Event' and user event 'u' in
 -- an application 'a'.
-type EventHandler u a = Either u Event -> a -> Maybe a
+type EventHandler u a = Event u -> a -> Maybe a

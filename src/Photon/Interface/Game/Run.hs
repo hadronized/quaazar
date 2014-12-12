@@ -17,9 +17,7 @@ import Control.Applicative
 import Control.Concurrent.STM ( atomically )
 import Control.Concurrent.STM.TVar ( TVar, modifyTVar, newTVarIO, readTVar
                                    , writeTVar )
-import Control.Monad ( forever, unless )
 import Data.List ( intercalate )
-import Data.Maybe ( fromMaybe )
 import Graphics.UI.GLFW as GLFW
 import Numeric.Natural ( Natural )
 import Photon.Core.Entity ( Entity )
@@ -35,7 +33,7 @@ import Photon.Render.Light ( GPULight )
 import Photon.Render.Material ( GPUMaterial )
 import Photon.Render.Mesh ( GPUMesh )
 import Photon.Utils.Log ( Log(..), LogCommitter(..), LogType(..) )
-import qualified Prelude as E ( Left, Right )
+import Prelude hiding ( Either(..) )
 
 data GameDriver = GameDriver {
     drvRegisterMesh     :: Mesh -> IO GPUMesh
@@ -118,19 +116,18 @@ runWithWindow window pollUserEvents eventHandler step initializedApp = do
     run_ events initializedApp
   where
     run_ events app = do
-      userEvs <- fmap (map Left) pollUserEvents
+      userEvs <- fmap (map UserEvent) pollUserEvents
       GLFW.pollEvents
       evs <- fmap (userEvs++) . atomically $ readTVar events <* writeTVar events []
-      app' <- routeEvents evs app
-      case app' of
-        Just appWithEvents -> do
-          interpretGame (step appWithEvents)
-          run_ events appWithEvents
+      case routeEvents evs app of
+        Just app' -> do
+          --interpretGame (step app')
+          run_ events app' 
         Nothing -> return () -- end of application requested
     routeEvents evs app = case evs of
       [] -> Just app
       (e:es) -> case eventHandler e app of
-        Just app' -> routeEvents xs app'
+        Just app' -> routeEvents es app'
         Nothing -> Nothing
 
 -------------------------------------------------------------------------------
@@ -142,6 +139,7 @@ runWithWindow window pollUserEvents eventHandler step initializedApp = do
 -- viewport-related.
 --
 -- If the window’s dimensions change, the game driver should be recreated.
+{-
 gameDriver :: Natural -> Natural -> Bool -> IO GameDriver
 gameDriver width height fullscreen = do
     -- create light program here
@@ -150,17 +148,18 @@ gameDriver width height fullscreen = do
     renderMeshes_ mat meshes = do
       runMaterial mat lightProgram
       liftIO $ traverse_ (uncurry $ renderMesh lightProgram) meshes
+-}
 
 -------------------------------------------------------------------------------
 -- Callbacks
-handleKey :: TVar [Either u Event] -> Window -> GLFW.Key -> Int -> GLFW.KeyState -> ModifierKeys -> IO ()
+handleKey :: TVar [Event u] -> Window -> GLFW.Key -> Int -> GLFW.KeyState -> ModifierKeys -> IO ()
 handleKey events _ k _ s _ = atomically . modifyTVar events $ (++ keys)
   where
     keys = case s of
       KeyState'Pressed   -> key KeyPressed
       KeyState'Released  -> key KeyReleased
       KeyState'Repeating -> key KeyReleased
-    key s = case k of
+    key st = case k of
         Key'Unknown      -> []
         Key'Space        -> r Space
         Key'Apostrophe   -> r Apostrophe
@@ -283,10 +282,10 @@ handleKey events _ k _ s _ = atomically . modifyTVar events $ (++ keys)
         Key'RightSuper   -> r RightSuper   
         Key'Menu         -> r Menu            
       where
-        r x = [E.Right . KeyEvent $ s x]
+        r x = [CoreEvent . KeyEvent $ st x]
 
-handleMouseButton :: TVar [Either u Event] -> Window -> GLFW.MouseButton -> GLFW.MouseButtonState -> ModifierKeys -> IO ()
-handleMouseButton events _ b s _ = atomically . modifyTVar events $ (++ [E.Right $ MouseButtonEvent mouseEvent])
+handleMouseButton :: TVar [Event u] -> Window -> GLFW.MouseButton -> GLFW.MouseButtonState -> ModifierKeys -> IO ()
+handleMouseButton events _ b s _ = atomically . modifyTVar events $ (++ [CoreEvent $ MouseButtonEvent mouseEvent])
   where
     mouseEvent = case s of
       MouseButtonState'Pressed -> ButtonPressed button
@@ -301,16 +300,16 @@ handleMouseButton events _ b s _ = atomically . modifyTVar events $ (++ [E.Right
       MouseButton'7 -> Mouse7
       MouseButton'8 -> Mouse8
 
-handleMouseMotion :: TVar (Double,Double) -> TVar [Either u Event] -> Window -> Double -> Double -> IO ()
+handleMouseMotion :: TVar (Double,Double) -> TVar [Event u] -> Window -> Double -> Double -> IO ()
 handleMouseMotion xy' events _ x y = do
     (x',y') <- atomically (readTVar xy')
-    atomically . modifyTVar events $ (++ [E.Right . MouseMotionEvent $ MouseMotion x y (x-x') (y-y')])
+    atomically . modifyTVar events $ (++ [CoreEvent . MouseMotionEvent $ MouseMotion x y (x-x') (y-y')])
 
-handleWindowClose :: TVar [Either u Event] -> Window -> IO ()
-handleWindowClose events _ = atomically . modifyTVar events $ (++ map E.Right [WindowEvent Closed,SystemEvent Quit])
+handleWindowClose :: TVar [Event u] -> Window -> IO ()
+handleWindowClose events _ = atomically . modifyTVar events $ (++ map CoreEvent [WindowEvent Closed,SystemEvent Quit])
 
-handleWindowFocus :: TVar [Either u Event] -> Window -> FocusState -> IO ()
-handleWindowFocus events _ f = atomically . modifyTVar events $ (++ [E.Right $ WindowEvent focusEvent])
+handleWindowFocus :: TVar [Event u] -> Window -> FocusState -> IO ()
+handleWindowFocus events _ f = atomically . modifyTVar events $ (++ [CoreEvent $ WindowEvent focusEvent])
   where
     focusEvent = case f of
       FocusState'Focused -> FocusGained
