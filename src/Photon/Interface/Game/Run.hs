@@ -13,6 +13,7 @@
 
 module Photon.Interface.Game.Run where
 
+import Control.Applicative
 import Control.Concurrent.STM ( atomically )
 import Control.Concurrent.STM.TVar ( TVar, modifyTVar, newTVarIO, readTVar
                                    , writeTVar )
@@ -34,7 +35,7 @@ import Photon.Render.Light ( GPULight )
 import Photon.Render.Material ( GPUMaterial )
 import Photon.Render.Mesh ( GPUMesh )
 import Photon.Utils.Log ( Log(..), LogCommitter(..), LogType(..) )
-import Prelude hiding ( Left, Right )
+import qualified Prelude as E ( Left, Right )
 
 data GameDriver = GameDriver {
     drvRegisterMesh     :: Mesh -> IO GPUMesh
@@ -101,12 +102,14 @@ runWithWindow window = do
     run_
   where
     run_ = do
+      -- poll GLFW events
       GLFW.pollEvents
-      --events <- getEvents
+      evs <- atomically (readTVar events <* writeTVar events [])
+      
       closed <- windowShouldClose window
       unless closed run_
 
-handleKey :: TVar [Event] -> Window -> GLFW.Key -> Int -> GLFW.KeyState -> ModifierKeys -> IO ()
+handleKey :: TVar [Either u Event] -> Window -> GLFW.Key -> Int -> GLFW.KeyState -> ModifierKeys -> IO ()
 handleKey events _ k _ s _ = atomically . modifyTVar events $ (++ keys)
   where
     keys = case s of
@@ -236,10 +239,10 @@ handleKey events _ k _ s _ = atomically . modifyTVar events $ (++ keys)
         Key'RightSuper   -> r RightSuper   
         Key'Menu         -> r Menu            
       where
-        r x = [KeyEvent $ s x]
+        r x = [E.Right . KeyEvent $ s x]
 
-handleMouseButton :: TVar [Event] -> Window -> GLFW.MouseButton -> GLFW.MouseButtonState -> ModifierKeys -> IO ()
-handleMouseButton events _ b s _ = atomically . modifyTVar events $ (++ [MouseButtonEvent mouseEvent])
+handleMouseButton :: TVar [Either u Event] -> Window -> GLFW.MouseButton -> GLFW.MouseButtonState -> ModifierKeys -> IO ()
+handleMouseButton events _ b s _ = atomically . modifyTVar events $ (++ [E.Right $ MouseButtonEvent mouseEvent])
   where
     mouseEvent = case s of
       MouseButtonState'Pressed -> ButtonPressed button
@@ -254,22 +257,17 @@ handleMouseButton events _ b s _ = atomically . modifyTVar events $ (++ [MouseBu
       MouseButton'7 -> Mouse7
       MouseButton'8 -> Mouse8
 
-handleMouseMotion :: TVar (Double,Double) -> TVar [Event] -> Window -> Double -> Double -> IO ()
+handleMouseMotion :: TVar (Double,Double) -> TVar [Either u Event] -> Window -> Double -> Double -> IO ()
 handleMouseMotion xy' events _ x y = do
     (x',y') <- atomically (readTVar xy')
-    atomically . modifyTVar events $ (++ [MouseMotionEvent $ MouseMotion x y (x-x') (y-y')])
+    atomically . modifyTVar events $ (++ [E.Right . MouseMotionEvent $ MouseMotion x y (x-x') (y-y')])
 
-handleWindowClose :: TVar [Event] -> Window -> IO ()
-handleWindowClose events _ = atomically . modifyTVar events $ (++ [WindowEvent Closed,SystemEvent Quit])
+handleWindowClose :: TVar [Either u Event] -> Window -> IO ()
+handleWindowClose events _ = atomically . modifyTVar events $ (++ map E.Right [WindowEvent Closed,SystemEvent Quit])
 
-handleWindowFocus :: TVar [Event] -> Window -> FocusState -> IO ()
-handleWindowFocus events _ f = atomically . modifyTVar events $ (++ [WindowEvent focusEvent])
+handleWindowFocus :: TVar [Either u Event] -> Window -> FocusState -> IO ()
+handleWindowFocus events _ f = atomically . modifyTVar events $ (++ [E.Right $ WindowEvent focusEvent])
   where
     focusEvent = case f of
       FocusState'Focused -> FocusGained
       FocusState'Defocused -> FocusLost
-
-{-
-getEvents :: Window -> IO [Event]
-getEvents =
--}
