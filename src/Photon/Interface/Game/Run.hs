@@ -54,13 +54,12 @@ showGLFWVersion (Version major minor rev) = intercalate "." $ map show [major,mi
 runGame :: Natural
         -> Natural
         -> String
-        -> IO [Event]
-        -> EventHandler a
-        -> GameDriver
+        -> IO [e]
+        -> EventHandler e a
         -> (a -> Game a)
-        -> a
+        -> (Natural -> Natural -> a)
         -> IO ()
-runGame w h title poll handler gameImpl step app = do
+runGame w h title pollUserEvents eventHandler step initApp = do
   initiated <- GLFW.init
   if initiated then do
     glfwVersion <- fmap showGLFWVersion getVersion
@@ -69,6 +68,7 @@ runGame w h title poll handler gameImpl step app = do
     windowHint (WindowHint'ContextVersionMinor 3)
     createWindow (fromIntegral w) (fromIntegral h) title Nothing Nothing >>= \win -> case win of
       Just window -> makeContextCurrent win >> runWithWindow window
+      -- TODO: display OpenGL information
       Nothing -> print (Log ErrorLog CoreLog "unable to create window :(")
     print (Log InfoLog CoreLog "bye!")
     terminate
