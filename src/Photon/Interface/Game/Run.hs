@@ -85,6 +85,8 @@ runGame w h title pollUserEvents eventHandler step initApp = do
 runWithWindow :: Window -> IO ()
 runWithWindow window = do
     events <- newTVarIO []
+    setKeyCallback window (Just $ handleKey events)
+    setMouseButtonCallback window (Just $ handleMouseButton events)
     setWindowCloseCallback window (Just $ handleWindowClose events)
     setWindowFocusCallback window (Just $ handleWindowFocus events)
     run_
@@ -226,6 +228,22 @@ handleKey events _ k _ s _ = atomically . modifyTVar events $ (++ keys)
         Key'Menu         -> r Menu            
       where
         r x = [KeyEvent $ s x]
+
+handleMouseButton :: TVar [Event] -> Window -> GLFW.MouseButton -> GLFW.MouseButtonState -> ModifierKeys -> IO ()
+handleMouseButton events _ b s _ = atomically . modifyTVar events $ (++ [MouseButtonEvent mouseEvent])
+  where
+    mouseEvent = case s of
+      MouseButtonState'Pressed -> ButtonPressed button
+      MouseButtonState'Released -> ButtonReleased button
+    button = case b of
+      MouseButton'1 -> MouseLeft
+      MouseButton'2 -> MouseRight
+      MouseButton'3 -> MouseMiddle
+      MouseButton'4 -> Mouse4
+      MouseButton'5 -> Mouse5
+      MouseButton'6 -> Mouse6
+      MouseButton'7 -> Mouse7
+      MouseButton'8 -> Mouse8
 
 handleWindowClose :: TVar [Event] -> Window -> IO ()
 handleWindowClose events _ = atomically . modifyTVar events $ (++ [WindowEvent Closed,SystemEvent Quit])
