@@ -36,16 +36,16 @@ import Photon.Render.Mesh ( GPUMesh )
 import Photon.Utils.Log ( Log(..), LogCommitter(..), LogType(..) )
 import Prelude hiding ( Left, Right )
 
-data GameImpl = GameImpl {
-    implRegisterMesh     :: Mesh -> IO GPUMesh
-  , implRegisterMaterial :: Material -> IO GPUMaterial
-  , implRegisterLight    :: Light -> IO GPULight
-  , implRegisterCamera   :: (Projection,Entity) -> IO GPUCamera
-  , implLoadObject       :: (Load a) => String -> IO a
-  , implRenderMeshes     :: GPUMaterial -> [GPUMesh] -> IO ()
-  , implSwitchLightOn    :: GPULight -> IO ()
-  , implLook             :: GPUCamera -> IO ()
-  , implLog              :: LogType -> String -> IO ()
+data GameDriver = GameDriver {
+    drvRegisterMesh     :: Mesh -> IO GPUMesh
+  , drvRegisterMaterial :: Material -> IO GPUMaterial
+  , drvRegisterLight    :: Light -> IO GPULight
+  , drvRegisterCamera   :: (Projection,Entity) -> IO GPUCamera
+  , drvLoadObject       :: (Load a) => String -> IO a
+  , drvRenderMeshes     :: GPUMaterial -> [GPUMesh] -> IO ()
+  , drvSwitchLightOn    :: GPULight -> IO ()
+  , drvLook             :: GPUCamera -> IO ()
+  , drvLog              :: LogType -> String -> IO ()
   }
 
 showGLFWVersion :: Version -> String
@@ -56,7 +56,7 @@ runGame :: Natural
         -> String
         -> IO [Event]
         -> EventHandler a
-        -> GameImpl
+        -> GameDriver
         -> (a -> Game a)
         -> a
         -> IO ()
