@@ -52,6 +52,8 @@ data GameDriver = GameDriver {
 showGLFWVersion :: Version -> String
 showGLFWVersion (Version major minor rev) = intercalate "." $ map show [major,minor,rev]
 
+-------------------------------------------------------------------------------
+-- Run game
 runGame :: Natural
         -> Natural
         -> String
@@ -61,30 +63,25 @@ runGame :: Natural
         -> (Natural -> Natural -> a)
         -> IO ()
 runGame w h title pollUserEvents eventHandler step initApp = do
-  initiated <- GLFW.init
-  if initiated then do
-    glfwVersion <- fmap showGLFWVersion getVersion
-    print (Log InfoLog CoreLog $ "GLFW " ++ glfwVersion ++ " initialized!")
-    windowHint (WindowHint'ContextVersionMajor 3)
-    windowHint (WindowHint'ContextVersionMinor 3)
-    createWindow (fromIntegral w) (fromIntegral h) title Nothing Nothing >>= \win -> case win of
-      Just window -> makeContextCurrent win >> runWithWindow window
-      -- TODO: display OpenGL information
-      Nothing -> print (Log ErrorLog CoreLog "unable to create window :(")
-    print (Log InfoLog CoreLog "bye!")
-    terminate
-    else do
-      print (Log ErrorLog CoreLog "unable to init :(")
-{-
+    initiated <- GLFW.init
+    if initiated then do
+      glfwVersion <- fmap showGLFWVersion getVersion
+      print (Log InfoLog CoreLog $ "GLFW " ++ glfwVersion ++ " initialized!")
+      windowHint (WindowHint'ContextVersionMajor 3)
+      windowHint (WindowHint'ContextVersionMinor 3)
+      createWindow (fromIntegral w) (fromIntegral h) title Nothing Nothing >>= \win -> case win of
+        Just window -> makeContextCurrent win >> runWithWindow window pollUserEvents eventHandler step app
+        -- TODO: display OpenGL information
+        Nothing -> print (Log ErrorLog CoreLog "unable to create window :(")
+      print (Log InfoLog CoreLog "bye!")
+      terminate
+      else do
+        print (Log ErrorLog CoreLog "unable to init :(")
   where
-    run app = pollEvents >>= forwardEvents app >>= maybe (return ()) (run . logic)
-    forwardEvents app events = return $ case events of
-      [] -> Just app
-      (x:xs) -> handler (x :| xs) app
-      -}
+    app = initApp w h
 
-runWithWindow :: Window -> IO ()
-runWithWindow window = do
+runWithWindow :: Window -> IO [e] -> EventHandler e a -> (a -> Game a) -> a -> IO ()
+runWithWindow window pollUserEvents eventHandler step initializedApp = do
     -- transaction variables
     events <- newTVarIO []
     mouseXY <- newTVarIO (0,0)
@@ -99,16 +96,29 @@ runWithWindow window = do
     -- pre-process
     getCursorPos window >>= atomically . writeTVar mouseXY
 
-    run_
+    run_ events initializedApp
   where
-    run_ = do
-      -- poll GLFW events
+    run_ events app = do
+      userEvs <- fmap (map Left) pollUserEvents
       GLFW.pollEvents
-      evs <- atomically (readTVar events <* writeTVar events [])
-      
-      closed <- windowShouldClose window
-      unless closed run_
+      evs <- fmap (userEvs++) . atomically $ readTVar events <* writeTVar events []
+      app' <- routeEvents evs app
+      case app' of
+        Just appWithEvents -> do
+          interpretGame (step appWithEvents)
+          run_ events appWithEvents
+        Nothing -> return () -- end of application requested
+    routeEvents evs app = case evs of
+      [] -> Just app
+      (e:es) -> case eventHandler e app of
+        Just app' -> routeEvents xs app'
+        Nothing -> Nothing
 
+-------------------------------------------------------------------------------
+-- Game interpreter
+
+-------------------------------------------------------------------------------
+-- Callbacks
 handleKey :: TVar [Either u Event] -> Window -> GLFW.Key -> Int -> GLFW.KeyState -> ModifierKeys -> IO ()
 handleKey events _ k _ s _ = atomically . modifyTVar events $ (++ keys)
   where
