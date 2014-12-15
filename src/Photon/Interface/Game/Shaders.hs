@@ -11,8 +11,6 @@
 
 module Photon.Interface.Game.Shaders where
 
-import Photon.Render.Semantics
-
 lightVS :: String
 lightVS = unlines
   [
@@ -20,8 +18,8 @@ lightVS = unlines
 
   , "layout (location = 0) in vec3 co;"
   , "layout (location = 1) in vec3 no;"
-  , "layout (location = " ++ show cameraProjViewSem ++ ") uniform mat4 projView;"
-  , "layout (location = " ++ show modelMatrixSem ++ ") uniform mat4 model;"
+  , "layout uniform mat4 projView;"
+  , "layout uniform mat4 model;"
 
   , "out vec3 vco;"
   , "out vec3 vno;"
@@ -41,15 +39,15 @@ lightFS = unlines
   , "in vec3 vco;"
   , "in vec3 vno;"
 
-  , "layout (location = " ++ show cameraEyeSem ++ ") uniform vec3 eye;"
-  , "layout (location = " ++ show cameraForwardSem ++ ") uniform vec3 forward;"
-  , "layout (location = " ++ show materialDiffuseAlbedoSem ++ ") uniform vec3 matDiffAlb;"
-  , "layout (location = " ++ show materialSpecularAlbedoSem ++ ") uniform vec3 matSpecAlb;"
-  , "layout (location = " ++ show materialShininessSem ++ ") uniform float matShn;"
-  , "layout (location = " ++ show lightPositionSem ++ ") uniform vec3 ligPos;"
-  , "layout (location = " ++ show lightColorSem ++ ") uniform vec3 ligCol;"
-  , "layout (location = " ++ show lightPowerSem ++ ") uniform float ligPow;"
-  , "layout (location = " ++ show lightRadiusSem ++ ") uniform float ligRad;"
+  , "layout uniform vec3 eye;"
+  , "layout uniform vec3 forward;"
+  , "layout uniform vec3 matDiffAlb;"
+  , "layout uniform vec3 matSpecAlb;"
+  , "layout uniform float matShn;"
+  , "layout uniform vec3 ligPos;"
+  , "layout uniform vec3 ligCol;"
+  , "layout uniform float ligPow;"
+  , "layout uniform float ligRad;"
   --, "layout (location = " ++ show lightProjViewSem ++ ") uniform mat4 ligProjView;"
   --, "layout (location = 2) uniform samplerCube shadowmap;"
 

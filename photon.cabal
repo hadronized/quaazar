@@ -59,7 +59,6 @@ library
                      , Photon.Render.GL.Shader
                      , Photon.Render.GL.Texture
                      , Photon.Render.GL.VertexArray
-                     , Photon.Render.Semantics
 
   default-extensions:  DeriveFunctor
                      , FlexibleContexts

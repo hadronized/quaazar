@@ -20,11 +20,11 @@ import Photon.Render.GL.Entity ( cameraTransform )
 import Photon.Render.GL.Shader ( Uniform, (@=) )
 
 data GPUCamera = GPUCamera {
-    runGPUCamera :: Uniform (M44 Float)
-                 -> Uniform (M44 Float)
-                 -> Uniform (V3 Float)
-                 -> Uniform (V3 Float)
-                 -> IO ()
+    runCamera :: Uniform (M44 Float)
+              -> Uniform (M44 Float)
+              -> Uniform (V3 Float)
+              -> Uniform (V3 Float)
+              -> IO ()
   }
 
 gpuCamera :: (Monad m) => Projection -> Entity -> m GPUCamera

@@ -28,6 +28,7 @@ import Photon.Core.Mesh ( Mesh )
 import Photon.Core.Projection ( Projection )
 import Photon.Interface.Game.Command ( GameCmd, Game )
 import Photon.Interface.Game.Event
+import Photon.Interface.Game.Shaders ( lightVS, lightFS )
 import Photon.Render.Camera ( GPUCamera )
 import Photon.Render.Light ( GPULight )
 import Photon.Render.Material ( GPUMaterial )
@@ -39,10 +40,10 @@ data GameDriver = GameDriver {
     drvRegisterMesh     :: Mesh -> IO GPUMesh
   , drvRegisterMaterial :: Material -> IO GPUMaterial
   , drvRegisterLight    :: Light -> IO GPULight
-  , drvRegisterCamera   :: (Projection,Entity) -> IO GPUCamera
+  , drvRegisterCamera   :: Projection -> Entity -> IO GPUCamera
   , drvLoadObject       :: (Load a) => String -> IO a
   , drvRenderMeshes     :: GPUMaterial -> [(GPUMesh,Entity)] -> IO ()
-  , drvSwitchLightOn    :: (GPULight,Entity) -> IO ()
+  , drvSwitchLightOn    :: GPULight -> Entity -> IO ()
   , drvLook             :: GPUCamera -> IO ()
   , drvLog              :: LogType -> String -> IO ()
   }
@@ -143,9 +144,29 @@ runWithWindow window pollUserEvents eventHandler step initializedApp = do
 gameDriver :: Natural -> Natural -> Bool -> IO GameDriver
 gameDriver width height fullscreen = do
     -- create light program here
-    -- map light program’s uniforms here as well
+    lightProgram <- gpuProgram [(VertexShader,lightVS),(FragmentShader,lightFS)]
+    -- map light program’s semantics here as well
+    let sem = programSemantic lightProgram
+    projViewU <- sem "projView"
+    modelU <- sem "model"
+    eyeU <- sem "eye"
+    matDiffAlbU <- sem "matDiffAlb"
+    matSpecAlbU <- sem "matSpecAlb"
+    matShnU <- sem "matShn"
+    ligPosU <- sem "ligPos"
+    ligColU <- sem "ligCol"
+    ligPowU <- sem "ligPow"
+    ligRadU <- sem "ligRad"
+    return $
+      GameDriver
+        gpuMesh
+        gpuMaterial
+        gpuLight
+        gpuCamera
+        load
+        
   where
-    renderMeshes_ mat meshes = do
+    renderMeshes_ lightProgram mat meshes = do
       runMaterial mat lightProgram
       liftIO $ traverse_ (uncurry $ renderMesh lightProgram) meshes
 -}
