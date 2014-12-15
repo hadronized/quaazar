@@ -140,7 +140,6 @@ runWithWindow window pollUserEvents eventHandler step initializedApp = do
 -- viewport-related.
 --
 -- If the window’s dimensions change, the game driver should be recreated.
-{-
 gameDriver :: Natural -> Natural -> Bool -> IO GameDriver
 gameDriver width height fullscreen = do
     -- create light program here
@@ -164,12 +163,12 @@ gameDriver width height fullscreen = do
         gpuLight
         gpuCamera
         load
-        
+        (\mat meshs -> do
+          runMaterial mat lightProgram
   where
     renderMeshes_ lightProgram mat meshes = do
       runMaterial mat lightProgram
       liftIO $ traverse_ (uncurry $ renderMesh lightProgram) meshes
--}
 
 -------------------------------------------------------------------------------
 -- Callbacks
