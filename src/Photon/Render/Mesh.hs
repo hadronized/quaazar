@@ -30,9 +30,9 @@ import Photon.Render.GL.Shader ( Uniform, (@=) )
 import Photon.Render.GL.VertexArray
 
 newtype GPUMesh = GPUMesh {
-    runMesh :: Uniform (M44 Float)
-            -> Entity
-            -> IO ()
+    renderMesh :: Uniform (M44 Float)
+               -> Entity
+               -> IO ()
   }
 
 makeLenses ''GPUMesh

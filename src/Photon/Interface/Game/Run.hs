@@ -17,22 +17,26 @@ import Control.Applicative
 import Control.Concurrent.STM ( atomically )
 import Control.Concurrent.STM.TVar ( TVar, modifyTVar, newTVarIO, readTVar
                                    , writeTVar )
+import Control.Monad ( forM )
+import Data.Foldable ( traverse_ )
 import Data.List ( intercalate )
 import Graphics.UI.GLFW as GLFW
 import Numeric.Natural ( Natural )
 import Photon.Core.Entity ( Entity )
 import Photon.Core.Light ( Light )
-import Photon.Core.Loader ( Load )
+import Photon.Core.Loader ( Load(..) )
 import Photon.Core.Material ( Material )
 import Photon.Core.Mesh ( Mesh )
 import Photon.Core.Projection ( Projection )
 import Photon.Interface.Game.Command ( GameCmd, Game )
 import Photon.Interface.Game.Event
 import Photon.Interface.Game.Shaders ( lightVS, lightFS )
-import Photon.Render.Camera ( GPUCamera )
-import Photon.Render.Light ( GPULight )
-import Photon.Render.Material ( GPUMaterial )
-import Photon.Render.Mesh ( GPUMesh )
+import Photon.Render.Camera ( GPUCamera, gpuCamera )
+import Photon.Render.GL.Shader ( ShaderType(..) )
+import Photon.Render.Light ( GPULight, gpuLight )
+import Photon.Render.Material ( GPUMaterial(..), gpuMaterial )
+import Photon.Render.Mesh ( GPUMesh(..), gpuMesh )
+import Photon.Render.Shader ( GPUProgram(..), gpuProgram )
 import Photon.Utils.Log ( Log(..), LogCommitter(..), LogType(..) )
 import Prelude hiding ( Either(..) )
 
@@ -103,14 +107,14 @@ runWithWindow window pollUserEvents eventHandler step initializedApp = do
     -- transaction variables
     events <- newTVarIO []
     mouseXY <- newTVarIO (0,0)
-    
+
     -- callbacks
     setKeyCallback window (Just $ handleKey events)
     setMouseButtonCallback window (Just $ handleMouseButton events)
     setCursorPosCallback window (Just $ handleMouseMotion mouseXY events)
     setWindowCloseCallback window (Just $ handleWindowClose events)
     setWindowFocusCallback window (Just $ handleWindowFocus events)
-    
+
     -- pre-process
     getCursorPos window >>= atomically . writeTVar mouseXY
 
@@ -123,7 +127,7 @@ runWithWindow window pollUserEvents eventHandler step initializedApp = do
       case routeEvents evs app of
         Just app' -> do
           --interpretGame (step app')
-          run_ events app' 
+          run_ events app'
         Nothing -> return () -- end of application requested
     routeEvents evs app = case evs of
       [] -> Just app
@@ -163,12 +167,14 @@ gameDriver width height fullscreen = do
         gpuLight
         gpuCamera
         load
-        (\mat meshs -> do
-          runMaterial mat lightProgram
+        (\mat meshes -> do
+            runMaterial mat lightProgram
+            forM meshes (uncurry renderMesh)
+          )
   where
     renderMeshes_ lightProgram mat meshes = do
       runMaterial mat lightProgram
-      liftIO $ traverse_ (uncurry $ renderMesh lightProgram) meshes
+      traverse_ (uncurry $ renderMesh lightProgram) meshes
 
 -------------------------------------------------------------------------------
 -- Callbacks
@@ -251,56 +257,56 @@ handleKey events _ k _ s _ = atomically . modifyTVar events $ (++ keys)
         Key'PrintScreen  -> r PrintScreen
         Key'Pause        -> r Pause
         Key'F1           -> r F1
-        Key'F2           -> r F2   
-        Key'F3           -> r F3   
-        Key'F4           -> r F4   
-        Key'F5           -> r F5   
-        Key'F6           -> r F6   
-        Key'F7           -> r F7   
-        Key'F8           -> r F8   
-        Key'F9           -> r F9   
-        Key'F10          -> r F10   
-        Key'F11          -> r F11   
-        Key'F12          -> r F12   
-        Key'F13          -> r F13   
-        Key'F14          -> r F14   
-        Key'F15          -> r F15   
-        Key'F16          -> r F16   
-        Key'F17          -> r F17   
-        Key'F18          -> r F18   
-        Key'F19          -> r F19   
-        Key'F20          -> r F20   
-        Key'F21          -> r F21   
-        Key'F22          -> r F22   
-        Key'F23          -> r F23   
-        Key'F24          -> r F24   
-        Key'F25          -> r F25   
-        Key'Pad0         -> r Pad0   
-        Key'Pad1         -> r Pad1   
-        Key'Pad2         -> r Pad2   
-        Key'Pad3         -> r Pad3   
-        Key'Pad4         -> r Pad4   
-        Key'Pad5         -> r Pad5   
-        Key'Pad6         -> r Pad6   
-        Key'Pad7         -> r Pad7   
-        Key'Pad8         -> r Pad8   
-        Key'Pad9         -> r Pad9   
-        Key'PadDecimal   -> r PadDecimal   
-        Key'PadDivide    -> r PadDivide   
-        Key'PadMultiply  -> r PadMultiply   
-        Key'PadSubtract  -> r PadSubtract   
-        Key'PadAdd       -> r PadAdd   
-        Key'PadEnter     -> r PadEnter   
-        Key'PadEqual     -> r PadEqual   
-        Key'LeftShift    -> r LeftShift   
-        Key'LeftControl  -> r LeftControl   
-        Key'LeftAlt      -> r LeftAlt   
-        Key'LeftSuper    -> r LeftSuper   
-        Key'RightShift   -> r RightShift   
-        Key'RightControl -> r RightControl   
-        Key'RightAlt     -> r RightAlt   
-        Key'RightSuper   -> r RightSuper   
-        Key'Menu         -> r Menu            
+        Key'F2           -> r F2
+        Key'F3           -> r F3
+        Key'F4           -> r F4
+        Key'F5           -> r F5
+        Key'F6           -> r F6
+        Key'F7           -> r F7
+        Key'F8           -> r F8
+        Key'F9           -> r F9
+        Key'F10          -> r F10
+        Key'F11          -> r F11
+        Key'F12          -> r F12
+        Key'F13          -> r F13
+        Key'F14          -> r F14
+        Key'F15          -> r F15
+        Key'F16          -> r F16
+        Key'F17          -> r F17
+        Key'F18          -> r F18
+        Key'F19          -> r F19
+        Key'F20          -> r F20
+        Key'F21          -> r F21
+        Key'F22          -> r F22
+        Key'F23          -> r F23
+        Key'F24          -> r F24
+        Key'F25          -> r F25
+        Key'Pad0         -> r Pad0
+        Key'Pad1         -> r Pad1
+        Key'Pad2         -> r Pad2
+        Key'Pad3         -> r Pad3
+        Key'Pad4         -> r Pad4
+        Key'Pad5         -> r Pad5
+        Key'Pad6         -> r Pad6
+        Key'Pad7         -> r Pad7
+        Key'Pad8         -> r Pad8
+        Key'Pad9         -> r Pad9
+        Key'PadDecimal   -> r PadDecimal
+        Key'PadDivide    -> r PadDivide
+        Key'PadMultiply  -> r PadMultiply
+        Key'PadSubtract  -> r PadSubtract
+        Key'PadAdd       -> r PadAdd
+        Key'PadEnter     -> r PadEnter
+        Key'PadEqual     -> r PadEqual
+        Key'LeftShift    -> r LeftShift
+        Key'LeftControl  -> r LeftControl
+        Key'LeftAlt      -> r LeftAlt
+        Key'LeftSuper    -> r LeftSuper
+        Key'RightShift   -> r RightShift
+        Key'RightControl -> r RightControl
+        Key'RightAlt     -> r RightAlt
+        Key'RightSuper   -> r RightSuper
+        Key'Menu         -> r Menu
       where
         r x = [CoreEvent . KeyEvent $ st x]
 
