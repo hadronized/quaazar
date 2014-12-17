@@ -12,28 +12,25 @@
 module Photon.Render.Light where
 
 import Control.Lens
+import Linear.V3 ( V3 )
 import Photon.Core.Color ( unColor )
 import Photon.Core.Entity ( Entity, entityPosition )
 import Photon.Core.Light ( Light(..) )
-import Photon.Render.GL.Shader ( Uniform, Uniformable, (@?=) )
-import Photon.Render.Semantics ( lightCastShadowsSem, lightColorSem
-                               , lightPositionSem, lightPowerSem, lightRadiusSem
-                               )
-import Photon.Render.Shader ( GPUProgram, programSemantic )
+import Photon.Render.GL.Shader ( Uniform, (@=) )
 
-newtype GPULight = GPULight { runLight :: GPUProgram -> Entity -> IO () }
+newtype GPULight = GPULight {
+    runLight :: Uniform (V3 Float) -- ^ color
+             -> Uniform Float -- ^ power
+             -> Uniform Float -- ^ radius
+             -> Uniform (V3 Float) -- ^ position
+             -> Entity
+             -> IO ()
+  }
 
 gpuLight :: (Monad m) => Light -> m GPULight
-gpuLight (Light _ col power radius castShadows) = return . GPULight $ \program ent -> do
-  let
-    sem :: (Uniformable a) => Int -> Maybe (Uniform a)
-    sem = programSemantic program
-  sem lightCastShadowsSem @?= fromBool castShadows
-  sem lightColorSem @?= unColor col
-  sem lightPowerSem @?= power
-  sem lightRadiusSem @?= radius
-  --sem lightTypeSem @?= t -- FIXME
-  sem lightPositionSem @?= (ent^.entityPosition)
-    
-fromBool :: Bool -> Int
-fromBool b = if b then 1 else 0
+gpuLight (Light _ col power radius castShadows) =
+  return . GPULight $ \coloru poweru radiusu posu ent -> do
+  coloru @= unColor col
+  poweru @= power
+  radiusu @= radius
+  posu @= (ent^.entityPosition)

@@ -12,11 +12,10 @@
 module Photon.Render.Mesh where
 
 import Control.Lens
-import Control.Monad.Trans ( MonadIO(..) )
 import Data.Word ( Word32 )
 import Foreign.Ptr ( nullPtr )
 import Foreign.Storable ( sizeOf )
-import Linear ( V2, V3 )
+import Linear ( M44, V2, V3 )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Photon.Core.Entity ( Entity )
@@ -27,29 +26,20 @@ import Photon.Core.UV
 import Photon.Render.GL.Buffer
 import Photon.Render.GL.Entity ( entityTransform )
 import Photon.Render.GL.Primitive
-import Photon.Render.GL.Shader ( (@?=) )
+import Photon.Render.GL.Shader ( Uniform, (@=) )
 import Photon.Render.GL.VertexArray
-import Photon.Render.Semantics ( modelMatrixSem )
-import Photon.Render.Shader ( GPUProgram, programSemantic )
 
-data GPUMesh = GPUMesh {
-    -- |VBO.
-    _gpuMeshVBO    :: Buffer
-    -- |IBO.
-  , _gpuMeshIBO    :: Buffer
-    -- |VAO.
-  , _gpuMeshVAO    :: VertexArray
-    -- |Primitive.
-  , _gpuMeshPrim   :: Primitive
-    -- |Vertices number.
-  , _gpuMeshVertNB :: Int
-  } deriving (Eq,Show)
+newtype GPUMesh = GPUMesh {
+    renderMesh :: Uniform (M44 Float)
+               -> Entity
+               -> IO ()
+  }
 
 makeLenses ''GPUMesh
 
 -- |OpenGL 'Mesh' representation.
-gpuMesh :: (MonadIO m) => Mesh -> m GPUMesh
-gpuMesh msh = liftIO $ case msh^.meshVertices of
+gpuMesh :: Mesh -> IO GPUMesh
+gpuMesh msh = case msh^.meshVertices of
     Interleaved v -> gpuMesh (msh & meshVertices .~ deinterleaved v)
     Deinterleaved vnb positions normals uvs -> do
       vb <- genBuffer
@@ -100,20 +90,14 @@ gpuMesh msh = liftIO $ case msh^.meshVertices of
 
       unbindBuffer IndexBuffer
 
-      return $ GPUMesh vb ib va prim verticesNb
+      return . GPUMesh $ \modelSem ent -> do
+        modelSem @= entityTransform ent
+        bindVertexArray va
+        glDrawElements (fromPrimitive prim) (fromIntegral vnb) gl_UNSIGNED_INT nullPtr
   where
     inds          = msh^.meshVGroup.to fromVGroup
     verticesNb    = length inds
     prim          = toGLPrimitive (msh^.meshVGroup)
-
-renderMesh :: (MonadIO m) => GPUProgram -> GPUMesh -> Entity -> m ()
-renderMesh program msh ent = liftIO $ do
-    sem modelMatrixSem @?= entityTransform ent
-    bindVertexArray (msh^.gpuMeshVAO)
-    glDrawElements (fromPrimitive $ msh^.gpuMeshPrim) vnb gl_UNSIGNED_INT nullPtr
-  where
-    sem = programSemantic program
-    vnb = fromIntegral (msh^.gpuMeshVertNB)
 
 toGLPrimitive :: VGroup -> Primitive
 toGLPrimitive vg = case vg of

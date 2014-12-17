@@ -15,20 +15,22 @@ module Photon.Render.Material (
   , gpuMaterial
   ) where
 
-import Photon.Core.Material ( MaterialLayer(..), unAlbedo )
-import Photon.Render.GL.Shader ( Uniform, Uniformable, (@?=) )
-import Photon.Render.Semantics ( materialDiffuseAlbedoSem
-                               , materialShininessSem
-                               , materialSpecularAlbedoSem )
-import Photon.Render.Shader ( GPUProgram, programSemantic )
+import Linear.V3 ( V3 )
+import Photon.Core.Material ( Material(..), MaterialLayer(..), unAlbedo )
+import Photon.Render.GL.Shader ( Uniform, (@=) )
 
-newtype GPUMaterial = GPUMaterial { runMaterial :: GPUProgram -> IO () }
+newtype GPUMaterial = GPUMaterial {
+    runMaterial :: Uniform (V3 Float) -- ^ diffuse albedo
+                -> Uniform (V3 Float) -- ^ specular albedo
+                -> Uniform Float -- ^ shininess
+                -> IO ()
+  }
 
-gpuMaterial :: (Monad m) => MaterialLayer -> m GPUMaterial
-gpuMaterial (MaterialLayer dalb salb shn) = return . GPUMaterial $ \program -> do
-   let
-     sem :: (Uniformable a) => Int -> Maybe (Uniform a)
-     sem = programSemantic program
-   sem materialDiffuseAlbedoSem @?= unAlbedo dalb
-   sem materialSpecularAlbedoSem @?= unAlbedo salb
-   sem materialShininessSem @?= shn
+-- TODO: implement multilayered material
+gpuMaterial :: (Monad m) => Material -> m GPUMaterial
+gpuMaterial (Material []) = return . GPUMaterial $ \_ _ _ -> return ()
+gpuMaterial (Material (MaterialLayer dalb salb shn:_)) =
+  return . GPUMaterial $ \diffu specu shnu -> do
+    diffu @= unAlbedo dalb
+    specu @= unAlbedo salb
+    shnu @= shn

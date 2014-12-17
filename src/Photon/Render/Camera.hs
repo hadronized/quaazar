@@ -11,19 +11,21 @@
 
 module Photon.Render.Camera where
 
-import Photon.Core.Entity ( Entity )
+import Control.Lens
+import Linear ( (!*!), M44, V3 )
+import Photon.Core.Entity ( Entity, entityPosition )
 import Photon.Core.Projection ( Projection, projectionMatrix )
 import Photon.Render.GL.Entity ( cameraTransform )
-import Photon.Render.GL.Shader ( Uniform, Uniformable, (@?=) )
-import Photon.Render.Semantics ( cameraProjectionSem, cameraViewSem )
-import Photon.Render.Shader
+import Photon.Render.GL.Shader ( Uniform, (@=) )
 
-data GPUCamera = GPUCamera { runGPUCamera :: GPUProgram -> IO () }
+data GPUCamera = GPUCamera {
+    runCamera :: Uniform (M44 Float) -- ^ projection * view
+              -> Uniform (V3 Float) -- ^ eye
+              -> IO ()
+  }
 
 gpuCamera :: (Monad m) => Projection -> Entity -> m GPUCamera
-gpuCamera proj ent = return . GPUCamera $ \program -> do
-  let
-    sem :: (Uniformable a) => Int -> Maybe (Uniform a)
-    sem = programSemantic program
-  sem cameraProjectionSem @?= projectionMatrix proj
-  sem cameraViewSem @?= cameraTransform ent
+gpuCamera proj ent = return . GPUCamera $ \projViewU eyeu -> do
+  projViewU @= projectionMatrix proj !*! cameraTransform ent
+  eyeu @= ent^.entityPosition
+  -- TODO: forward

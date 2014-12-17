@@ -46,6 +46,7 @@ module Photon.Utils.Log (
   , LogType(..)
   , LogCommitter(..)
     -- * Logging functions
+  , log_
   , deb
   , info
   , warn
@@ -100,21 +101,25 @@ instance Show LogCommitter where
     BackendLog impl -> take 8 $ impl ++ repeat ' '
     UserLog         -> "user    "
 
+-- |Create a log.
+log_ :: (MonadLogger m) => LogType -> LogCommitter -> String -> m ()
+log_ t c m = journal_ (Log t c m)
+
 -- |Create a debug log.
 deb :: (MonadLogger m) => LogCommitter -> String -> m ()
-deb c = journal_ . Log DebLog c
+deb = log_ DebLog
 
 -- |Create an informational log.
 info :: (MonadLogger m) => LogCommitter -> String -> m ()
-info c = journal_ . Log InfoLog c
+info = log_ InfoLog
 
 -- |Create a warning log.
 warn :: (MonadLogger m) => LogCommitter -> String -> m ()
-warn c = journal_ . Log WarningLog c
+warn = log_ WarningLog
 
 -- |Create an error log.
 err :: (MonadLogger m) => LogCommitter -> String -> m ()
-err c = journal_ . Log ErrorLog c
+err = log_ ErrorLog
 
 journal_ :: (MonadLogger m) => Log -> m ()
 journal_ = journal . fromList . discardNewlines

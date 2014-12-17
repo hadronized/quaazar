@@ -13,6 +13,7 @@
 module Photon.Core.Loader (
     -- * Loading resources
     loadJSON
+  , Load
   , load 
     -- * Loaders
   , loadMesh
@@ -35,8 +36,8 @@ import System.FilePath
 rootPath :: FilePath
 rootPath = "data"
 
-class Load a where
-  load :: (MonadIO m,MonadLogger m,MonadPlus m,FromJSON a)
+class (FromJSON a) => Load a where
+  load :: (MonadIO m,MonadLogger m,MonadPlus m)
        => String
        -> m a
 
