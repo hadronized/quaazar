@@ -19,10 +19,10 @@ import Photon.Core.Light ( Light(..) )
 import Photon.Render.GL.Shader ( Uniform, (@=) )
 
 newtype GPULight = GPULight {
-    runLight :: Uniform (V3 Float)
-             -> Uniform Float
-             -> Uniform Float
-             -> Uniform (V3 Float)
+    runLight :: Uniform (V3 Float) -- ^ color
+             -> Uniform Float -- ^ power
+             -> Uniform Float -- ^ radius
+             -> Uniform (V3 Float) -- ^ position
              -> Entity
              -> IO ()
   }

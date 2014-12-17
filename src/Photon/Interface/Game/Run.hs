@@ -17,7 +17,11 @@ import Control.Applicative
 import Control.Concurrent.STM ( atomically )
 import Control.Concurrent.STM.TVar ( TVar, modifyTVar, newTVarIO, readTVar
                                    , writeTVar )
-import Control.Monad ( forM )
+import Control.Monad ( forM_ )
+import Control.Monad.Trans ( liftIO )
+import Control.Monad.Trans.Either ( runEitherT )
+import Control.Monad.Trans.Journal ( evalJournalT, sink )
+import Control.Monad.Trans.Maybe ( runMaybeT )
 import Data.Foldable ( traverse_ )
 import Data.List ( intercalate )
 import Graphics.UI.GLFW as GLFW
@@ -31,21 +35,22 @@ import Photon.Core.Projection ( Projection )
 import Photon.Interface.Game.Command ( GameCmd, Game )
 import Photon.Interface.Game.Event
 import Photon.Interface.Game.Shaders ( lightVS, lightFS )
-import Photon.Render.Camera ( GPUCamera, gpuCamera )
-import Photon.Render.GL.Shader ( ShaderType(..) )
-import Photon.Render.Light ( GPULight, gpuLight )
+import Photon.Render.Camera ( GPUCamera(..), gpuCamera )
+import Photon.Render.GL.Shader ( ShaderType(..), Uniform, Uniformable )
+import Photon.Render.Light ( GPULight(..), gpuLight )
 import Photon.Render.Material ( GPUMaterial(..), gpuMaterial )
 import Photon.Render.Mesh ( GPUMesh(..), gpuMesh )
 import Photon.Render.Shader ( GPUProgram(..), gpuProgram )
 import Photon.Utils.Log ( Log(..), LogCommitter(..), LogType(..) )
-import Prelude hiding ( Either(..) )
+import Prelude ( Either(Either) )
+import Prelude hiding ( Either(Left,Right) )
 
 data GameDriver = GameDriver {
     drvRegisterMesh     :: Mesh -> IO GPUMesh
   , drvRegisterMaterial :: Material -> IO GPUMaterial
   , drvRegisterLight    :: Light -> IO GPULight
   , drvRegisterCamera   :: Projection -> Entity -> IO GPUCamera
-  , drvLoadObject       :: (Load a) => String -> IO a
+  , drvLoadObject       :: (Load a) => String -> IO (Maybe a)
   , drvRenderMeshes     :: GPUMaterial -> [(GPUMesh,Entity)] -> IO ()
   , drvSwitchLightOn    :: GPULight -> Entity -> IO ()
   , drvLook             :: GPUCamera -> IO ()
@@ -144,37 +149,39 @@ runWithWindow window pollUserEvents eventHandler step initializedApp = do
 -- viewport-related.
 --
 -- If the window’s dimensions change, the game driver should be recreated.
-gameDriver :: Natural -> Natural -> Bool -> IO GameDriver
-gameDriver width height fullscreen = do
+gameDriver :: Natural -> Natural -> Bool -> IO (Maybe GameDriver)
+gameDriver width height fullscreen = fmap hush . runEitherT $ do
     -- create light program here
-    lightProgram <- gpuProgram [(VertexShader,lightVS),(FragmentShader,lightFS)]
-    -- map light program’s semantics here as well
-    let sem = programSemantic lightProgram
-    projViewU <- sem "projView"
-    modelU <- sem "model"
-    eyeU <- sem "eye"
-    matDiffAlbU <- sem "matDiffAlb"
-    matSpecAlbU <- sem "matSpecAlb"
-    matShnU <- sem "matShn"
-    ligPosU <- sem "ligPos"
-    ligColU <- sem "ligCol"
-    ligPowU <- sem "ligPow"
-    ligRadU <- sem "ligRad"
-    return $
-      GameDriver
-        gpuMesh
-        gpuMaterial
-        gpuLight
-        gpuCamera
-        load
-        (\mat meshes -> do
-            runMaterial mat lightProgram
-            forM meshes (uncurry renderMesh)
-          )
-  where
-    renderMeshes_ lightProgram mat meshes = do
-      runMaterial mat lightProgram
-      traverse_ (uncurry $ renderMesh lightProgram) meshes
+    lightProgram <- evalJournalT $ gpuProgram [(VertexShader,lightVS),(FragmentShader,lightFS)] <* sink print
+    let
+      sem :: (Uniformable a) => String -> IO (Uniform a)
+      sem = programSemantic lightProgram
+    liftIO $ do
+      -- map light program’s semantics here as well
+      projViewU <- sem "projView"
+      modelU <- sem "model"
+      eyeU <- sem "eye"
+      matDiffAlbU <- sem "matDiffAlb"
+      matSpecAlbU <- sem "matSpecAlb"
+      matShnU <- sem "matShn"
+      ligPosU <- sem "ligPos"
+      ligColU <- sem "ligCol"
+      ligPowU <- sem "ligPow"
+      ligRadU <- sem "ligRad"
+      return $
+        GameDriver
+          gpuMesh
+          gpuMaterial
+          gpuLight
+          gpuCamera
+          (\name -> runMaybeT . evalJournalT $ load name <* sink print)
+          (\mat meshes -> do
+              runMaterial mat matDiffAlbU matSpecAlbU matShnU
+              forM_ meshes $ \(gpum,ent) -> renderMesh gpum modelU ent
+            )
+          (\gpul ent -> runLight gpul ligColU ligPowU ligRadU ligPosU ent)
+          (\gpuc -> runCamera gpuc projViewU eyeU)
+          (\lt msg -> print $ Log lt UserLog msg)
 
 -------------------------------------------------------------------------------
 -- Callbacks
@@ -340,3 +347,6 @@ handleWindowFocus events _ f = atomically . modifyTVar events $ (++ [CoreEvent $
     focusEvent = case f of
       FocusState'Focused -> FocusGained
       FocusState'Defocused -> FocusLost
+
+hush :: Either e a -> Maybe a
+hush = either (const Nothing) Just
