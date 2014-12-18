@@ -22,7 +22,6 @@ module Photon.Core.Loader (
   ) where
 
 import Control.Exception ( IOException, catch )
-import Control.Monad ( MonadPlus(..) )
 import Control.Monad.Trans ( MonadIO, liftIO )
 import Data.ByteString.Lazy as B ( readFile )
 import Data.Aeson
@@ -37,9 +36,9 @@ rootPath :: FilePath
 rootPath = "data"
 
 class (FromJSON a) => Load a where
-  load :: (MonadIO m,MonadLogger m,MonadPlus m)
+  load :: (MonadIO m,MonadLogger m)
        => String
-       -> m a
+       -> m (Maybe a)
 
 instance Load Mesh where
   load = loadMesh
@@ -63,35 +62,35 @@ loadJSON path = do
   where
     onError ioe = return . Left $ "unable to open file: " ++ show (ioe :: IOException)
 
-loadMesh :: (MonadIO m,MonadLogger m,MonadPlus m) => String -> m Mesh
+loadMesh :: (MonadIO m,MonadLogger m) => String -> m (Maybe Mesh)
 loadMesh n = loadJSON path >>= either loadError ok
   where
     path = "meshes" </> n <.> "ymsh"
     loadError e = do
       err CoreLog $ "failed to load mesh '" ++ path ++ "': " ++ e
-      mzero
+      return Nothing
     ok msh = do
       info CoreLog $ "loaded mesh '" ++ n ++ "'"
-      return msh
+      return (Just msh)
 
-loadMaterial :: (MonadIO m,MonadLogger m,MonadPlus m) => String -> m Material
+loadMaterial :: (MonadIO m,MonadLogger m) => String -> m (Maybe Material)
 loadMaterial n = loadJSON path >>= either loadError ok
   where
     path = "materials" </> n <.> "ymat"
     loadError e = do
       err CoreLog $ "failed to load material '" ++ path ++ "': " ++ e
-      mzero
+      return Nothing
     ok mat = do
       info CoreLog $ "loaded material '" ++ n ++ "'"
-      return mat
+      return (Just mat)
 
-loadLight :: (MonadIO m,MonadLogger m,MonadPlus m) => String -> m Light
+loadLight :: (MonadIO m,MonadLogger m) => String -> m (Maybe Light)
 loadLight n = loadJSON path >>= either loadError ok
   where
     path = "lights" </> n <.> "ylig"
     loadError e = do
       err CoreLog $ "failed to load light '" ++ path ++ "': " ++ e
-      mzero
+      return Nothing
     ok lig = do
       info CoreLog $ "loaded light '" ++ n ++ "'"
-      return lig
+      return (Just lig)
