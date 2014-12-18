@@ -47,7 +47,7 @@ import Photon.Render.Light ( GPULight(..), gpuLight )
 import Photon.Render.Material ( GPUMaterial(..), gpuMaterial )
 import Photon.Render.Mesh ( GPUMesh(..), gpuMesh )
 import Photon.Render.Shader ( GPUProgram(..), gpuProgram )
-import Photon.Utils.Log ( Log(..), LogCommitter(..), LogType(..) )
+import Photon.Utils.Log ( Log(..), LogCommitter(..), LogType(..), sinkLogs )
 import Photon.Utils.TimePoint
 import Prelude ( Either(Either) )
 import Prelude hiding ( Either(Left,Right) )
@@ -164,7 +164,7 @@ gameDriver width height fullscreen = do
   gdrv <- runEitherT $ do
     -- create light program here
     lightProgram <- evalJournalT $
-      gpuProgram [(VertexShader,lightVS),(FragmentShader,lightFS)] <* sink print
+      gpuProgram [(VertexShader,lightVS),(FragmentShader,lightFS)] <* sinkLogs
     let
       sem :: (Uniformable a) => String -> IO (Uniform a)
       sem = programSemantic lightProgram
