@@ -43,16 +43,16 @@ import Photon.Utils.TimePoint ( TimePoint )
 
 data GameCmd n
   = RegisterMesh Mesh (GPUMesh -> n)
-  | forall a. (Load a) => LoadObject String (a -> n)
+  | forall a. (Load a) => LoadObject String (Maybe a -> n)
   | RegisterMaterial Material (GPUMaterial -> n)
   | RenderMeshes GPUMaterial [GPUMesh] n
   | RegisterLight Light (GPULight -> n)
-  | SwitchLightOn GPULight n
+  | SwitchLightOn GPULight Entity n
   | RegisterCamera Projection Entity (GPUCamera -> n)
   | Look GPUCamera n
   | Log LogType String n
   | Time (TimePoint -> n)
-  
+
 instance Functor GameCmd where
   fmap f a = case a of
     RegisterMesh m g -> RegisterMesh m (f . g)
@@ -60,7 +60,7 @@ instance Functor GameCmd where
     RegisterMaterial m g -> RegisterMaterial m (f . g)
     RenderMeshes mat mshs n -> RenderMeshes mat mshs (f n)
     RegisterLight l g -> RegisterLight l (f . g)
-    SwitchLightOn l n -> SwitchLightOn l (f n)
+    SwitchLightOn l ent n -> SwitchLightOn l ent (f n)
     RegisterCamera proj view g -> RegisterCamera proj view (f . g)
     Look c n -> Look c (f n)
     Log t s n -> Log t s (f n)
@@ -71,7 +71,7 @@ type Game = Free GameCmd
 registerMesh :: Mesh -> Game GPUMesh
 registerMesh m = Free (RegisterMesh m Pure)
 
-load :: (Load a) => String -> Game a
+load :: (Load a) => String -> Game (Maybe a)
 load name = Free (LoadObject name Pure)
 
 registerMaterial :: Material -> Game GPUMaterial
@@ -83,8 +83,8 @@ renderMeshes mat mshs = Free . RenderMeshes mat mshs $ Pure ()
 registerLight :: Light -> Game GPULight
 registerLight l = Free (RegisterLight l Pure)
 
-switchLightOn :: GPULight -> Game ()
-switchLightOn l = Free . SwitchLightOn l $ Pure ()
+switchLightOn :: GPULight -> Entity -> Game ()
+switchLightOn l ent = Free . SwitchLightOn l ent $ Pure ()
 
 registerCamera :: Projection -> Entity -> Game GPUCamera
 registerCamera proj view = Free (RegisterCamera proj view Pure)

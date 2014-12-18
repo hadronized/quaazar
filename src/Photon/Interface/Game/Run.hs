@@ -11,18 +11,23 @@
 --
 ----------------------------------------------------------------------------
 
-module Photon.Interface.Game.Run where
+module Photon.Interface.Game.Run (
+    -- * Running games
+    runGame
+  ) where
 
 import Control.Applicative
 import Control.Concurrent.STM ( atomically )
 import Control.Concurrent.STM.TVar ( TVar, modifyTVar, newTVarIO, readTVar
                                    , writeTVar )
 import Control.Monad ( forM_ )
+import Control.Monad.Free ( Free(..) )
 import Control.Monad.Trans ( liftIO )
 import Control.Monad.Trans.Either ( runEitherT )
 import Control.Monad.Trans.Journal ( evalJournalT, sink )
 import Control.Monad.Trans.Maybe ( runMaybeT )
 import Data.Foldable ( traverse_ )
+import Data.Traversable ( traverse )
 import Data.List ( intercalate )
 import Graphics.UI.GLFW as GLFW
 import Numeric.Natural ( Natural )
@@ -33,6 +38,7 @@ import Photon.Core.Material ( Material )
 import Photon.Core.Mesh ( Mesh )
 import Photon.Core.Projection ( Projection )
 import Photon.Interface.Game.Command ( GameCmd, Game )
+import qualified Photon.Interface.Game.Command as GC ( GameCmd(..) )
 import Photon.Interface.Game.Event
 import Photon.Interface.Game.Shaders ( lightVS, lightFS )
 import Photon.Render.Camera ( GPUCamera(..), gpuCamera )
@@ -42,6 +48,7 @@ import Photon.Render.Material ( GPUMaterial(..), gpuMaterial )
 import Photon.Render.Mesh ( GPUMesh(..), gpuMesh )
 import Photon.Render.Shader ( GPUProgram(..), gpuProgram )
 import Photon.Utils.Log ( Log(..), LogCommitter(..), LogType(..) )
+import Photon.Utils.TimePoint
 import Prelude ( Either(Either) )
 import Prelude hiding ( Either(Left,Right) )
 
@@ -55,6 +62,7 @@ data GameDriver = GameDriver {
   , drvSwitchLightOn    :: GPULight -> Entity -> IO ()
   , drvLook             :: GPUCamera -> IO ()
   , drvLog              :: LogType -> String -> IO ()
+  , drvTime             :: IO TimePoint
   }
 
 -- |Helper function to show 'GLSL.Version' type, because they didn’t pick the
@@ -99,7 +107,7 @@ runGame w h fullscreen title pollUserEvents eventHandler step app = do
       windowHint (WindowHint'ContextVersionMajor 3)
       windowHint (WindowHint'ContextVersionMinor 3)
       createWindow (fromIntegral w) (fromIntegral h) title Nothing Nothing >>= \win -> case win of
-        Just window -> makeContextCurrent win >> runWithWindow window pollUserEvents eventHandler step app
+        Just window -> makeContextCurrent win >> runWithWindow w h fullscreen window pollUserEvents eventHandler step app
         -- TODO: display OpenGL information
         Nothing -> print (Log ErrorLog CoreLog "unable to create window :(")
       print (Log InfoLog CoreLog "bye!")
@@ -107,8 +115,8 @@ runGame w h fullscreen title pollUserEvents eventHandler step app = do
       else do
         print (Log ErrorLog CoreLog "unable to init :(")
 
-runWithWindow :: Window -> IO [u] -> EventHandler u a -> (a -> Game a) -> a -> IO ()
-runWithWindow window pollUserEvents eventHandler step initializedApp = do
+runWithWindow :: Natural -> Natural -> Bool -> Window -> IO [u] -> EventHandler u a -> (a -> Game a) -> a -> IO ()
+runWithWindow w h fullscreen window pollUserEvents eventHandler step initializedApp = do
     -- transaction variables
     events <- newTVarIO []
     mouseXY <- newTVarIO (0,0)
@@ -123,22 +131,22 @@ runWithWindow window pollUserEvents eventHandler step initializedApp = do
     -- pre-process
     getCursorPos window >>= atomically . writeTVar mouseXY
 
-    run_ events initializedApp
+    -- game
+    gdrv <- gameDriver w h fullscreen
+    case gdrv of
+      Nothing -> print (Log ErrorLog CoreLog "unable to create game driver")
+      Just drv -> run_ drv events initializedApp
   where
-    run_ events app = do
+    run_ drv events app = do
+      -- poll user events then GLFW ones and sink shared events
       userEvs <- fmap (map UserEvent) pollUserEvents
       GLFW.pollEvents
       evs <- fmap (userEvs++) . atomically $ readTVar events <* writeTVar events []
-      case routeEvents evs app of
-        Just app' -> do
-          --interpretGame (step app')
-          run_ events app'
-        Nothing -> return () -- end of application requested
-    routeEvents evs app = case evs of
-      [] -> Just app
-      (e:es) -> case eventHandler e app of
-        Just app' -> routeEvents es app'
-        Nothing -> Nothing
+      -- rout events to game and interpret it; if it has to go on then simply loop
+      traverse (interpretGame drv) (routeEvents app evs) >>= maybe (return ()) (run_ drv events)
+    routeEvents app evs = case evs of
+      [] -> Just (step app)
+      _ -> Just (step app)
 
 -------------------------------------------------------------------------------
 -- Game interpreter
@@ -168,6 +176,7 @@ gameDriver width height fullscreen = fmap hush . runEitherT $ do
       ligColU <- sem "ligCol"
       ligPowU <- sem "ligPow"
       ligRadU <- sem "ligRad"
+      startTime <- timePoint
       return $
         GameDriver
           gpuMesh
@@ -182,6 +191,25 @@ gameDriver width height fullscreen = fmap hush . runEitherT $ do
           (\gpul ent -> runLight gpul ligColU ligPowU ligRadU ligPosU ent)
           (\gpuc -> runCamera gpuc projViewU eyeU)
           (\lt msg -> print $ Log lt UserLog msg)
+          (fmap (\t -> t - startTime) timePoint)
+
+-- |Game interpreter. This function turns the pure 'Game a' structure into
+-- 'IO a'.
+interpretGame :: GameDriver -> Game a -> IO a
+interpretGame drv = interpret_
+  where
+    interpret_ g = case g of
+      Pure x -> return x
+      Free g' -> case g' of
+        GC.RegisterMesh m f -> drvRegisterMesh drv m >>= interpret_ . f
+        GC.LoadObject name f -> drvLoadObject drv name >>= interpret_ . f
+        GC.RegisterMaterial m f -> drvRegisterMaterial drv m >>= interpret_ . f
+        GC.RegisterLight l f -> drvRegisterLight drv l >>= interpret_ . f
+        GC.SwitchLightOn g ent nxt -> drvSwitchLightOn drv g ent >> interpret_ nxt
+        GC.RegisterCamera proj ent f -> drvRegisterCamera drv proj ent >>= interpret_ . f
+        GC.Look cam nxt -> drvLook drv cam >> interpret_ nxt
+        GC.Log lt msg nxt -> drvLog drv lt msg >> interpret_ nxt
+        GC.Time f -> drvTime drv >>= interpret_ . f
 
 -------------------------------------------------------------------------------
 -- Callbacks

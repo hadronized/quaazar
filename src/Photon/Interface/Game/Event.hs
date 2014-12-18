@@ -27,6 +27,8 @@ module Photon.Interface.Game.Event (
   , SystemState(..)
   ) where
 
+import Photon.Interface.Game.Command ( Game )
+
 -- |Keyboard key. The keys are not documented because they’re self-explanatory.
 data Key
   = Unknown
@@ -157,7 +159,7 @@ data Key
 -- 'KeyPressed' 'KeyReleased' event pairs are generated after the first to
 -- emulate the repeating.
 data KeyState
-  = KeyPressed Key -- ^ Occurs when a key is pressed 
+  = KeyPressed Key -- ^ Occurs when a key is pressed
   | KeyReleased Key -- ^ Occurs when a key is released
     deriving (Eq,Read,Show)
 
@@ -219,4 +221,4 @@ data Event u = CoreEvent CoreEvent | UserEvent u deriving (Eq,Read,Show)
 
 -- |An 'EventHandler u a' handles core event 'Event' and user event 'u' in
 -- an application 'a'.
-type EventHandler u a = Event u -> a -> Maybe a
+type EventHandler u a = Event u -> a -> Maybe (Game a)

@@ -68,7 +68,7 @@ data Log = Log LogType LogCommitter String deriving (Eq)
 
 -- FIXME: use DList instead
 -- |Logs queue.
-type LogQueue = Vector Log 
+type LogQueue = Vector Log
 
 -- |Type of log.
 data LogType
@@ -97,9 +97,9 @@ instance Show LogType where
 
 instance Show LogCommitter where
   show c = case c of
-    CoreLog         -> "core    "
+    CoreLog         -> "core"
     BackendLog impl -> take 8 $ impl ++ repeat ' '
-    UserLog         -> "user    "
+    UserLog         -> "user"
 
 -- |Create a log.
 log_ :: (MonadLogger m) => LogType -> LogCommitter -> String -> m ()
