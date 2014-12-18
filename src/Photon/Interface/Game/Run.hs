@@ -20,7 +20,7 @@ import Control.Applicative
 import Control.Concurrent.STM ( atomically )
 import Control.Concurrent.STM.TVar ( TVar, modifyTVar, newTVarIO, readTVar
                                    , writeTVar )
-import Control.Monad ( forM_ )
+import Control.Monad ( (=<<), forM_ )
 import Control.Monad.Free ( Free(..) )
 import Control.Monad.Trans ( liftIO )
 import Control.Monad.Trans.Either ( runEitherT )
@@ -160,9 +160,11 @@ runWithWindow w h fullscreen window pollUserEvents eventHandler step initialized
 --
 -- If the window’s dimensions change, the game driver should be recreated.
 gameDriver :: Natural -> Natural -> Bool -> IO (Maybe GameDriver)
-gameDriver width height fullscreen = fmap hush . runEitherT $ do
+gameDriver width height fullscreen = do
+  gdrv <- runEitherT $ do
     -- create light program here
-    lightProgram <- evalJournalT $ gpuProgram [(VertexShader,lightVS),(FragmentShader,lightFS)] <* sink print
+    lightProgram <- evalJournalT $
+      gpuProgram [(VertexShader,lightVS),(FragmentShader,lightFS)] <* sink print
     let
       sem :: (Uniformable a) => String -> IO (Uniform a)
       sem = programSemantic lightProgram
@@ -194,6 +196,7 @@ gameDriver width height fullscreen = fmap hush . runEitherT $ do
           (\gpuc -> runCamera gpuc projViewU eyeU)
           (\lt msg -> print $ Log lt UserLog msg)
           (fmap (\t -> t - startTime) timePoint)
+  either (\e -> print e >> return Nothing) (return . Just) gdrv
 
 -- |Game interpreter. This function turns the pure 'Game a' structure into
 -- 'IO a'.
@@ -377,6 +380,3 @@ handleWindowFocus events _ f = atomically . modifyTVar events $ (++ [CoreEvent $
     focusEvent = case f of
       FocusState'Focused -> FocusGained
       FocusState'Defocused -> FocusLost
-
-hush :: Either e a -> Maybe a
-hush = either (const Nothing) Just

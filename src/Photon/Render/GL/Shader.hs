@@ -32,6 +32,9 @@ import Photon.Utils.Log
 gllog :: LogCommitter
 gllog = BackendLog "gl"
 
+throwError_ :: (MonadError Log m) => String -> m a
+throwError_ = throwError . Log ErrorLog gllog
+
 newtype Shader = Shader { unShader :: GLObject } deriving (Eq,Show)
 
 data ShaderType
@@ -41,7 +44,7 @@ data ShaderType
 
 newtype Program = Program { unProgram :: GLObject } deriving (Eq,Show)
 
-genShader :: (MonadIO m,MonadLogger m,MonadError String m) => ShaderType -> String -> m Shader
+genShader :: (MonadIO m,MonadLogger m,MonadError Log m) => ShaderType -> String -> m Shader
 genShader stype src = do
     deb gllog "shader source is:"
     deb gllog src
@@ -56,7 +59,7 @@ genShader stype src = do
       ll <- clogLength s
       cl <- clog ll s
       return (p,s,compiled,cl)
-    unless compiled $ throwError cl
+    unless compiled $ throwError_ cl
     info gllog "done..."
     liftIO $ Shader . GLObject <$> newForeignPtr p (glDeleteShader s >> free p)
   where
@@ -76,7 +79,7 @@ fromShaderType shaderType = case shaderType of
   VertexShader   -> gl_VERTEX_SHADER
   FragmentShader -> gl_FRAGMENT_SHADER
 
-genProgram :: (MonadIO m,MonadError String m) => [Shader] -> m Program
+genProgram :: (MonadIO m,MonadError Log m) => [Shader] -> m Program
 genProgram shaders = do
     (p,sp,linked,cl) <- liftIO $ do
       p <- malloc
@@ -88,7 +91,7 @@ genProgram shaders = do
       ll <- clogLength sp
       cl <- clog ll sp
       return (p,sp,linked,cl)
-    unless linked $ throwError cl
+    unless linked $ throwError_ cl
     liftIO $ Program . GLObject <$> newForeignPtr p (glDeleteProgram sp >> free p)
   where
     isLinked s   = fmap ((==gl_TRUE) . fromIntegral) .
