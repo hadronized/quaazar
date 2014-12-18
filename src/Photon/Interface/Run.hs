@@ -11,9 +11,9 @@
 --
 ----------------------------------------------------------------------------
 
-module Photon.Interface.Game.Run (
-    -- * Running games
-    runGame
+module Photon.Interface.Run (
+    -- * Running photon sessions
+    runPhoton
   ) where
 
 import Control.Applicative
@@ -38,10 +38,10 @@ import Photon.Core.Loader ( Load(..) )
 import Photon.Core.Material ( Material )
 import Photon.Core.Mesh ( Mesh )
 import Photon.Core.Projection ( Projection )
-import Photon.Interface.Game.Command ( GameCmd, Game )
-import qualified Photon.Interface.Game.Command as GC ( GameCmd(..) )
-import Photon.Interface.Game.Event
-import Photon.Interface.Game.Shaders ( lightVS, lightFS )
+import Photon.Interface.Command ( PhotonCmd, Photon )
+import qualified Photon.Interface.Command as GC ( PhotonCmd(..) )
+import Photon.Interface.Event
+import Photon.Interface.Shaders ( lightVS, lightFS )
 import Photon.Render.Camera ( GPUCamera(..), gpuCamera )
 import Photon.Render.GL.Shader ( ShaderType(..), Uniform, Uniformable )
 import Photon.Render.Light ( GPULight(..), gpuLight )
@@ -53,7 +53,7 @@ import Photon.Utils.TimePoint
 import Prelude ( Either(Either) )
 import Prelude hiding ( Either(Left,Right) )
 
-data GameDriver = GameDriver {
+data PhotonDriver = PhotonDriver {
     drvRegisterMesh     :: Mesh -> IO GPUMesh
   , drvRegisterMaterial :: Material -> IO GPUMaterial
   , drvRegisterLight    :: Light -> IO GPULight
@@ -76,7 +76,7 @@ showGLFWVersion (Version major minor rev) = intercalate "." $ map show [major,mi
 
 -- |Run a game session. This is the entry point of a photon-powered game. It
 -- spawns a standalone window in windowed or fullscreen mode. If you want to
--- embed **photon** in a /GUI/ container, you shouldn’t use 'runGame'.
+-- embed **photon** in a /GUI/ container, you shouldn’t use 'runPhoton'.
 --
 -- You’ll be asked for an event poller. This is optional; if you don’t want
 -- any specific events, just use @return []@. If you do, you’ll be placed in
@@ -88,19 +88,19 @@ showGLFWVersion (Version major minor rev) = intercalate "." $ map show [major,mi
 -- /event handler/ which type is 'EventHandler u a', where 'u' is your event
 -- type and 'a' your application.
 --
--- The application runs in a special isolated monad, 'Game'. That type gives
--- you everything you need for game-development. Feel free to read the 'Game'
+-- The application runs in a special isolated monad, 'Photon'. That type gives
+-- you everything you need for game-development. Feel free to read the 'Photon'
 -- documentation for further understanding.
-runGame :: Natural -- ^ Width of the window
+runPhoton :: Natural -- ^ Width of the window
         -> Natural -- ^ Height of the window
         -> Bool -- ^ Should the window be fullscreen?
         -> String -- ^ Title of the window
         -> IO [u] -- ^ User-spefic events poller
         -> EventHandler u a -- ^ Event handler
-        -> (a -> Game a) -- ^ Your application logic
+        -> (a -> Photon a) -- ^ Your application logic
         -> a -- ^ Initial application
         -> IO ()
-runGame w h fullscreen title pollUserEvents eventHandler step app = do
+runPhoton w h fullscreen title pollUserEvents eventHandler step app = do
     initiated <- GLFW.init
     if initiated then do
       glfwVersion <- fmap showGLFWVersion getVersion
@@ -116,7 +116,7 @@ runGame w h fullscreen title pollUserEvents eventHandler step app = do
       else do
         print (Log ErrorLog CoreLog "unable to init :(")
 
-runWithWindow :: Natural -> Natural -> Bool -> Window -> IO [u] -> EventHandler u a -> (a -> Game a) -> a -> IO ()
+runWithWindow :: Natural -> Natural -> Bool -> Window -> IO [u] -> EventHandler u a -> (a -> Photon a) -> a -> IO ()
 runWithWindow w h fullscreen window pollUserEvents eventHandler step initializedApp = do
     -- transaction variables
     events <- newTVarIO []
@@ -145,7 +145,7 @@ runWithWindow w h fullscreen window pollUserEvents eventHandler step initialized
         GLFW.pollEvents
         evs <- fmap (userEvs++) . atomically $ readTVar events <* writeTVar events []
         -- rout events to game and interpret it; if it has to go on then simply loop
-        traverse (interpretGame drv) (routeEvents (step app) evs) >>= maybe (return ()) endFrame
+        traverse (interpretPhoton drv) (routeEvents (step app) evs) >>= maybe (return ()) endFrame
       where
         endFrame app' = do
           swapBuffers window
@@ -161,15 +161,15 @@ initGL = do
   glClearColor 0 0 0 0
 
 -------------------------------------------------------------------------------
--- Game interpreter
+-- Photon interpreter
 
--- |This function generates the 'GameDriver'. It uses **OpenGL** to get all the
+-- |This function generates the 'PhotonDriver'. It uses **OpenGL** to get all the
 -- required functions. The width and the height of the window are required in
 -- order to be able to generate framebuffers, textures or any kind of object
 -- viewport-related.
 --
 -- If the window’s dimensions change, the game driver should be recreated.
-gameDriver :: Natural -> Natural -> Bool -> IO (Maybe GameDriver)
+gameDriver :: Natural -> Natural -> Bool -> IO (Maybe PhotonDriver)
 gameDriver width height fullscreen = do
   gdrv <- runEitherT $ do
     -- create light program here
@@ -192,7 +192,7 @@ gameDriver width height fullscreen = do
       ligRadU <- sem "ligRad"
       startTime <- timePoint
       return $
-        GameDriver
+        PhotonDriver
           gpuMesh
           gpuMaterial
           gpuLight
@@ -208,10 +208,10 @@ gameDriver width height fullscreen = do
           (fmap (\t -> t - startTime) timePoint)
   either (\e -> print e >> return Nothing) (return . Just) gdrv
 
--- |Game interpreter. This function turns the pure 'Game a' structure into
+-- |Photon interpreter. This function turns the pure 'Photon a' structure into
 -- 'IO a'.
-interpretGame :: GameDriver -> Game a -> IO a
-interpretGame drv = interpret_
+interpretPhoton :: PhotonDriver -> Photon a -> IO a
+interpretPhoton drv = interpret_
   where
     interpret_ g = case g of
       Pure x -> return x
