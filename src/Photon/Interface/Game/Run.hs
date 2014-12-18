@@ -29,6 +29,7 @@ import Control.Monad.Trans.Maybe ( runMaybeT )
 import Data.Foldable ( traverse_ )
 import Data.Traversable ( traverse )
 import Data.List ( intercalate )
+import Graphics.Rendering.OpenGL.Raw
 import Graphics.UI.GLFW as GLFW
 import Numeric.Natural ( Natural )
 import Photon.Core.Entity ( Entity )
@@ -130,6 +131,7 @@ runWithWindow w h fullscreen window pollUserEvents eventHandler step initialized
 
     -- pre-process
     getCursorPos window >>= atomically . writeTVar mouseXY
+    initGL
 
     -- game
     gdrv <- gameDriver w h fullscreen
@@ -138,17 +140,25 @@ runWithWindow w h fullscreen window pollUserEvents eventHandler step initialized
       Just drv -> run_ drv events initializedApp
   where
     run_ drv events app = do
-      -- poll user events then GLFW ones and sink shared events
-      userEvs <- fmap (map UserEvent) pollUserEvents
-      GLFW.pollEvents
-      evs <- fmap (userEvs++) . atomically $ readTVar events <* writeTVar events []
-      -- rout events to game and interpret it; if it has to go on then simply loop
-      traverse (interpretGame drv) (routeEvents (step app) evs) >>= maybe (return ()) (run_ drv events)
+        -- poll user events then GLFW ones and sink shared events
+        userEvs <- fmap (map UserEvent) pollUserEvents
+        GLFW.pollEvents
+        evs <- fmap (userEvs++) . atomically $ readTVar events <* writeTVar events []
+        -- rout events to game and interpret it; if it has to go on then simply loop
+        traverse (interpretGame drv) (routeEvents (step app) evs) >>= maybe (return ()) endFrame
+      where
+        endFrame app' = do
+          swapBuffers window
+          run_ drv events app'
     routeEvents app evs = case evs of
       [] -> Just app
       (e:es) -> case eventHandler e of
         Just step' -> routeEvents (app >>= step') es
         Nothing -> Nothing
+
+initGL :: IO ()
+initGL = do
+  glClearColor 0 0 0 0
 
 -------------------------------------------------------------------------------
 -- Game interpreter
