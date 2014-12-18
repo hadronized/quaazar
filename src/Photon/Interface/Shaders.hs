@@ -9,7 +9,7 @@
 --
 ----------------------------------------------------------------------------
 
-module Photon.Interface.Game.Shaders where
+module Photon.Interface.Shaders where
 
 lightVS :: String
 lightVS = unlines
