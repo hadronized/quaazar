@@ -143,10 +143,12 @@ runWithWindow w h fullscreen window pollUserEvents eventHandler step initialized
       GLFW.pollEvents
       evs <- fmap (userEvs++) . atomically $ readTVar events <* writeTVar events []
       -- rout events to game and interpret it; if it has to go on then simply loop
-      traverse (interpretGame drv) (routeEvents app evs) >>= maybe (return ()) (run_ drv events)
+      traverse (interpretGame drv) (routeEvents (step app) evs) >>= maybe (return ()) (run_ drv events)
     routeEvents app evs = case evs of
-      [] -> Just (step app)
-      _ -> Just (step app)
+      [] -> Just app
+      (e:es) -> case eventHandler e of
+        Just step' -> routeEvents (app >>= step') es
+        Nothing -> Nothing
 
 -------------------------------------------------------------------------------
 -- Game interpreter
