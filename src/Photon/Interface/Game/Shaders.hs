@@ -18,8 +18,8 @@ lightVS = unlines
 
   , "layout (location = 0) in vec3 co;"
   , "layout (location = 1) in vec3 no;"
-  , "layout uniform mat4 projView;"
-  , "layout uniform mat4 model;"
+  , "uniform mat4 projView;"
+  , "uniform mat4 model;"
 
   , "out vec3 vco;"
   , "out vec3 vno;"
@@ -39,15 +39,15 @@ lightFS = unlines
   , "in vec3 vco;"
   , "in vec3 vno;"
 
-  , "layout uniform vec3 eye;"
-  , "layout uniform vec3 forward;"
-  , "layout uniform vec3 matDiffAlb;"
-  , "layout uniform vec3 matSpecAlb;"
-  , "layout uniform float matShn;"
-  , "layout uniform vec3 ligPos;"
-  , "layout uniform vec3 ligCol;"
-  , "layout uniform float ligPow;"
-  , "layout uniform float ligRad;"
+  , "uniform vec3 eye;"
+  , "uniform vec3 forward;"
+  , "uniform vec3 matDiffAlb;"
+  , "uniform vec3 matSpecAlb;"
+  , "uniform float matShn;"
+  , "uniform vec3 ligPos;"
+  , "uniform vec3 ligCol;"
+  , "uniform float ligPow;"
+  , "uniform float ligRad;"
   --, "layout (location = " ++ show lightProjViewSem ++ ") uniform mat4 ligProjView;"
   --, "layout (location = 2) uniform samplerCube shadowmap;"
 
@@ -69,8 +69,8 @@ lightFS = unlines
   {-
   , "  float ligDepth = texture(shadowmap, normalize(forward)).r;"
   , "  float shadow = 1.;"
-  
-  , "  if (gl_FragCoord.z 
+
+  , "  if (gl_FragCoord.z
   -}
 
     -- final color
