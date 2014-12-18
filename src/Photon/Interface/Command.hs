@@ -11,17 +11,14 @@
 --
 ----------------------------------------------------------------------------
 
-module Photon.Interface.Game.Command (
-    -- * Game commands
-    GameCmd(..)
-  , Game
-  , registerMesh
+module Photon.Interface.Command (
+    -- * Photon commands
+    PhotonCmd(..)
+  , Photon
+  , gpu
   , load
-  , registerMaterial
   , renderMeshes
-  , registerLight
   , switchLightOn
-  , registerCamera
   , look
   , log_
   , time
@@ -41,11 +38,11 @@ import Photon.Render.Mesh ( GPUMesh )
 import Photon.Utils.Log ( LogType )
 import Photon.Utils.TimePoint ( TimePoint )
 
-data GameCmd n
+data PhotonCmd n
   = RegisterMesh Mesh (GPUMesh -> n)
   | forall a. (Load a) => LoadObject String (Maybe a -> n)
   | RegisterMaterial Material (GPUMaterial -> n)
-  | RenderMeshes GPUMaterial [GPUMesh] n
+  | RenderMeshes GPUMaterial [(GPUMesh,Entity)] n
   | RegisterLight Light (GPULight -> n)
   | SwitchLightOn GPULight Entity n
   | RegisterCamera Projection Entity (GPUCamera -> n)
@@ -53,7 +50,7 @@ data GameCmd n
   | Log LogType String n
   | Time (TimePoint -> n)
 
-instance Functor GameCmd where
+instance Functor PhotonCmd where
   fmap f a = case a of
     RegisterMesh m g -> RegisterMesh m (f . g)
     LoadObject n g -> LoadObject n (f . g)
@@ -66,34 +63,49 @@ instance Functor GameCmd where
     Log t s n -> Log t s (f n)
     Time g -> Time (f . g)
 
-type Game = Free GameCmd
+type Photon = Free PhotonCmd
 
-registerMesh :: Mesh -> Game GPUMesh
+class GPU a b where
+  gpu :: a -> Photon b
+
+instance GPU Mesh GPUMesh where
+  gpu = registerMesh
+
+instance GPU Material GPUMaterial where
+  gpu = registerMaterial
+
+instance GPU Light GPULight where
+  gpu = registerLight
+
+instance GPU (Projection,Entity) GPUCamera where
+  gpu = uncurry registerCamera
+
+registerMesh :: Mesh -> Photon GPUMesh
 registerMesh m = Free (RegisterMesh m Pure)
 
-load :: (Load a) => String -> Game (Maybe a)
+load :: (Load a) => String -> Photon (Maybe a)
 load name = Free (LoadObject name Pure)
 
-registerMaterial :: Material -> Game GPUMaterial
+registerMaterial :: Material -> Photon GPUMaterial
 registerMaterial m = Free (RegisterMaterial m Pure)
 
-renderMeshes :: GPUMaterial -> [GPUMesh] -> Game ()
+renderMeshes :: GPUMaterial -> [(GPUMesh,Entity)] -> Photon ()
 renderMeshes mat mshs = Free . RenderMeshes mat mshs $ Pure ()
 
-registerLight :: Light -> Game GPULight
+registerLight :: Light -> Photon GPULight
 registerLight l = Free (RegisterLight l Pure)
 
-switchLightOn :: GPULight -> Entity -> Game ()
+switchLightOn :: GPULight -> Entity -> Photon ()
 switchLightOn l ent = Free . SwitchLightOn l ent $ Pure ()
 
-registerCamera :: Projection -> Entity -> Game GPUCamera
+registerCamera :: Projection -> Entity -> Photon GPUCamera
 registerCamera proj view = Free (RegisterCamera proj view Pure)
 
-look :: GPUCamera -> Game ()
+look :: GPUCamera -> Photon ()
 look c = Free . Look c $ Pure ()
 
-log_ :: LogType -> String -> Game ()
+log_ :: LogType -> String -> Photon ()
 log_ t s = Free . Log t s $ Pure ()
 
-time :: Game TimePoint
+time :: Photon TimePoint
 time = Free (Time Pure)

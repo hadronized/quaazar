@@ -9,7 +9,7 @@
 --
 ----------------------------------------------------------------------------
 
-module Photon.Interface.Game.Event (
+module Photon.Interface.Event (
     -- * Events
     Event(..)
   , CoreEvent(..)
@@ -27,7 +27,7 @@ module Photon.Interface.Game.Event (
   , SystemState(..)
   ) where
 
-import Photon.Interface.Game.Command ( Game )
+import Photon.Interface.Command ( Photon )
 
 -- |Keyboard key. The keys are not documented because they’re self-explanatory.
 data Key
@@ -221,4 +221,4 @@ data Event u = CoreEvent CoreEvent | UserEvent u deriving (Eq,Read,Show)
 
 -- |An 'EventHandler u a' handles core event 'Event' and user event 'u' in
 -- an application 'a'.
-type EventHandler u a = Event u -> Maybe (a -> Game a)
+type EventHandler u a = Event u -> Maybe (a -> Photon a)

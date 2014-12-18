@@ -20,13 +20,11 @@ import Control.Applicative
 import Control.Concurrent.STM ( atomically )
 import Control.Concurrent.STM.TVar ( TVar, modifyTVar, newTVarIO, readTVar
                                    , writeTVar )
-import Control.Monad ( (=<<), forM_ )
+import Control.Monad ( forM_ )
 import Control.Monad.Free ( Free(..) )
 import Control.Monad.Trans ( liftIO )
 import Control.Monad.Trans.Either ( runEitherT )
-import Control.Monad.Trans.Journal ( evalJournalT, sink )
-import Control.Monad.Trans.Maybe ( runMaybeT )
-import Data.Foldable ( traverse_ )
+import Control.Monad.Trans.Journal ( evalJournalT )
 import Data.Traversable ( traverse )
 import Data.List ( intercalate )
 import Graphics.Rendering.OpenGL.Raw
@@ -38,7 +36,7 @@ import Photon.Core.Loader ( Load(..) )
 import Photon.Core.Material ( Material )
 import Photon.Core.Mesh ( Mesh )
 import Photon.Core.Projection ( Projection )
-import Photon.Interface.Command ( PhotonCmd, Photon )
+import Photon.Interface.Command ( Photon )
 import qualified Photon.Interface.Command as GC ( PhotonCmd(..) )
 import Photon.Interface.Event
 import Photon.Interface.Shaders ( lightVS, lightFS )
@@ -50,7 +48,6 @@ import Photon.Render.Mesh ( GPUMesh(..), gpuMesh )
 import Photon.Render.Shader ( GPUProgram(..), gpuProgram )
 import Photon.Utils.Log ( Log(..), LogCommitter(..), LogType(..), sinkLogs )
 import Photon.Utils.TimePoint
-import Prelude ( Either(Either) )
 import Prelude hiding ( Either(Left,Right) )
 
 data PhotonDriver = PhotonDriver {
@@ -219,8 +216,9 @@ interpretPhoton drv = interpret_
         GC.RegisterMesh m f -> drvRegisterMesh drv m >>= interpret_ . f
         GC.LoadObject name f -> drvLoadObject drv name >>= interpret_ . f
         GC.RegisterMaterial m f -> drvRegisterMaterial drv m >>= interpret_ . f
+        GC.RenderMeshes mat mshs nxt -> drvRenderMeshes drv mat mshs >> interpret_ nxt
         GC.RegisterLight l f -> drvRegisterLight drv l >>= interpret_ . f
-        GC.SwitchLightOn g ent nxt -> drvSwitchLightOn drv g ent >> interpret_ nxt
+        GC.SwitchLightOn glig ent nxt -> drvSwitchLightOn drv glig ent >> interpret_ nxt
         GC.RegisterCamera proj ent f -> drvRegisterCamera drv proj ent >>= interpret_ . f
         GC.Look cam nxt -> drvLook drv cam >> interpret_ nxt
         GC.Log lt msg nxt -> drvLog drv lt msg >> interpret_ nxt

@@ -33,10 +33,10 @@ library
                      , Photon.Core.VGroup
                      , Photon.Core.Vertex
                      , Photon.Core.UV
-                     , Photon.Interface.Game.Command
-                     , Photon.Interface.Game.Event
-                     , Photon.Interface.Game.Run
-                     , Photon.Interface.Game.Shaders
+                     , Photon.Interface.Command
+                     , Photon.Interface.Event
+                     , Photon.Interface.Run
+                     , Photon.Interface.Shaders
                      , Photon.Render.Camera
                      , Photon.Render.Light
                      , Photon.Render.Material
