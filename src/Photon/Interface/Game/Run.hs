@@ -197,7 +197,7 @@ gameDriver width height fullscreen = do
           gpuMaterial
           gpuLight
           gpuCamera
-          (\name -> runMaybeT . evalJournalT $ load name <* sink print)
+          (\name -> runMaybeT . evalJournalT $ load name <* sinkLogs)
           (\mat meshes -> do
               runMaterial mat matDiffAlbU matSpecAlbU matShnU
               forM_ meshes $ \(gpum,ent) -> renderMesh gpum modelU ent

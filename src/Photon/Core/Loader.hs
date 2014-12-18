@@ -14,7 +14,7 @@ module Photon.Core.Loader (
     -- * Loading resources
     loadJSON
   , Load
-  , load 
+  , load
     -- * Loaders
   , loadMesh
   , loadMaterial
@@ -64,7 +64,7 @@ loadJSON path = do
     onError ioe = return . Left $ "unable to open file: " ++ show (ioe :: IOException)
 
 loadMesh :: (MonadIO m,MonadLogger m,MonadPlus m) => String -> m Mesh
-loadMesh n = loadJSON path >>= either loadError ok 
+loadMesh n = loadJSON path >>= either loadError ok
   where
     path = "meshes" </> n <.> "ymsh"
     loadError e = do
@@ -75,7 +75,7 @@ loadMesh n = loadJSON path >>= either loadError ok
       return msh
 
 loadMaterial :: (MonadIO m,MonadLogger m,MonadPlus m) => String -> m Material
-loadMaterial n = loadJSON path >>= either loadError ok 
+loadMaterial n = loadJSON path >>= either loadError ok
   where
     path = "materials" </> n <.> "ymat"
     loadError e = do
@@ -86,7 +86,7 @@ loadMaterial n = loadJSON path >>= either loadError ok
       return mat
 
 loadLight :: (MonadIO m,MonadLogger m,MonadPlus m) => String -> m Light
-loadLight n = loadJSON path >>= either loadError ok 
+loadLight n = loadJSON path >>= either loadError ok
   where
     path = "lights" </> n <.> "ylig"
     loadError e = do
