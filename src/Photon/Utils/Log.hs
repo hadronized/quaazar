@@ -57,7 +57,7 @@ module Photon.Utils.Log (
 
 import Control.Monad.Trans ( MonadIO )
 import Control.Monad.Trans.Journal
-import Data.Foldable as F ( mapM_ )
+import Data.Foldable ( traverse_ )
 import Data.Vector ( Vector, fromList )
 
 -- |Monad used to log.
@@ -128,4 +128,4 @@ discardNewlines :: Log -> [Log]
 discardNewlines (Log lt lc msg) = map (Log lt lc) (lines msg)
 
 sinkLogs :: (MonadLogger m,MonadIO m) => m ()
-sinkLogs = sink (F.mapM_ print)
+sinkLogs = sink (traverse_ print)
