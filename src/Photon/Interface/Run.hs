@@ -61,11 +61,9 @@ data PhotonDriver = PhotonDriver {
   , drvRegisterLight    :: Light -> IO GPULight
   , drvRegisterCamera   :: Projection -> Entity -> IO GPUCamera
   , drvLoadObject       :: (Load a) => String -> IO (Maybe a)
-  , drvRenderMeshes     :: GPUMaterial -> [(GPUMesh,Entity)] -> IO ()
-  , drvSwitchLightOn    :: GPULight -> Entity -> IO ()
+  , drvRender           :: GPULight -> Entity -> [(GPUMaterial,[(GPUMesh,Entity)])] -> IO ()
   , drvLook             :: GPUCamera -> IO ()
   , drvLog              :: LogType -> String -> IO ()
-  , drvTime             :: IO TimePoint
   }
 
 -- |Helper function to show 'GLSL.Version' type, because they didn’t pick the
@@ -184,8 +182,9 @@ gameDriver width height fullscreen = do
     liftIO $ do
       -- map light program’s semantics here as well
       projViewU <- sem "projView"
-      modelU <- sem "model"
+      --modelU <- sem "model"
       eyeU <- sem "eye"
+      {-
       matDiffAlbU <- sem "matDiffAlb"
       matSpecAlbU <- sem "matSpecAlb"
       matShnU <- sem "matShn"
@@ -193,6 +192,7 @@ gameDriver width height fullscreen = do
       ligColU <- sem "ligCol"
       ligPowU <- sem "ligPow"
       ligRadU <- sem "ligRad"
+      -}
       startTime <- timePoint
       return $
         PhotonDriver
@@ -201,18 +201,9 @@ gameDriver width height fullscreen = do
           gpuLight
           gpuCamera
           (\name -> evalJournalT $ load name <* sinkLogs)
-          (\mat meshes -> do
-              runMaterial mat matDiffAlbU matSpecAlbU matShnU
-              forM_ meshes $ \(gpum,ent) -> renderMesh gpum modelU ent
-            )
-          (\gpulig ent -> do
-              useProgram lightProgram -- switch to the light program
-              bindFramebuffer (lightBuffer^.offscreenFB) Write -- switch to the light buffer
-              runLight gpulig ligColU ligPowU ligRadU ligPosU ent
-            )
+          (\_ _ _ -> return ()) -- TODO
           (\gpuc -> runCamera gpuc projViewU eyeU)
           (\lt msg -> print $ Log lt UserLog msg)
-          (fmap (\t -> t - startTime) timePoint)
   either (\e -> print e >> return Nothing) (return . Just) gdrv
 
 -- |Photon interpreter. This function turns the pure 'Photon a' structure into
@@ -226,13 +217,11 @@ interpretPhoton drv = interpret_
         GC.RegisterMesh m f -> drvRegisterMesh drv m >>= interpret_ . f
         GC.LoadObject name f -> drvLoadObject drv name >>= interpret_ . f
         GC.RegisterMaterial m f -> drvRegisterMaterial drv m >>= interpret_ . f
-        GC.RenderMeshes mat mshs nxt -> drvRenderMeshes drv mat mshs >> interpret_ nxt
         GC.RegisterLight l f -> drvRegisterLight drv l >>= interpret_ . f
-        GC.SwitchLightOn glig ent nxt -> drvSwitchLightOn drv glig ent >> interpret_ nxt
         GC.RegisterCamera proj ent f -> drvRegisterCamera drv proj ent >>= interpret_ . f
+        GC.Render gpulig ent meshes nxt -> drvRender drv gpulig ent meshes >> interpret_ nxt
         GC.Look cam nxt -> drvLook drv cam >> interpret_ nxt
         GC.Log lt msg nxt -> drvLog drv lt msg >> interpret_ nxt
-        GC.Time f -> drvTime drv >>= interpret_ . f
 
 -------------------------------------------------------------------------------
 -- Callbacks
