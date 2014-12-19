@@ -15,8 +15,10 @@ import Control.Lens ( makeLenses )
 import Control.Monad ( forM_ )
 import Numeric.Natural ( Natural )
 import Photon.Render.GL.Framebuffer
+import Photon.Render.GL.Log ( gllog )
 import Photon.Render.GL.Renderbuffer
 import Photon.Render.GL.Texture
+import Photon.Utils.Log
 
 -- |OpenGL requires three objects to perform an offscreen render:
 --

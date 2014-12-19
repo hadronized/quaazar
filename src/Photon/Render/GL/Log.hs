@@ -14,5 +14,7 @@ module Photon.Render.GL.Log (
   gllog
   ) where
 
+import Photon.Utils.Log ( LogCommitter(BackendLog) )
+
 gllog :: LogCommitter
 gllog = BackendLog "gl"
