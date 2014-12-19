@@ -17,6 +17,7 @@ module Photon.Interface.Run (
   ) where
 
 import Control.Applicative
+import Control.Lens
 import Control.Concurrent.STM ( atomically )
 import Control.Concurrent.STM.TVar ( TVar, modifyTVar, newTVarIO, readTVar
                                    , writeTVar )
@@ -41,8 +42,9 @@ import qualified Photon.Interface.Command as GC ( PhotonCmd(..) )
 import Photon.Interface.Event as E
 import Photon.Interface.Shaders ( lightVS, lightFS )
 import Photon.Render.Camera ( GPUCamera(..), gpuCamera )
-import Photon.Render.GL.Framebuffer ( AttachmentPoint(..) )
-import Photon.Render.GL.Offscreen ( genOffscreen )
+import Photon.Render.GL.Framebuffer ( AttachmentPoint(..), Target(..)
+                                    , bindFramebuffer )
+import Photon.Render.GL.Offscreen
 import Photon.Render.GL.Shader ( ShaderType(..), Uniform, Uniformable )
 import Photon.Render.GL.Texture ( InternalFormat(..), Format(..) )
 import Photon.Render.Light ( GPULight(..), gpuLight )
@@ -203,7 +205,11 @@ gameDriver width height fullscreen = do
               runMaterial mat matDiffAlbU matSpecAlbU matShnU
               forM_ meshes $ \(gpum,ent) -> renderMesh gpum modelU ent
             )
-          (\gpul ent -> runLight gpul ligColU ligPowU ligRadU ligPosU ent)
+          (\gpulig ent -> do
+              useProgram lightProgram -- switch to the light program
+              bindFramebuffer (lightBuffer^.offscreenFB) Write -- switch to the light buffer
+              runLight gpulig ligColU ligPowU ligRadU ligPosU ent
+            )
           (\gpuc -> runCamera gpuc projViewU eyeU)
           (\lt msg -> print $ Log lt UserLog msg)
           (fmap (\t -> t - startTime) timePoint)
