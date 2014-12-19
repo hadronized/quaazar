@@ -23,7 +23,7 @@ import Control.Concurrent.STM.TVar ( TVar, modifyTVar, newTVarIO, readTVar
 import Control.Monad ( forM_ )
 import Control.Monad.Free ( Free(..) )
 import Control.Monad.Trans ( liftIO )
-import Control.Monad.Trans.Either ( runEitherT )
+import Control.Monad.Trans.Either ( hoistEither, runEitherT )
 import Control.Monad.Trans.Journal ( evalJournalT )
 import Data.Traversable ( traverse )
 import Data.List ( intercalate )
@@ -38,10 +38,13 @@ import Photon.Core.Mesh ( Mesh )
 import Photon.Core.Projection ( Projection )
 import Photon.Interface.Command ( Photon )
 import qualified Photon.Interface.Command as GC ( PhotonCmd(..) )
-import Photon.Interface.Event
+import Photon.Interface.Event as E
 import Photon.Interface.Shaders ( lightVS, lightFS )
 import Photon.Render.Camera ( GPUCamera(..), gpuCamera )
+import Photon.Render.GL.Framebuffer ( AttachmentPoint(..) )
+import Photon.Render.GL.Offscreen ( genOffscreen )
 import Photon.Render.GL.Shader ( ShaderType(..), Uniform, Uniformable )
+import Photon.Render.GL.Texture ( InternalFormat(..), Format(..) )
 import Photon.Render.Light ( GPULight(..), gpuLight )
 import Photon.Render.Material ( GPUMaterial(..), gpuMaterial )
 import Photon.Render.Mesh ( GPUMesh(..), gpuMesh )
@@ -169,9 +172,10 @@ initGL = do
 gameDriver :: Natural -> Natural -> Bool -> IO (Maybe PhotonDriver)
 gameDriver width height fullscreen = do
   gdrv <- runEitherT $ do
-    -- create light program here
+    -- Lighting step
     lightProgram <- evalJournalT $
       gpuProgram [(VertexShader,lightVS),(FragmentShader,lightFS)] <* sinkLogs
+    lightBuffer <- liftIO (genOffscreen width height RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
     let
       sem :: (Uniformable a) => String -> IO (Uniform a)
       sem = programSemantic lightProgram
@@ -270,7 +274,7 @@ handleKey events _ k _ s _ = atomically . modifyTVar events $ (++ keys)
         Key'O            -> r O
         Key'P            -> r P
         Key'Q            -> r Q
-        Key'R            -> r R
+        Key'R            -> r E.R
         Key'S            -> r S
         Key'T            -> r T
         Key'U            -> r U

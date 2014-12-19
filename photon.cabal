@@ -53,6 +53,7 @@ library
                      , Photon.Render.GL.Entity
                      , Photon.Render.GL.Framebuffer
                      , Photon.Render.GL.GLObject
+                     , Photon.Render.GL.Log
                      , Photon.Render.GL.Offscreen
                      , Photon.Render.GL.Primitive
                      , Photon.Render.GL.Renderbuffer

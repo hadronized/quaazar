@@ -41,7 +41,7 @@ genOffscreen :: Natural
              -> AttachmentPoint
              -> InternalFormat
              -> AttachmentPoint
-             -> IO (Either String Offscreen)
+             -> IO (Either Log Offscreen)
 genOffscreen w h texift texft texap rbift rbap = do
   tex <- genTexture2D
   bindTexture tex
@@ -63,14 +63,14 @@ genOffscreen w h texift texft texap rbift rbap = do
   status <- checkFramebufferStatus
   unbindFramebuffer Write
 
-  maybe (return . Right $ Offscreen tex fb rb) (return . Left) status
+  maybe (return . Right $ Offscreen tex fb rb) (return . Left . Log ErrorLog gllog) status
 
 genCubeOffscreen :: Natural
                  -> Natural
                  -> InternalFormat
                  -> Format
                  -> InternalFormat
-                 -> IO (Either String Offscreen)
+                 -> IO (Either Log Offscreen)
 genCubeOffscreen w h texift texft rbift = do
   cube <- genCubemap
   bindTexture cube
@@ -92,4 +92,4 @@ genCubeOffscreen w h texift texft rbift = do
   status <- checkFramebufferStatus
   unbindFramebuffer Write
 
-  maybe (return . Right $ Offscreen cube fb rb) (return . Left) status
+  maybe (return . Right $ Offscreen cube fb rb) (return . Left . Log ErrorLog gllog) status

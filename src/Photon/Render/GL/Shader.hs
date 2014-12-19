@@ -27,10 +27,8 @@ import Foreign.Storable ( peek, poke )
 import Linear
 import Graphics.Rendering.OpenGL.Raw
 import Photon.Render.GL.GLObject
+import Photon.Render.GL.Log ( gllog )
 import Photon.Utils.Log
-
-gllog :: LogCommitter
-gllog = BackendLog "gl"
 
 throwError_ :: (MonadError Log m) => String -> m a
 throwError_ = throwError . Log ErrorLog gllog
