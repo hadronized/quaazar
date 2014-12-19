@@ -141,7 +141,7 @@ runWithWindow w h fullscreen window pollUserEvents eventHandler step initialized
         userEvs <- fmap (map UserEvent) pollUserEvents
         GLFW.pollEvents
         evs <- fmap (userEvs++) . atomically $ readTVar events <* writeTVar events []
-        -- rout events to game and interpret it; if it has to go on then simply loop
+        -- route events to game and interpret it; if it has to go on then simply loop
         traverse (interpretPhoton drv) (routeEvents (step app) evs) >>= maybe (return ()) endFrame
       where
         endFrame app' = do
