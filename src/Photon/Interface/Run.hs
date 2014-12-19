@@ -134,9 +134,9 @@ runWithWindow w h fullscreen window pollUserEvents eventHandler step initialized
     gdrv <- gameDriver w h fullscreen
     case gdrv of
       Nothing -> print (Log ErrorLog CoreLog "unable to create game driver")
-      Just drv -> run_ drv events initializedApp
+      Just drv -> startFrame drv events initializedApp
   where
-    run_ drv events app = do
+    startFrame drv events app = do
         -- poll user events then GLFW ones and sink shared events
         userEvs <- fmap (map UserEvent) pollUserEvents
         GLFW.pollEvents
@@ -146,7 +146,7 @@ runWithWindow w h fullscreen window pollUserEvents eventHandler step initialized
       where
         endFrame app' = do
           swapBuffers window
-          run_ drv events app'
+          startFrame drv events app'
     routeEvents app evs = case evs of
       [] -> Just app
       (e:es) -> case eventHandler e of
