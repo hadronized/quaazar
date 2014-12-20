@@ -61,7 +61,7 @@ data PhotonDriver = PhotonDriver {
   , drvLoadObject       :: (Load a) => String -> IO (Maybe a)
   , drvRender           :: GPULight -> Entity -> [(GPUMaterial,[(GPUMesh,Entity)])] -> IO ()
   , drvLook             :: GPUCamera -> IO ()
-  , drvLog              :: LogType -> String -> IO ()
+  , drvLog              :: Log -> IO ()
   }
 
 -- |Helper function to show 'GLSL.Version' type, because they didn’t pick the
@@ -96,10 +96,11 @@ runPhoton :: Natural -- ^ Width of the window
           -> String -- ^ Title of the window
           -> IO [u] -- ^ User-spefic events poller
           -> EventHandler u a -- ^ Event handler
-          -> (a -> Photon a) -- ^ Your application logic
+          -> (Log -> IO ()) -- log sink
           -> a -- ^ Initial application
+          -> (a -> Photon a) -- ^ Your application logic
           -> IO ()
-runPhoton w h fullscreen title pollUserEvents eventHandler step app = do
+runPhoton w h fullscreen title pollUserEvents eventHandler logSink app step = do
     initiated <- GLFW.init
     if initiated then do
       glfwVersion <- fmap showGLFWVersion getVersion
@@ -107,7 +108,7 @@ runPhoton w h fullscreen title pollUserEvents eventHandler step app = do
       windowHint (WindowHint'ContextVersionMajor 3)
       windowHint (WindowHint'ContextVersionMinor 3)
       createWindow (fromIntegral w) (fromIntegral h) title Nothing Nothing >>= \win -> case win of
-        Just window -> makeContextCurrent win >> runWithWindow w h fullscreen window pollUserEvents eventHandler step app
+        Just window -> makeContextCurrent win >> runWithWindow w h fullscreen window pollUserEvents eventHandler logSink app step
         -- TODO: display OpenGL information
         Nothing -> print (Log ErrorLog CoreLog "unable to create window :(")
       print (Log InfoLog CoreLog "bye!")
@@ -115,8 +116,8 @@ runPhoton w h fullscreen title pollUserEvents eventHandler step app = do
       else do
         print (Log ErrorLog CoreLog "unable to init :(")
 
-runWithWindow :: Natural -> Natural -> Bool -> Window -> IO [u] -> EventHandler u a -> (a -> Photon a) -> a -> IO ()
-runWithWindow w h fullscreen window pollUserEvents eventHandler step initializedApp = do
+runWithWindow :: Natural -> Natural -> Bool -> Window -> IO [u] -> EventHandler u a -> (Log -> IO ()) -> a -> (a -> Photon a) -> IO ()
+runWithWindow w h fullscreen window pollUserEvents eventHandler logSink initializedApp step = do
     -- transaction variables
     events <- newTVarIO []
     mouseXY <- newTVarIO (0,0)
@@ -133,7 +134,7 @@ runWithWindow w h fullscreen window pollUserEvents eventHandler step initialized
     initGL
 
     -- game
-    gdrv <- gameDriver w h fullscreen
+    gdrv <- gameDriver w h fullscreen logSink
     case gdrv of
       Nothing -> print (Log ErrorLog CoreLog "unable to create game driver")
       Just drv -> startFrame drv events initializedApp
@@ -168,8 +169,8 @@ initGL = do
 -- viewport-related.
 --
 -- If the window’s dimensions change, the game driver should be recreated.
-gameDriver :: Natural -> Natural -> Bool -> IO (Maybe PhotonDriver)
-gameDriver width height fullscreen = do
+gameDriver :: Natural -> Natural -> Bool -> (Log -> IO ()) -> IO (Maybe PhotonDriver)
+gameDriver width height fullscreen logHandler = do
   gdrv <- runEitherT $ do
     -- Lighting step
     lightProgram <- evalJournalT $
@@ -206,7 +207,7 @@ gameDriver width height fullscreen = do
                 forM_ msh $ \(gmsh,ment) -> renderMesh gmsh modelU ment -- render all meshes
             )
           (\gpuc -> runCamera gpuc projViewU eyeU)
-          (\lt msg -> print $ Log lt UserLog msg)
+          logHandler
   either (\e -> print e >> return Nothing) (return . Just) gdrv
 
 -- |Photon interpreter. This function turns the pure 'Photon a' structure into
@@ -224,7 +225,7 @@ interpretPhoton drv = interpret_
         GC.RegisterCamera proj ent f -> drvRegisterCamera drv proj ent >>= interpret_ . f
         GC.Render gpulig ent meshes nxt -> drvRender drv gpulig ent meshes >> interpret_ nxt
         GC.Look cam nxt -> drvLook drv cam >> interpret_ nxt
-        GC.Log lt msg nxt -> drvLog drv lt msg >> interpret_ nxt
+        GC.Log lt msg nxt -> drvLog drv (Log lt UserLog msg) >> interpret_ nxt
 
 -------------------------------------------------------------------------------
 -- Callbacks
