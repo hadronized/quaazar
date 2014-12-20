@@ -26,7 +26,6 @@ import Control.Monad.Free ( Free(..) )
 import Control.Monad.Trans ( liftIO )
 import Control.Monad.Trans.Either ( hoistEither, runEitherT )
 import Control.Monad.Trans.Journal ( evalJournalT )
-import Data.Traversable ( traverse )
 import Data.List ( intercalate )
 import Graphics.Rendering.OpenGL.Raw
 import Graphics.UI.GLFW as GLFW
@@ -52,7 +51,6 @@ import Photon.Render.Material ( GPUMaterial(..), gpuMaterial )
 import Photon.Render.Mesh ( GPUMesh(..), gpuMesh )
 import Photon.Render.Shader ( GPUProgram(..), gpuProgram )
 import Photon.Utils.Log ( Log(..), LogCommitter(..), LogType(..), sinkLogs )
-import Photon.Utils.TimePoint
 import Prelude hiding ( Either(Left,Right) )
 
 data PhotonDriver = PhotonDriver {
@@ -72,11 +70,12 @@ showGLFWVersion :: Version -> String
 showGLFWVersion (Version major minor rev) = intercalate "." $ map show [major,minor,rev]
 
 -------------------------------------------------------------------------------
--- Run game
+-- Run photon
 
--- |Run a game session. This is the entry point of a photon-powered game. It
--- spawns a standalone window in windowed or fullscreen mode. If you want to
--- embed **photon** in a /GUI/ container, you shouldn’t use 'runPhoton'.
+-- |Run a photon session. This is the entry point of a photon-powered
+-- application. It spawns a standalone window in windowed or fullscreen mode.
+-- If you want to embed **photon** in a /GUI/ container, you shouldn’t use
+-- 'runPhoton'.
 --
 -- You’ll be asked for an event poller. This is optional; if you don’t want
 -- any specific events, just use @return []@. If you do, you’ll be placed in
@@ -92,14 +91,14 @@ showGLFWVersion (Version major minor rev) = intercalate "." $ map show [major,mi
 -- you everything you need for game-development. Feel free to read the 'Photon'
 -- documentation for further understanding.
 runPhoton :: Natural -- ^ Width of the window
-        -> Natural -- ^ Height of the window
-        -> Bool -- ^ Should the window be fullscreen?
-        -> String -- ^ Title of the window
-        -> IO [u] -- ^ User-spefic events poller
-        -> EventHandler u a -- ^ Event handler
-        -> (a -> Photon a) -- ^ Your application logic
-        -> a -- ^ Initial application
-        -> IO ()
+          -> Natural -- ^ Height of the window
+          -> Bool -- ^ Should the window be fullscreen?
+          -> String -- ^ Title of the window
+          -> IO [u] -- ^ User-spefic events poller
+          -> EventHandler u a -- ^ Event handler
+          -> (a -> Photon a) -- ^ Your application logic
+          -> a -- ^ Initial application
+          -> IO ()
 runPhoton w h fullscreen title pollUserEvents eventHandler step app = do
     initiated <- GLFW.init
     if initiated then do
@@ -182,9 +181,8 @@ gameDriver width height fullscreen = do
     liftIO $ do
       -- map light program’s semantics here as well
       projViewU <- sem "projView"
-      --modelU <- sem "model"
+      modelU <- sem "model"
       eyeU <- sem "eye"
-      {-
       matDiffAlbU <- sem "matDiffAlb"
       matSpecAlbU <- sem "matSpecAlb"
       matShnU <- sem "matShn"
@@ -192,8 +190,6 @@ gameDriver width height fullscreen = do
       ligColU <- sem "ligCol"
       ligPowU <- sem "ligPow"
       ligRadU <- sem "ligRad"
-      -}
-      startTime <- timePoint
       return $
         PhotonDriver
           gpuMesh
@@ -201,7 +197,14 @@ gameDriver width height fullscreen = do
           gpuLight
           gpuCamera
           (\name -> evalJournalT $ load name <* sinkLogs)
-          (\_ _ _ -> return ()) -- TODO
+          (\gpul lent meshes -> do
+              useProgram lightProgram -- switch to the light program
+              bindFramebuffer (lightBuffer^.offscreenFB) Write -- switch to the light framebuffer
+              runLight gpul ligColU ligPowU ligRadU ligPosU lent -- switch the light on
+              forM_ meshes $ \(gmat,msh) -> do
+                runMaterial gmat matDiffAlbU matSpecAlbU matShnU -- switch the material
+                forM_ msh $ \(gmsh,ment) -> renderMesh gmsh modelU ment -- render all meshes
+            )
           (\gpuc -> runCamera gpuc projViewU eyeU)
           (\lt msg -> print $ Log lt UserLog msg)
   either (\e -> print e >> return Nothing) (return . Just) gdrv
