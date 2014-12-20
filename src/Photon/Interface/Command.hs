@@ -58,7 +58,7 @@ instance Functor PhotonCmd where
 
 type Photon = Free PhotonCmd
 
-class GPU a b where
+class GPU a b | b -> a where
   gpu :: a -> Photon b
 
 instance GPU Mesh GPUMesh where
