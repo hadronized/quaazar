@@ -133,10 +133,10 @@ runWithWindow w h fullscreen window pollUserEvents eventHandler logSink initiali
     getCursorPos window >>= atomically . writeTVar mouseXY
     initGL
 
-    -- game
-    gdrv <- gameDriver w h fullscreen logSink
+    -- photon
+    gdrv <- photonDriver w h fullscreen logSink
     case gdrv of
-      Nothing -> print (Log ErrorLog CoreLog "unable to create game driver")
+      Nothing -> print (Log ErrorLog CoreLog "unable to create photon driver")
       Just drv -> startFrame drv events initializedApp
   where
     startFrame drv events app = do
@@ -144,7 +144,7 @@ runWithWindow w h fullscreen window pollUserEvents eventHandler logSink initiali
         userEvs <- fmap (map UserEvent) pollUserEvents
         GLFW.pollEvents
         evs <- fmap (userEvs++) . atomically $ readTVar events <* writeTVar events []
-        -- route events to game and interpret it; if it has to go on then simply loop
+        -- route events to photon and interpret it; if it has to go on then simply loop
         traverse (interpretPhoton drv) (routeEvents (step app) evs) >>= maybe (return ()) endFrame
       where
         endFrame app' = do
@@ -168,9 +168,9 @@ initGL = do
 -- order to be able to generate framebuffers, textures or any kind of object
 -- viewport-related.
 --
--- If the window’s dimensions change, the game driver should be recreated.
-gameDriver :: Natural -> Natural -> Bool -> (Log -> IO ()) -> IO (Maybe PhotonDriver)
-gameDriver width height fullscreen logHandler = do
+-- If the window’s dimensions change, the photon driver should be recreated.
+photonDriver :: Natural -> Natural -> Bool -> (Log -> IO ()) -> IO (Maybe PhotonDriver)
+photonDriver width height _ logHandler = do
   gdrv <- runEitherT $ do
     -- Lighting step
     lightProgram <- evalJournalT $
