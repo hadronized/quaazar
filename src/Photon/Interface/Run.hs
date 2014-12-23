@@ -97,7 +97,7 @@ runPhoton :: Natural -- ^ Width of the window
           -> IO [u] -- ^ User-spefic events poller
           -> EventHandler u a -- ^ Event handler
           -> (Log -> IO ()) -- log sink
-          -> a -- ^ Initial application
+          -> Photon a -- ^ Initial application
           -> (a -> Photon a) -- ^ Your application logic
           -> IO ()
 runPhoton w h fullscreen title pollUserEvents eventHandler logSink app step = do
@@ -116,7 +116,7 @@ runPhoton w h fullscreen title pollUserEvents eventHandler logSink app step = do
       else do
         print (Log ErrorLog CoreLog "unable to init :(")
 
-runWithWindow :: Natural -> Natural -> Bool -> Window -> IO [u] -> EventHandler u a -> (Log -> IO ()) -> a -> (a -> Photon a) -> IO ()
+runWithWindow :: Natural -> Natural -> Bool -> Window -> IO [u] -> EventHandler u a -> (Log -> IO ()) -> Photon a -> (a -> Photon a) -> IO ()
 runWithWindow w h fullscreen window pollUserEvents eventHandler logSink initializedApp step = do
     -- transaction variables
     events <- newTVarIO []
@@ -145,11 +145,11 @@ runWithWindow w h fullscreen window pollUserEvents eventHandler logSink initiali
         GLFW.pollEvents
         evs <- fmap (userEvs++) . atomically $ readTVar events <* writeTVar events []
         -- route events to photon and interpret it; if it has to go on then simply loop
-        traverse (interpretPhoton drv) (routeEvents (step app) evs) >>= maybe (return ()) endFrame
+        traverse (interpretPhoton drv) (routeEvents (app >>= step) evs) >>= maybe (return ()) endFrame
       where
         endFrame app' = do
           swapBuffers window
-          startFrame drv events app'
+          startFrame drv events (return app')
     routeEvents app evs = case evs of
       [] -> Just app
       (e:es) -> case eventHandler e of
