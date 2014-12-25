@@ -145,16 +145,12 @@ runWithWindow w h fullscreen window pollUserEvents eventHandler logSink initiali
         GLFW.pollEvents
         evs <- fmap (userEvs++) . atomically $ readTVar events <* writeTVar events []
         -- route events to photon and interpret it; if it has to go on then simply loop
-        traverse (interpretPhoton drv) (routeEvents (app >>= step) evs) >>= maybe (return ()) endFrame
+        interpretPhoton drv (routeEvents (app >>= step) evs) >>= maybe (return ()) endFrame
       where
         endFrame app' = do
           swapBuffers window
           startFrame drv events (return app')
-    routeEvents app evs = case evs of
-      [] -> Just app
-      (e:es) -> case eventHandler e of
-        Just step' -> routeEvents (app >>= step') es
-        Nothing -> Nothing
+    routeEvents = foldl (\a e -> a >>= eventHandler e)
 
 initGL :: IO ()
 initGL = do
@@ -212,11 +208,11 @@ photonDriver width height _ logHandler = do
 
 -- |Photon interpreter. This function turns the pure 'Photon a' structure into
 -- 'IO a'.
-interpretPhoton :: PhotonDriver -> Photon a -> IO a
+interpretPhoton :: PhotonDriver -> Photon a -> IO (Maybe a)
 interpretPhoton drv = interpret_
   where
     interpret_ g = case g of
-      Pure x -> return x
+      Pure x -> return (Just x)
       Free g' -> case g' of
         GC.RegisterMesh m f -> drvRegisterMesh drv m >>= interpret_ . f
         GC.LoadObject name f -> drvLoadObject drv name >>= interpret_ . f
@@ -226,6 +222,7 @@ interpretPhoton drv = interpret_
         GC.Render gpulig ent meshes nxt -> drvRender drv gpulig ent meshes >> interpret_ nxt
         GC.Look cam nxt -> drvLook drv cam >> interpret_ nxt
         GC.Log lt msg nxt -> drvLog drv (Log lt UserLog msg) >> interpret_ nxt
+        GC.Destroy -> return Nothing
 
 -------------------------------------------------------------------------------
 -- Callbacks

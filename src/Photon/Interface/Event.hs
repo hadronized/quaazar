@@ -221,4 +221,4 @@ data Event u = CoreEvent CoreEvent | UserEvent u deriving (Eq,Read,Show)
 
 -- |An 'EventHandler u a' handles core event 'Event' and user event 'u' in
 -- an application 'a'.
-type EventHandler u a = Event u -> Maybe (a -> Photon a)
+type EventHandler u a = Event u -> a -> Photon a

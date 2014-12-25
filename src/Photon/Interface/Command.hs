@@ -20,6 +20,7 @@ module Photon.Interface.Command (
   , render
   , look
   , log_
+  , destroy
   ) where
 
 import Control.Monad.Free
@@ -44,6 +45,7 @@ data PhotonCmd n
   | RegisterCamera Projection Entity (GPUCamera -> n)
   | Look GPUCamera n
   | Log LogType String n
+  | Destroy
 
 instance Functor PhotonCmd where
   fmap f a = case a of
@@ -55,6 +57,7 @@ instance Functor PhotonCmd where
     RegisterCamera proj view g -> RegisterCamera proj view (f . g)
     Look c n -> Look c (f n)
     Log t s n -> Log t s (f n)
+    Destroy -> Destroy
 
 type Photon = Free PhotonCmd
 
@@ -96,3 +99,6 @@ look c = Free . Look c $ Pure ()
 
 log_ :: LogType -> String -> Photon ()
 log_ t s = Free . Log t s $ Pure ()
+
+destroy :: Photon ()
+destroy = Free Destroy
