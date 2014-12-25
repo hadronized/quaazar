@@ -100,5 +100,5 @@ look c = Free . Look c $ Pure ()
 log_ :: LogType -> String -> Photon ()
 log_ t s = Free . Log t s $ Pure ()
 
-destroy :: Photon ()
+destroy :: Photon a
 destroy = Free Destroy
