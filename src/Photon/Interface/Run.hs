@@ -26,6 +26,7 @@ import Control.Monad.Free ( Free(..) )
 import Control.Monad.Trans ( liftIO )
 import Control.Monad.Trans.Either ( hoistEither, runEitherT )
 import Control.Monad.Trans.Journal ( evalJournalT )
+import Data.Bits ( (.|.) )
 import Data.List ( intercalate )
 import Graphics.Rendering.OpenGL.Raw
 import Graphics.UI.GLFW as GLFW
@@ -39,7 +40,7 @@ import Photon.Core.Projection ( Projection )
 import Photon.Interface.Command ( Photon )
 import qualified Photon.Interface.Command as GC ( PhotonCmd(..) )
 import Photon.Interface.Event as E
-import Photon.Interface.Shaders ( lightVS, lightFS )
+import Photon.Interface.Shaders ( accumVS, accumFS, lightVS, lightFS )
 import Photon.Render.Camera ( GPUCamera(..), gpuCamera )
 import Photon.Render.GL.Framebuffer ( AttachmentPoint(..), Target(..)
                                     , bindFramebuffer )
@@ -59,7 +60,7 @@ data PhotonDriver = PhotonDriver {
   , drvRegisterLight    :: Light -> IO GPULight
   , drvRegisterCamera   :: Projection -> Entity -> IO GPUCamera
   , drvLoadObject       :: (Load a) => String -> IO (Maybe a)
-  , drvRender           :: GPUCamera -> GPULight -> Entity -> [(GPUMaterial,[(GPUMesh,Entity)])] -> IO ()
+  , drvRender           :: GPUCamera -> [(GPULight,Entity)] -> [(GPUMaterial,[(GPUMesh,Entity)])] -> IO ()
   , drvLog              :: Log -> IO ()
   }
 
@@ -171,21 +172,24 @@ photonDriver width height _ logHandler = do
     lightProgram <- evalJournalT $
       gpuProgram [(VertexShader,lightVS),(FragmentShader,lightFS)] <* sinkLogs
     lightBuffer <- liftIO (genOffscreen width height RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
+    -- accumulation step
+    accumProgram <- evalJournalT $
+      gpuProgram [(VertexShader,accumVS),(FragmentShader,accumFS)] <* sinkLogs
     let
       sem :: (Uniformable a) => String -> IO (Uniform a)
       sem = programSemantic lightProgram
     liftIO $ do
       -- map light program’s semantics here as well
       projViewU <- sem "projView"
-      modelU <- sem "model"
+      --modelU <- sem "model"
       eyeU <- sem "eye"
-      matDiffAlbU <- sem "matDiffAlb"
-      matSpecAlbU <- sem "matSpecAlb"
-      matShnU <- sem "matShn"
-      ligPosU <- sem "ligPos"
-      ligColU <- sem "ligCol"
-      ligPowU <- sem "ligPow"
-      ligRadU <- sem "ligRad"
+      -- matDiffAlbU <- sem "matDiffAlb"
+      -- matSpecAlbU <- sem "matSpecAlb"
+      -- matShnU <- sem "matShn"
+      -- ligPosU <- sem "ligPos"
+      -- ligColU <- sem "ligCol"
+      -- ligPowU <- sem "ligPow"
+      -- ligRadU <- sem "ligRad"
       return $
         PhotonDriver
           gpuMesh
@@ -193,14 +197,21 @@ photonDriver width height _ logHandler = do
           gpuLight
           gpuCamera
           (\name -> evalJournalT $ load name <* sinkLogs)
-          (\gcam gpul lent meshes -> do
+          (\gcam gpuligs meshes -> do
+              -- lighting phase
               useProgram lightProgram -- switch to the light program
               bindFramebuffer (lightBuffer^.offscreenFB) Write -- switch to the light framebuffer
+              glClearColor 1 0 0 1
+              glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
               runCamera gcam projViewU eyeU
+              {-}
               runLight gpul ligColU ligPowU ligRadU ligPosU lent -- switch the light on
               forM_ meshes $ \(gmat,msh) -> do
                 runMaterial gmat matDiffAlbU matSpecAlbU matShnU -- switch the material
                 forM_ msh $ \(gmsh,ment) -> renderMesh gmsh modelU ment -- render all meshes
+              -}
+              -- accumulation phase
+              -- post-process phase
             )
           logHandler
   either (\e -> print e >> return Nothing) (return . Just) gdrv
@@ -218,7 +229,7 @@ interpretPhoton drv = interpret_
         GC.RegisterMaterial m f -> drvRegisterMaterial drv m >>= interpret_ . f
         GC.RegisterLight l f -> drvRegisterLight drv l >>= interpret_ . f
         GC.RegisterCamera proj ent f -> drvRegisterCamera drv proj ent >>= interpret_ . f
-        GC.Render gcam gpulig ent meshes nxt -> drvRender drv gcam gpulig ent meshes >> interpret_ nxt
+        GC.Render gcam gpulig meshes nxt -> drvRender drv gcam gpulig meshes >> interpret_ nxt
         GC.Log lt msg nxt -> drvLog drv (Log lt UserLog msg) >> interpret_ nxt
         GC.Destroy -> return Nothing
 
