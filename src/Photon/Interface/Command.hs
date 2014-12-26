@@ -18,7 +18,6 @@ module Photon.Interface.Command (
   , gpu
   , load
   , render
-  , look
   , log_
   , destroy
   ) where
@@ -40,10 +39,9 @@ data PhotonCmd n
   = RegisterMesh Mesh (GPUMesh -> n)
   | forall a. (Load a) => LoadObject String (Maybe a -> n)
   | RegisterMaterial Material (GPUMaterial -> n)
-  | Render GPULight Entity [(GPUMaterial,[(GPUMesh,Entity)])] n
+  | Render GPUCamera GPULight Entity [(GPUMaterial,[(GPUMesh,Entity)])] n
   | RegisterLight Light (GPULight -> n)
   | RegisterCamera Projection Entity (GPUCamera -> n)
-  | Look GPUCamera n
   | Log LogType String n
   | Destroy
 
@@ -52,10 +50,9 @@ instance Functor PhotonCmd where
     RegisterMesh m g -> RegisterMesh m (f . g)
     LoadObject n g -> LoadObject n (f . g)
     RegisterMaterial m g -> RegisterMaterial m (f . g)
-    Render glig ent meshes n -> Render glig ent meshes (f n)
+    Render gcam glig ent meshes n -> Render gcam glig ent meshes (f n)
     RegisterLight l g -> RegisterLight l (f . g)
     RegisterCamera proj view g -> RegisterCamera proj view (f . g)
-    Look c n -> Look c (f n)
     Log t s n -> Log t s (f n)
     Destroy -> Destroy
 
@@ -85,17 +82,14 @@ load name = Free (LoadObject name Pure)
 registerMaterial :: Material -> Photon GPUMaterial
 registerMaterial m = Free (RegisterMaterial m Pure)
 
-render :: GPULight -> Entity -> [(GPUMaterial,[(GPUMesh,Entity)])] -> Photon ()
-render glig ent meshes = Free (Render glig ent meshes $ Pure ())
+render :: GPUCamera -> GPULight -> Entity -> [(GPUMaterial,[(GPUMesh,Entity)])] -> Photon ()
+render gcam glig ent meshes = Free (Render gcam glig ent meshes $ Pure ())
 
 registerLight :: Light -> Photon GPULight
 registerLight l = Free (RegisterLight l Pure)
 
 registerCamera :: Projection -> Entity -> Photon GPUCamera
 registerCamera proj view = Free (RegisterCamera proj view Pure)
-
-look :: GPUCamera -> Photon ()
-look c = Free . Look c $ Pure ()
 
 log_ :: LogType -> String -> Photon ()
 log_ t s = Free . Log t s $ Pure ()

@@ -59,8 +59,7 @@ data PhotonDriver = PhotonDriver {
   , drvRegisterLight    :: Light -> IO GPULight
   , drvRegisterCamera   :: Projection -> Entity -> IO GPUCamera
   , drvLoadObject       :: (Load a) => String -> IO (Maybe a)
-  , drvRender           :: GPULight -> Entity -> [(GPUMaterial,[(GPUMesh,Entity)])] -> IO ()
-  , drvLook             :: GPUCamera -> IO ()
+  , drvRender           :: GPUCamera -> GPULight -> Entity -> [(GPUMaterial,[(GPUMesh,Entity)])] -> IO ()
   , drvLog              :: Log -> IO ()
   }
 
@@ -194,15 +193,15 @@ photonDriver width height _ logHandler = do
           gpuLight
           gpuCamera
           (\name -> evalJournalT $ load name <* sinkLogs)
-          (\gpul lent meshes -> do
+          (\gcam gpul lent meshes -> do
               useProgram lightProgram -- switch to the light program
               bindFramebuffer (lightBuffer^.offscreenFB) Write -- switch to the light framebuffer
+              runCamera gcam projViewU eyeU
               runLight gpul ligColU ligPowU ligRadU ligPosU lent -- switch the light on
               forM_ meshes $ \(gmat,msh) -> do
                 runMaterial gmat matDiffAlbU matSpecAlbU matShnU -- switch the material
                 forM_ msh $ \(gmsh,ment) -> renderMesh gmsh modelU ment -- render all meshes
             )
-          (\gpuc -> runCamera gpuc projViewU eyeU)
           logHandler
   either (\e -> print e >> return Nothing) (return . Just) gdrv
 
@@ -219,8 +218,7 @@ interpretPhoton drv = interpret_
         GC.RegisterMaterial m f -> drvRegisterMaterial drv m >>= interpret_ . f
         GC.RegisterLight l f -> drvRegisterLight drv l >>= interpret_ . f
         GC.RegisterCamera proj ent f -> drvRegisterCamera drv proj ent >>= interpret_ . f
-        GC.Render gpulig ent meshes nxt -> drvRender drv gpulig ent meshes >> interpret_ nxt
-        GC.Look cam nxt -> drvLook drv cam >> interpret_ nxt
+        GC.Render gcam gpulig ent meshes nxt -> drvRender drv gcam gpulig ent meshes >> interpret_ nxt
         GC.Log lt msg nxt -> drvLog drv (Log lt UserLog msg) >> interpret_ nxt
         GC.Destroy -> return Nothing
 
