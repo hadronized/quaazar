@@ -42,11 +42,12 @@ import qualified Photon.Interface.Command as GC ( PhotonCmd(..) )
 import Photon.Interface.Event as E
 import Photon.Interface.Shaders ( accumVS, accumFS, lightVS, lightFS )
 import Photon.Render.Camera ( GPUCamera(..), gpuCamera )
-import Photon.Render.GL.Framebuffer ( AttachmentPoint(..), Target(..)
-                                    , bindFramebuffer )
+import Photon.Render.GL.Framebuffer
 import Photon.Render.GL.Offscreen
 import Photon.Render.GL.Shader ( ShaderType(..), Uniform, Uniformable )
-import Photon.Render.GL.Texture ( InternalFormat(..), Format(..) )
+import Photon.Render.GL.Texture
+import Photon.Render.GL.VertexArray ( bindVertexArray, genVertexArray
+                                    , unbindVertexArray )
 import Photon.Render.Light ( GPULight(..), gpuLight )
 import Photon.Render.Material ( GPUMaterial(..), gpuMaterial )
 import Photon.Render.Mesh ( GPUMesh(..), gpuMesh )
@@ -175,6 +176,12 @@ photonDriver width height _ logHandler = do
     -- accumulation step
     accumProgram <- evalJournalT $
       gpuProgram [(VertexShader,accumVS),(FragmentShader,accumFS)] <* sinkLogs
+    accumBuffer <- liftIO (genOffscreen width height RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
+    accumVA <- liftIO $ do
+      va <- genVertexArray
+      bindVertexArray va
+      unbindVertexArray
+      return va
     let
       sem :: (Uniformable a) => String -> IO (Uniform a)
       sem = programSemantic lightProgram
@@ -199,19 +206,34 @@ photonDriver width height _ logHandler = do
           (\name -> evalJournalT $ load name <* sinkLogs)
           (\gcam gpuligs meshes -> do
               -- lighting phase
-              useProgram lightProgram -- switch to the light program
-              bindFramebuffer (lightBuffer^.offscreenFB) Write -- switch to the light framebuffer
+              useProgram lightProgram
+              bindFramebuffer (lightBuffer^.offscreenFB) Write
               glClearColor 1 0 0 1
               glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
               runCamera gcam projViewU eyeU
-              {-}
+              {-
               runLight gpul ligColU ligPowU ligRadU ligPosU lent -- switch the light on
               forM_ meshes $ \(gmat,msh) -> do
                 runMaterial gmat matDiffAlbU matSpecAlbU matShnU -- switch the material
                 forM_ msh $ \(gmsh,ment) -> renderMesh gmsh modelU ment -- render all meshes
               -}
-              -- accumulation phase
+              -- accumulation phase; we firstly use the accumulation program and
+              -- bind the resulting image of the lighting phase to unit 0. Then,
+              -- we render a quad with an attribute-less vertex array.
+              useProgram accumProgram
+              bindFramebuffer (accumBuffer^.offscreenFB) Write
+              bindTextureAt (lightBuffer^.offscreenTex) 0
+              bindVertexArray accumVA
+              glDrawArrays gl_TRIANGLE_STRIP 0 4
               -- post-process phase
+              -- back-buffer phase
+              useProgram accumProgram
+              unbindFramebuffer Write
+              glClearColor 0 0 0 1
+              glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
+              bindTextureAt (accumBuffer^.offscreenTex) 0
+              bindVertexArray accumVA
+              glDrawArrays gl_TRIANGLE_STRIP 0 4
             )
           logHandler
   either (\e -> print e >> return Nothing) (return . Just) gdrv
