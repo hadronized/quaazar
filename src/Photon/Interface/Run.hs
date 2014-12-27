@@ -188,15 +188,15 @@ photonDriver width height _ logHandler = do
     liftIO $ do
       -- map light program’s semantics here as well
       projViewU <- sem "projView"
-      --modelU <- sem "model"
+      modelU <- sem "model"
       eyeU <- sem "eye"
-      -- matDiffAlbU <- sem "matDiffAlb"
-      -- matSpecAlbU <- sem "matSpecAlb"
-      -- matShnU <- sem "matShn"
-      -- ligPosU <- sem "ligPos"
-      -- ligColU <- sem "ligCol"
-      -- ligPowU <- sem "ligPow"
-      -- ligRadU <- sem "ligRad"
+      matDiffAlbU <- sem "matDiffAlb"
+      matSpecAlbU <- sem "matSpecAlb"
+      matShnU <- sem "matShn"
+      ligPosU <- sem "ligPos"
+      ligColU <- sem "ligCol"
+      ligPowU <- sem "ligPow"
+      ligRadU <- sem "ligRad"
       return $
         PhotonDriver
           gpuMesh
@@ -205,31 +205,34 @@ photonDriver width height _ logHandler = do
           gpuCamera
           (\name -> evalJournalT $ load name <* sinkLogs)
           (\gcam gpuligs meshes -> do
+              -- purge the accumulation buffer
+              bindFramebuffer (accumBuffer^.offscreenFB) Write
+              glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
               -- lighting phase
               useProgram lightProgram
-              bindFramebuffer (lightBuffer^.offscreenFB) Write
-              glClearColor 1 0 0 1
-              glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
               runCamera gcam projViewU eyeU
-              {-
-              runLight gpul ligColU ligPowU ligRadU ligPosU lent -- switch the light on
-              forM_ meshes $ \(gmat,msh) -> do
-                runMaterial gmat matDiffAlbU matSpecAlbU matShnU -- switch the material
-                forM_ msh $ \(gmsh,ment) -> renderMesh gmsh modelU ment -- render all meshes
-              -}
-              -- accumulation phase; we firstly use the accumulation program and
-              -- bind the resulting image of the lighting phase to unit 0. Then,
-              -- we render a quad with an attribute-less vertex array.
-              useProgram accumProgram
-              bindFramebuffer (accumBuffer^.offscreenFB) Write
-              bindTextureAt (lightBuffer^.offscreenTex) 0
-              bindVertexArray accumVA
-              glDrawArrays gl_TRIANGLE_STRIP 0 4
+              forM_ gpuligs $ \(lig,lent) -> do
+                useProgram lightProgram
+                bindFramebuffer (lightBuffer^.offscreenFB) Write
+                glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
+                glDisable gl_BLEND
+                runLight lig ligColU ligPowU ligRadU ligPosU lent
+                forM_ meshes $ \(gmat,msh) -> do
+                  runMaterial gmat matDiffAlbU matSpecAlbU matShnU
+                  forM_ msh $ \(gmsh,ment) -> renderMesh gmsh modelU ment
+                -- accumulation phase
+                useProgram accumProgram
+                bindFramebuffer (accumBuffer^.offscreenFB) Write
+                glClear gl_DEPTH_BUFFER_BIT -- FIXME: glDisable gl_DEPTH_TEST ?
+                glEnable gl_BLEND
+                glBlendFunc gl_ONE gl_ONE
+                bindTextureAt (lightBuffer^.offscreenTex) 0
+                bindVertexArray accumVA
+                glDrawArrays gl_TRIANGLE_STRIP 0 4
               -- post-process phase
               -- back-buffer phase
               useProgram accumProgram
               unbindFramebuffer Write
-              glClearColor 0 0 0 1
               glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
               bindTextureAt (accumBuffer^.offscreenTex) 0
               bindVertexArray accumVA
@@ -407,7 +410,7 @@ handleMouseButton events _ b s _ = atomically . modifyTVar events $ (++ [CoreEve
 
 handleMouseMotion :: TVar (Double,Double) -> TVar [Event u] -> Window -> Double -> Double -> IO ()
 handleMouseMotion xy' events _ x y = do
-    (x',y') <- atomically (readTVar xy')
+    (x',y') <- atomically $ readTVar xy' <* writeTVar xy' (x,y)
     atomically . modifyTVar events $ (++ [CoreEvent . MouseMotionEvent $ MouseMotion x y (x-x') (y-y')])
 
 handleWindowClose :: TVar [Event u] -> Window -> IO ()

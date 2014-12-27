@@ -111,6 +111,6 @@ accumFS = unlines
   , "out vec4 frag;"
   , "uniform sampler2D source;"
   , "void main() {"
-  , "  frag = texelFetch(source, gl_FragCoord.xy, 0);"
+  , "  frag = texelFetch(source, ivec2(gl_FragCoord.xy), 0);"
   , "}"
   ]
