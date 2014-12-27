@@ -23,9 +23,9 @@ import Photon.Render.GL.Texture ( Texture(..), unTexture )
 
 newtype Framebuffer = Framebuffer { unFramebuffer :: GLObject } deriving (Eq,Show)
 
-data Target 
+data Target
   = Read
-  | Write 
+  | Write
     deriving (Eq,Show)
 
 data AttachmentPoint

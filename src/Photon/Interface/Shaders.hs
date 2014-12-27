@@ -11,6 +11,12 @@
 
 module Photon.Interface.Shaders where
 
+--------------------------------------------------------------------------------
+-- Lighting.
+--
+-- The lighting shader is used to render objects via lights.
+--
+-- TODO: for now, we only support omnidirectional lights.
 lightVS :: String
 lightVS = unlines
   [
@@ -78,6 +84,11 @@ lightFS = unlines
   , "}"
   ]
 
+--------------------------------------------------------------------------------
+-- Accumulation.
+--
+-- The accumulation program is used to blend a lighting image into the
+-- accumulation buffer.
 accumVS :: String
 accumVS = unlines
   [
