@@ -95,7 +95,7 @@ gpuMesh msh = case msh^.meshVertices of
       return . GPUMesh vb ib $ \modelSem ent -> do
         modelSem @= entityTransform ent
         bindVertexArray va
-        glDrawElements (fromPrimitive prim) (fromIntegral vnb) gl_UNSIGNED_INT nullPtr
+        glDrawElements (fromPrimitive prim) (fromIntegral verticesNb) gl_UNSIGNED_INT nullPtr
   where
     inds          = msh^.meshVGroup.to fromVGroup
     verticesNb    = length inds
