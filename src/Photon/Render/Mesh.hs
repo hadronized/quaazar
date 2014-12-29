@@ -29,8 +29,10 @@ import Photon.Render.GL.Primitive
 import Photon.Render.GL.Shader ( Uniform, (@=) )
 import Photon.Render.GL.VertexArray
 
-newtype GPUMesh = GPUMesh {
-    renderMesh :: Uniform (M44 Float)
+data GPUMesh = GPUMesh {
+    vertexBuffer :: Buffer
+  , indexBuffer :: Buffer
+  , renderMesh :: Uniform (M44 Float)
                -> Entity
                -> IO ()
   }
@@ -72,7 +74,7 @@ gpuMesh msh = case msh^.meshVertices of
       -- VAO
       bindVertexArray va
       bindBuffer vb ArrayBuffer
-      
+
       -- position
       enableVertexAttrib (fromIntegral positionAttribute)
       vertexAttribPointer (fromIntegral positionAttribute) 3 Floats False 0
@@ -90,7 +92,7 @@ gpuMesh msh = case msh^.meshVertices of
 
       unbindBuffer IndexBuffer
 
-      return . GPUMesh $ \modelSem ent -> do
+      return . GPUMesh vb ib $ \modelSem ent -> do
         modelSem @= entityTransform ent
         bindVertexArray va
         glDrawElements (fromPrimitive prim) (fromIntegral vnb) gl_UNSIGNED_INT nullPtr
