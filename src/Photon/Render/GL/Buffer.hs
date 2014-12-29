@@ -57,5 +57,5 @@ bufferSubData target offset bytes values =
 
 fromBufferTarget :: BufferTarget -> GLenum
 fromBufferTarget target = case target of
-  ArrayBuffer   -> gl_ARRAY_BUFFER
+  ArrayBuffer -> gl_ARRAY_BUFFER
   IndexBuffer -> gl_ELEMENT_ARRAY_BUFFER
