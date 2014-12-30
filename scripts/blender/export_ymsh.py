@@ -78,7 +78,6 @@ def hasOnlyTris(msh):
       return False
   return True
 
-# TODO: the whole function is wrong
 def toPhotonMesh(msh):
   vs = []
   vg = []
