@@ -155,6 +155,7 @@ runWithWindow w h fullscreen window pollUserEvents eventHandler logSink initiali
 
 initGL :: IO ()
 initGL = do
+  glEnable gl_DEPTH_TEST
   glClearColor 0 0 0 0
 
 -------------------------------------------------------------------------------
