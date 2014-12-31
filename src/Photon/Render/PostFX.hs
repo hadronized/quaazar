@@ -14,17 +14,24 @@ module Photon.Render.PostFX where
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Photon.Core.PostFX
-import Photon.Render.GL.Shader ( ShaderType(..), genShader, genProgram
-                               , useProgram )
+import Photon.Render.GL.Shader ( ShaderType(..), (@=), genShader, genProgram
+                               , getUniform, useProgram )
+import Photon.Render.GL.Texture
 import Photon.Utils.Log ( Log, MonadLogger, sinkLogs )
 
-newtype GPUPostFX = GPUPostFX { usePostFX :: IO () }
+newtype GPUPostFX = GPUPostFX { usePostFX :: Texture -> IO () }
 
 gpuPostFX :: (MonadIO m,MonadLogger m,MonadError Log m) => PostFX -> m GPUPostFX
 gpuPostFX (PostFX src) = do
     program <- sequence [genShader VertexShader vsSrc,genShader FragmentShader src] >>= genProgram
+    liftIO $ do
+      sourceTexU <- getUniform program "sourceTex"
+      useProgram program
+      sourceTexU @= (0 :: Int)
     sinkLogs
-    return $ GPUPostFX (useProgram program)
+    return . GPUPostFX $ \sourceTex -> do
+      useProgram program
+      bindTextureAt sourceTex 0
 
 vsSrc :: String
 vsSrc = unlines

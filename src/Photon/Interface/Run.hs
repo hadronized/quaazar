@@ -21,14 +21,17 @@ import Control.Lens
 import Control.Concurrent.STM ( atomically )
 import Control.Concurrent.STM.TVar ( TVar, modifyTVar, newTVarIO, readTVar
                                    , writeTVar )
-import Control.Monad ( forM_ )
+import Control.Monad ( forM_, void )
 import Control.Monad.Free ( Free(..) )
-import Control.Monad.Trans ( liftIO )
+import Control.Monad.Trans ( lift, liftIO )
 import Control.Monad.Trans.Either ( hoistEither, runEitherT )
 import Control.Monad.Trans.Journal ( evalJournalT )
+import Control.Monad.Trans.State ( get, gets, modify, runStateT )
 import Data.Bits ( (.|.) )
 import qualified Data.Either as Either (Either(..) )
+import Data.IORef ( newIORef, readIORef, writeIORef )
 import Data.List ( intercalate )
+import Data.Tuple ( swap )
 import Graphics.Rendering.OpenGL.Raw
 import Graphics.UI.GLFW as GLFW
 import Numeric.Natural ( Natural )
@@ -204,6 +207,8 @@ photonDriver width height _ logHandler = do
       ligColU <- sem "ligCol"
       ligPowU <- sem "ligPow"
       ligRadU <- sem "ligRad"
+      -- post-process IORef to track the post image
+      postImage <- newIORef (accumBuffer^.offscreenTex)
       return $
         PhotonDriver
           gpuMesh
@@ -218,10 +223,10 @@ photonDriver width height _ logHandler = do
             )
           (\name -> evalJournalT $ load name <* sinkLogs)
           (\gcam gpuligs meshes -> do
-              -- purge the accumulation buffer
+              -- Purge the accumulation buffer.
               bindFramebuffer (accumBuffer^.offscreenFB) Write
               glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
-              -- lighting phase
+              -- Lighting phase.
               useProgram lightProgram
               runCamera gcam projViewU eyeU
               forM_ gpuligs $ \(lig,lent) -> do
@@ -233,7 +238,7 @@ photonDriver width height _ logHandler = do
                 forM_ meshes $ \(gmat,msh) -> do
                   runMaterial gmat matDiffAlbU matSpecAlbU matShnU
                   forM_ msh $ \(gmsh,ment) -> renderMesh gmsh modelU ment
-                -- accumulation phase
+                -- Accumulation phase.
                 useProgram accumProgram
                 bindFramebuffer (accumBuffer^.offscreenFB) Write
                 glClear gl_DEPTH_BUFFER_BIT -- FIXME: glDisable gl_DEPTH_TEST ?
@@ -244,22 +249,25 @@ photonDriver width height _ logHandler = do
                 glDrawArrays gl_TRIANGLE_STRIP 0 4
             )
           (\pfxs -> do
-              -- disable blending and prepare buffer ping-pong
               glDisable gl_BLEND
-              let pingpong = repeat (accumBuffer,lightBuffer) -- TODO: might be slow
-              forM_ (zip pfxs pingpong) $ \(pfx,(sourceBuffer,targetBuffer)) -> do
-                bindFramebuffer (targetBuffer^.offscreenFB) Write
-                glClear gl_DEPTH_BUFFER_BIT
-                bindTextureAt (sourceBuffer^.offscreenTex) 0
-                bindVertexArray accumVA
-                usePostFX pfx
-                glDrawArrays gl_TRIANGLE_STRIP 0 4
+              bindVertexArray accumVA
+              void . flip runStateT (accumBuffer,lightBuffer) $ do
+                forM_ pfxs $ \pfx -> do
+                  (sourceBuffer,targetBuffer) <- get
+                  modify swap
+                  lift $ do
+                    usePostFX pfx (sourceBuffer^.offscreenTex)
+                    bindFramebuffer (targetBuffer^.offscreenFB) Write
+                    glClear gl_DEPTH_BUFFER_BIT
+                    glDrawArrays gl_TRIANGLE_STRIP 0 4
+                    writeIORef postImage (targetBuffer^.offscreenTex)
             )
           ( do
               useProgram accumProgram
               unbindFramebuffer Write
               glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
-              bindTextureAt (accumBuffer^.offscreenTex) 0
+              post <- readIORef postImage
+              bindTextureAt post 0
               bindVertexArray accumVA
               glDrawArrays gl_TRIANGLE_STRIP 0 4
             )
