@@ -18,6 +18,7 @@ module Photon.Interface.Command (
   , gpu
   , load
   , render
+  , postProcess
   , log_
   , destroy
   ) where
@@ -104,6 +105,9 @@ registerCamera proj view = Free (RegisterCamera proj view Pure)
 
 registerPostFX :: PostFX -> Photon (Maybe GPUPostFX)
 registerPostFX pfx = Free (RegisterPostFX pfx Pure)
+
+postProcess :: [GPUPostFX] -> Photon ()
+postProcess pfxs = Free (PostProcess pfxs $ Pure ())
 
 log_ :: LogType -> String -> Photon ()
 log_ t s = Free . Log t s $ Pure ()
