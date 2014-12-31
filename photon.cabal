@@ -28,6 +28,7 @@ library
                      , Photon.Core.Mesh
                      , Photon.Core.Normal
                      , Photon.Core.Position
+                     , Photon.Core.PostFX
                      , Photon.Core.Projection
                      , Photon.Core.Texture
                      , Photon.Core.VGroup

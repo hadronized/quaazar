@@ -28,13 +28,16 @@ import Photon.Core.Light ( Light )
 import Photon.Core.Loader ( Load )
 import Photon.Core.Material ( Material )
 import Photon.Core.Mesh ( Mesh )
+import Photon.Core.PostFX
 import Photon.Core.Projection ( Projection )
 import Photon.Render.Camera ( GPUCamera )
 import Photon.Render.Light ( GPULight )
 import Photon.Render.Material ( GPUMaterial )
 import Photon.Render.Mesh ( GPUMesh )
+import Photon.Render.PostFX ( GPUPostFX )
 import Photon.Utils.Log ( LogType )
 
+-- TODO: “Register” is a really bad name there :)
 data PhotonCmd n
   = RegisterMesh Mesh (GPUMesh -> n)
   | forall a. (Load a) => LoadObject String (Maybe a -> n)
@@ -42,6 +45,7 @@ data PhotonCmd n
   | Render GPUCamera [(GPULight,Entity)] [(GPUMaterial,[(GPUMesh,Entity)])] n
   | RegisterLight Light (GPULight -> n)
   | RegisterCamera Projection Entity (GPUCamera -> n)
+  | RegisterPostFX PostFX (Maybe GPUPostFX -> n)
   | Log LogType String n
   | Destroy
 
@@ -53,9 +57,11 @@ instance Functor PhotonCmd where
     Render gcam glig meshes n -> Render gcam glig meshes (f n)
     RegisterLight l g -> RegisterLight l (f . g)
     RegisterCamera proj view g -> RegisterCamera proj view (f . g)
+    RegisterPostFX pfx g -> RegisterPostFX pfx (f . g)
     Log t s n -> Log t s (f n)
     Destroy -> Destroy
 
+-- TODO: this should be a newtype
 type Photon = Free PhotonCmd
 
 class GPU a b | b -> a where
@@ -72,6 +78,9 @@ instance GPU Light GPULight where
 
 instance GPU (Projection,Entity) GPUCamera where
   gpu = uncurry registerCamera
+
+instance GPU PostFX (Maybe GPUPostFX) where
+  gpu = registerPostFX
 
 registerMesh :: Mesh -> Photon GPUMesh
 registerMesh m = Free (RegisterMesh m Pure)
@@ -90,6 +99,9 @@ registerLight l = Free (RegisterLight l Pure)
 
 registerCamera :: Projection -> Entity -> Photon GPUCamera
 registerCamera proj view = Free (RegisterCamera proj view Pure)
+
+registerPostFX :: PostFX -> Photon (Maybe GPUPostFX)
+registerPostFX pfx = Free (RegisterPostFX pfx Pure)
 
 log_ :: LogType -> String -> Photon ()
 log_ t s = Free . Log t s $ Pure ()

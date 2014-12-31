@@ -14,14 +14,13 @@ module Photon.Render.PostFX where
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Graphics.Rendering.OpenGL.Raw
+import Photon.Core.PostFX
 import Photon.Render.GL.Shader ( ShaderType(..), genShader, genProgram
                                , useProgram )
 import Photon.Render.GL.VertexArray ( bindVertexArray, genVertexArray
                                     , unbindVertexArray )
 import Photon.Render.Texture ( GPUTexture(..) )
 import Photon.Utils.Log ( Log, MonadLogger )
-
-newtype PostFX = PostFX String deriving (Eq,Show)
 
 newtype GPUPostFXScreen = GPUPostFXScreen { runPostFXScreen :: IO () }
 

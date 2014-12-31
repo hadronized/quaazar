@@ -27,6 +27,7 @@ import Control.Monad.Trans ( liftIO )
 import Control.Monad.Trans.Either ( hoistEither, runEitherT )
 import Control.Monad.Trans.Journal ( evalJournalT )
 import Data.Bits ( (.|.) )
+import qualified Data.Either as Either (Either(..) )
 import Data.List ( intercalate )
 import Graphics.Rendering.OpenGL.Raw
 import Graphics.UI.GLFW as GLFW
@@ -36,9 +37,10 @@ import Photon.Core.Light ( Light )
 import Photon.Core.Loader ( Load(..) )
 import Photon.Core.Material ( Material )
 import Photon.Core.Mesh ( Mesh )
+import Photon.Core.PostFX ( PostFX )
 import Photon.Core.Projection ( Projection )
 import Photon.Interface.Command ( Photon )
-import qualified Photon.Interface.Command as GC ( PhotonCmd(..) )
+import qualified Photon.Interface.Command as PC ( PhotonCmd(..) )
 import Photon.Interface.Event as E
 import Photon.Interface.Shaders ( accumVS, accumFS, lightVS, lightFS )
 import Photon.Render.Camera ( GPUCamera(..), gpuCamera )
@@ -51,6 +53,7 @@ import Photon.Render.GL.VertexArray ( bindVertexArray, genVertexArray
 import Photon.Render.Light ( GPULight(..), gpuLight )
 import Photon.Render.Material ( GPUMaterial(..), gpuMaterial )
 import Photon.Render.Mesh ( GPUMesh(..), gpuMesh )
+import Photon.Render.PostFX ( GPUPostFX, gpuPostFX )
 import Photon.Render.Shader ( GPUProgram(..), gpuProgram )
 import Photon.Utils.Log ( Log(..), LogCommitter(..), LogType(..), sinkLogs )
 import Prelude hiding ( Either(Left,Right) )
@@ -60,6 +63,7 @@ data PhotonDriver = PhotonDriver {
   , drvRegisterMaterial :: Material -> IO GPUMaterial
   , drvRegisterLight    :: Light -> IO GPULight
   , drvRegisterCamera   :: Projection -> Entity -> IO GPUCamera
+  , drvRegisterPostFX   :: PostFX -> IO (Maybe GPUPostFX)
   , drvLoadObject       :: (Load a) => String -> IO (Maybe a)
   , drvRender           :: GPUCamera -> [(GPULight,Entity)] -> [(GPUMaterial,[(GPUMesh,Entity)])] -> IO ()
   , drvLog              :: Log -> IO ()
@@ -204,6 +208,12 @@ photonDriver width height _ logHandler = do
           gpuMaterial
           gpuLight
           gpuCamera
+          (\pfx -> evalJournalT $ do
+              gpfx <- runEitherT (gpuPostFX pfx)
+              case gpfx of
+                Either.Left gpfxError -> liftIO (print gpfxError) >> return Nothing
+                Either.Right gpfx' -> return (Just gpfx')
+            )
           (\name -> evalJournalT $ load name <* sinkLogs)
           (\gcam gpuligs meshes -> do
               -- purge the accumulation buffer
@@ -250,14 +260,15 @@ interpretPhoton drv = interpret_
     interpret_ g = case g of
       Pure x -> return (Just x)
       Free g' -> case g' of
-        GC.RegisterMesh m f -> drvRegisterMesh drv m >>= interpret_ . f
-        GC.LoadObject name f -> drvLoadObject drv name >>= interpret_ . f
-        GC.RegisterMaterial m f -> drvRegisterMaterial drv m >>= interpret_ . f
-        GC.RegisterLight l f -> drvRegisterLight drv l >>= interpret_ . f
-        GC.RegisterCamera proj ent f -> drvRegisterCamera drv proj ent >>= interpret_ . f
-        GC.Render gcam gpulig meshes nxt -> drvRender drv gcam gpulig meshes >> interpret_ nxt
-        GC.Log lt msg nxt -> drvLog drv (Log lt UserLog msg) >> interpret_ nxt
-        GC.Destroy -> return Nothing
+        PC.RegisterMesh m f -> drvRegisterMesh drv m >>= interpret_ . f
+        PC.LoadObject name f -> drvLoadObject drv name >>= interpret_ . f
+        PC.RegisterMaterial m f -> drvRegisterMaterial drv m >>= interpret_ . f
+        PC.RegisterLight l f -> drvRegisterLight drv l >>= interpret_ . f
+        PC.RegisterCamera proj ent f -> drvRegisterCamera drv proj ent >>= interpret_ . f
+        PC.RegisterPostFX pfx f -> drvRegisterPostFX drv pfx >>= interpret_ . f
+        PC.Render gcam gpulig meshes nxt -> drvRender drv gcam gpulig meshes >> interpret_ nxt
+        PC.Log lt msg nxt -> drvLog drv (Log lt UserLog msg) >> interpret_ nxt
+        PC.Destroy -> return Nothing
 
 -------------------------------------------------------------------------------
 -- Callbacks
