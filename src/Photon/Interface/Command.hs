@@ -46,6 +46,7 @@ data PhotonCmd n
   | RegisterLight Light (GPULight -> n)
   | RegisterCamera Projection Entity (GPUCamera -> n)
   | RegisterPostFX PostFX (Maybe GPUPostFX -> n)
+  | PostProcess [GPUPostFX] n
   | Log LogType String n
   | Destroy
 
@@ -58,6 +59,7 @@ instance Functor PhotonCmd where
     RegisterLight l g -> RegisterLight l (f . g)
     RegisterCamera proj view g -> RegisterCamera proj view (f . g)
     RegisterPostFX pfx g -> RegisterPostFX pfx (f . g)
+    PostProcess pfxs n -> PostProcess pfxs (f n)
     Log t s n -> Log t s (f n)
     Destroy -> Destroy
 
