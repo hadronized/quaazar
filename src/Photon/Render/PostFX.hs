@@ -20,7 +20,7 @@ import Photon.Render.GL.Shader ( ShaderType(..), genShader, genProgram
 import Photon.Render.GL.VertexArray ( bindVertexArray, genVertexArray
                                     , unbindVertexArray )
 import Photon.Render.Texture ( GPUTexture(..) )
-import Photon.Utils.Log ( Log, MonadLogger )
+import Photon.Utils.Log ( Log, MonadLogger, sinkLogs )
 
 newtype GPUPostFXScreen = GPUPostFXScreen { runPostFXScreen :: IO () }
 
@@ -38,6 +38,7 @@ newtype GPUPostFX = GPUPostFX { runPostFX :: GPUPostFXScreen -> GPUTexture -> IO
 gpuPostFX :: (MonadIO m,MonadLogger m,MonadError Log m) => PostFX -> m GPUPostFX
 gpuPostFX (PostFX src) = do
     program <- sequence [genShader VertexShader vsSrc,genShader FragmentShader src] >>= genProgram
+    sinkLogs
     return . GPUPostFX $ \screen texture -> do
       useProgram program
       bindTextureAt texture 0
