@@ -13,36 +13,18 @@ module Photon.Render.PostFX where
 
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
-import Graphics.Rendering.OpenGL.Raw
 import Photon.Core.PostFX
 import Photon.Render.GL.Shader ( ShaderType(..), genShader, genProgram
                                , useProgram )
-import Photon.Render.GL.VertexArray ( bindVertexArray, genVertexArray
-                                    , unbindVertexArray )
-import Photon.Render.Texture ( GPUTexture(..) )
 import Photon.Utils.Log ( Log, MonadLogger, sinkLogs )
 
-newtype GPUPostFXScreen = GPUPostFXScreen { runPostFXScreen :: IO () }
-
-gpuPostFXScreen :: (MonadIO m) => m GPUPostFXScreen
-gpuPostFXScreen = liftIO $ do
-  va <- genVertexArray
-  bindVertexArray va
-  unbindVertexArray
-  return . GPUPostFXScreen $ do
-    bindVertexArray va
-    glDrawArrays gl_TRIANGLE_STRIP 0 4
-
-newtype GPUPostFX = GPUPostFX { runPostFX :: GPUPostFXScreen -> GPUTexture -> IO () }
+newtype GPUPostFX = GPUPostFX { usePostFX :: IO () }
 
 gpuPostFX :: (MonadIO m,MonadLogger m,MonadError Log m) => PostFX -> m GPUPostFX
 gpuPostFX (PostFX src) = do
     program <- sequence [genShader VertexShader vsSrc,genShader FragmentShader src] >>= genProgram
     sinkLogs
-    return . GPUPostFX $ \screen texture -> do
-      useProgram program
-      bindTextureAt texture 0
-      runPostFXScreen screen
+    return $ GPUPostFX (useProgram program)
 
 vsSrc :: String
 vsSrc = unlines

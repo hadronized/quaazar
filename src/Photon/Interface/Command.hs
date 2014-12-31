@@ -19,6 +19,7 @@ module Photon.Interface.Command (
   , load
   , render
   , postProcess
+  , display
   , log_
   , destroy
   ) where
@@ -48,6 +49,7 @@ data PhotonCmd n
   | RegisterCamera Projection Entity (GPUCamera -> n)
   | RegisterPostFX PostFX (Maybe GPUPostFX -> n)
   | PostProcess [GPUPostFX] n
+  | Display n
   | Log LogType String n
   | Destroy
 
@@ -61,6 +63,7 @@ instance Functor PhotonCmd where
     RegisterCamera proj view g -> RegisterCamera proj view (f . g)
     RegisterPostFX pfx g -> RegisterPostFX pfx (f . g)
     PostProcess pfxs n -> PostProcess pfxs (f n)
+    Display n -> Display (f n)
     Log t s n -> Log t s (f n)
     Destroy -> Destroy
 
@@ -108,6 +111,9 @@ registerPostFX pfx = Free (RegisterPostFX pfx Pure)
 
 postProcess :: [GPUPostFX] -> Photon ()
 postProcess pfxs = Free (PostProcess pfxs $ Pure ())
+
+display :: Photon ()
+display = Free . Display $ Pure ()
 
 log_ :: LogType -> String -> Photon ()
 log_ t s = Free . Log t s $ Pure ()

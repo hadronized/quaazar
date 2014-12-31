@@ -53,7 +53,7 @@ import Photon.Render.GL.VertexArray ( bindVertexArray, genVertexArray
 import Photon.Render.Light ( GPULight(..), gpuLight )
 import Photon.Render.Material ( GPUMaterial(..), gpuMaterial )
 import Photon.Render.Mesh ( GPUMesh(..), gpuMesh )
-import Photon.Render.PostFX ( GPUPostFX, gpuPostFX )
+import Photon.Render.PostFX ( GPUPostFX(..), gpuPostFX )
 import Photon.Render.Shader ( GPUProgram(..), gpuProgram )
 import Photon.Utils.Log ( Log(..), LogCommitter(..), LogType(..), sinkLogs )
 import Prelude hiding ( Either(Left,Right) )
@@ -66,6 +66,8 @@ data PhotonDriver = PhotonDriver {
   , drvRegisterPostFX   :: PostFX -> IO (Maybe GPUPostFX)
   , drvLoadObject       :: (Load a) => String -> IO (Maybe a)
   , drvRender           :: GPUCamera -> [(GPULight,Entity)] -> [(GPUMaterial,[(GPUMesh,Entity)])] -> IO ()
+  , drvPostProcess      :: [GPUPostFX] -> IO ()
+  , drvDisplay          :: IO ()
   , drvLog              :: Log -> IO ()
   }
 
@@ -240,8 +242,20 @@ photonDriver width height _ logHandler = do
                 bindTextureAt (lightBuffer^.offscreenTex) 0
                 bindVertexArray accumVA
                 glDrawArrays gl_TRIANGLE_STRIP 0 4
-              -- post-process phase
-              -- back-buffer phase
+            )
+          (\pfxs -> do
+              -- disable blending and prepare buffer ping-pong
+              glDisable gl_BLEND
+              let pingpong = repeat (accumBuffer,lightBuffer) -- TODO: might be slow
+              forM_ (zip pfxs pingpong) $ \(pfx,(sourceBuffer,targetBuffer)) -> do
+                bindFramebuffer (targetBuffer^.offscreenFB) Write
+                glClear gl_DEPTH_BUFFER_BIT
+                bindTextureAt (sourceBuffer^.offscreenTex) 0
+                bindVertexArray accumVA
+                usePostFX pfx
+                glDrawArrays gl_TRIANGLE_STRIP 0 4
+            )
+          ( do
               useProgram accumProgram
               unbindFramebuffer Write
               glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
@@ -267,6 +281,8 @@ interpretPhoton drv = interpret_
         PC.RegisterCamera proj ent f -> drvRegisterCamera drv proj ent >>= interpret_ . f
         PC.RegisterPostFX pfx f -> drvRegisterPostFX drv pfx >>= interpret_ . f
         PC.Render gcam gpulig meshes nxt -> drvRender drv gcam gpulig meshes >> interpret_ nxt
+        PC.PostProcess pfxs nxt -> drvPostProcess drv pfxs >> interpret_ nxt
+        PC.Display nxt -> drvDisplay drv >> interpret_ nxt
         PC.Log lt msg nxt -> drvLog drv (Log lt UserLog msg) >> interpret_ nxt
         PC.Destroy -> return Nothing
 
