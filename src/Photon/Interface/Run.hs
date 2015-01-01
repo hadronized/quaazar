@@ -26,7 +26,7 @@ import Control.Monad.Free ( Free(..) )
 import Control.Monad.Trans ( lift, liftIO )
 import Control.Monad.Trans.Either ( hoistEither, runEitherT )
 import Control.Monad.Trans.Journal ( evalJournalT )
-import Control.Monad.Trans.State ( get, gets, modify, runStateT )
+import Control.Monad.Trans.State ( get, modify, runStateT )
 import Data.Bits ( (.|.) )
 import qualified Data.Either as Either (Either(..) )
 import Data.IORef ( newIORef, readIORef, writeIORef )
@@ -180,7 +180,7 @@ photonDriver :: Natural -> Natural -> Bool -> (Log -> IO ()) -> IO (Maybe Photon
 photonDriver width height _ logHandler = do
   gdrv <- runEitherT $ do
     -- Lighting step
-    lightProgram <- evalJournalT $
+    omniLightProgram <- evalJournalT $
       gpuProgram [(VertexShader,lightVS),(FragmentShader,lightFS)] <* sinkLogs
     lightBuffer <- liftIO (genOffscreen width height RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
     -- accumulation step
@@ -194,7 +194,7 @@ photonDriver width height _ logHandler = do
       return va
     let
       sem :: (Uniformable a) => String -> IO (Uniform a)
-      sem = programSemantic lightProgram
+      sem = programSemantic omniLightProgram
     liftIO $ do
       -- map light program’s semantics here as well
       projViewU <- sem "projView"
@@ -227,10 +227,10 @@ photonDriver width height _ logHandler = do
               bindFramebuffer (accumBuffer^.offscreenFB) Write
               glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
               -- Lighting phase.
-              useProgram lightProgram
+              useProgram omniLightProgram
               runCamera gcam projViewU eyeU
               forM_ gpuligs $ \(lig,lent) -> do
-                useProgram lightProgram
+                useProgram omniLightProgram
                 bindFramebuffer (lightBuffer^.offscreenFB) Write
                 glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
                 glDisable gl_BLEND
