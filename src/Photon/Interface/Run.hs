@@ -183,6 +183,12 @@ photonDriver width height _ logHandler = do
     omniLightProgram <- evalJournalT $
       gpuProgram [(VertexShader,lightVS),(FragmentShader,lightFS)] <* sinkLogs
     lightBuffer <- liftIO (genOffscreen width height RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
+    lightCubeDepthmap <- do
+      cube <- genCubemap
+      bindTexture cube
+      setTextureWrap cube Clamp
+      setTextureFilter cube Linear
+      setTextureNoImage cube Depth32F width height Depth
     -- accumulation step
     accumProgram <- evalJournalT $
       gpuProgram [(VertexShader,accumVS),(FragmentShader,accumFS)] <* sinkLogs
