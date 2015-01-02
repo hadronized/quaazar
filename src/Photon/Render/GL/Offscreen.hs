@@ -12,7 +12,8 @@
 module Photon.Render.GL.Offscreen where
 
 import Control.Lens ( makeLenses )
-import Control.Monad ( forM_ )
+import Foreign.Ptr ( nullPtr )
+import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Photon.Render.GL.Framebuffer
 import Photon.Render.GL.Log ( gllog )
@@ -71,9 +72,8 @@ genCubeOffscreen :: Natural
                  -> Natural
                  -> InternalFormat
                  -> Format
-                 -> InternalFormat
-                 -> IO (Either Log Offscreen)
-genCubeOffscreen w h texift texft rbift = do
+                 -> IO (Either Log (Framebuffer,Texture))
+genCubeOffscreen w h texift texft = do
   cube <- genCubemap
   bindTexture cube
   setTextureWrap cube Clamp
@@ -81,17 +81,12 @@ genCubeOffscreen w h texift texft rbift = do
   setTextureNoImage cube texift w h texft
   unbindTexture cube
 
-  rb <- genRenderbuffer
-  bindRenderbuffer rb
-  renderbufferStorage rbift w h
-  unbindRenderbuffer
-
   fb <- genFramebuffer
   bindFramebuffer fb Write
-  forM_ [0..5] (attachTextureLayer Write cube DepthAttachment)
-  attachRenderbuffer Write rb (ColorAttachment 0)
+  attachTexture Write cube DepthAttachment
+  glDrawBuffer gl_NONE
 
   status <- checkFramebufferStatus
   unbindFramebuffer Write
 
-  maybe (return . Right $ Offscreen cube fb rb) (return . Left . Log ErrorLog gllog) status
+  return $ maybe (Right (fb,cube)) (Left . Log ErrorLog gllog) status

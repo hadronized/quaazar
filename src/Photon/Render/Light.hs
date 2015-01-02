@@ -20,21 +20,27 @@ import Photon.Core.Light ( Light(..) )
 import Photon.Render.GL.Entity ( cameraTransform )
 import Photon.Render.GL.Shader ( Uniform, (@=) )
 
-newtype GPULight = GPULight {
-    runLight :: Uniform (V3 Float) -- ^ color
-             -> Uniform Float -- ^ power
-             -> Uniform Float -- ^ radius
-             -> Uniform (V3 Float) -- ^ position
-             -> Uniform (M44 Float) -- projection * view
-             -> Entity
-             -> IO ()
+data GPULight = GPULight {
+    shadeWithLight :: Uniform (V3 Float) -- ^ color
+                   -> Uniform Float -- ^ power
+                   -> Uniform Float -- ^ radius
+                   -> Uniform (V3 Float) -- ^ position
+                   -> Uniform (M44 Float) -- projection * view
+                   -> Entity
+                   -> IO ()
+  , genDepthmap :: IO () -> IO ()
   }
 
 gpuLight :: (Monad m) => Light -> m GPULight
-gpuLight (Light _ col power radius _) =
-  return . GPULight $ \colorU powerU radiusU posU projViewU ent -> do
-  colorU @= unColor col
-  powerU @= power
-  radiusU @= radius
-  posU @= (ent^.entityPosition)
-  projViewU @= cameraTransform ent
+gpuLight (Light _ col power radius castShadows) =
+    return (GPULight sendProperties sendDepthmap)
+  where
+    sendProperties colorU powerU radiusU posU projViewU ent = do
+      colorU @= unColor col
+      powerU @= power
+      radiusU @= radius
+      posU @= (ent^.entityPosition)
+      projViewU @= cameraTransform ent
+    sendDepthmap
+      | castShadows = id
+      | otherwise = const (return ())

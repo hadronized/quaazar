@@ -11,6 +11,12 @@
 
 module Photon.Interface.Shaders where
 
+emptyFS :: String
+emptyFS = unlines
+  [
+    "#version 330 core"
+  , "void main() {}"
+  ]
 --------------------------------------------------------------------------------
 -- Lighting.
 --
@@ -24,6 +30,7 @@ lightVS = unlines
 
   , "layout (location = 0) in vec3 co;"
   , "layout (location = 1) in vec3 no;"
+
   , "uniform mat4 projView;"
   , "uniform mat4 model;"
 
@@ -81,6 +88,26 @@ lightFS = unlines
 
     -- final color
   , "  frag = vec4(illum,1.);"
+  , "}"
+  ]
+
+--------------------------------------------------------------------------------
+-- Shadows
+lightCubeDepthmapVS :: String
+lightCubeDepthmapVS = unlines
+  [
+    "#version 330 core"
+
+  , "layout (location = 0) in vec3 co;"
+  , "layout (location = 1) in vec3 no;"
+
+  , "uniform mat4 projView;"
+  , "uniform mat4 model;"
+
+  , "void main() {"
+  , "  vco = (model * vec4(co,1.)).xyz;"
+  , "  vec4 vno = (transpose(inverse(model)) * vec4(no,1.)).xyz;"
+  , "  gl_Position = projView * vno"
   , "}"
   ]
 
