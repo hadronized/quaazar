@@ -186,7 +186,7 @@ photonDriver width height _ logHandler = do
     liftIO . print $ Log InfoLog CoreLog "generating light offscreen"
     lightOff <- liftIO (genOffscreen width height RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
     liftIO . print $ Log InfoLog CoreLog "generating light cube depthmap offscreen"
-    lightCubeDepthOff <- liftIO (genOffscreen width height Depth32F Depth DepthAttachment RGB32F (ColorAttachment 0)) >>= hoistEither
+    lightCubeDepthOff <- liftIO (genOffscreen width height RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
     lightCubeDepthmapProgram <- evalJournalT $
       gpuProgram [(VertexShader,lightCubeDepthmapVS),(FragmentShader,lightCubeDepthmapFS)] <* sinkLogs
     -- accumulation step

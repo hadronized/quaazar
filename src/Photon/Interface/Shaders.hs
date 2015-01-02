@@ -118,7 +118,7 @@ lightCubeDepthmapFS = unlines
   , "out vec4 frag;"
 
   , "void main() {"
-  , "  frag = vec4(0.,0.,0.,0.);"
+  , "  frag = vec4(gl_FragDepth);"
   , "}"
   ]
 
