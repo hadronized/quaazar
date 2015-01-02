@@ -106,9 +106,7 @@ lightCubeDepthmapVS = unlines
   , "uniform mat4 model;"
 
   , "void main() {"
-  , "  vco = (model * vec4(co,1.)).xyz;"
-  , "  vec4 vno = (transpose(inverse(model)) * vec4(no,1.)).xyz;"
-  , "  gl_Position = projView * vno"
+  , "  gl_Position = projView * model * vec4(co,1.);"
   , "}"
   ]
 
