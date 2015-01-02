@@ -17,6 +17,7 @@ emptyFS = unlines
     "#version 330 core"
   , "void main() {}"
   ]
+
 --------------------------------------------------------------------------------
 -- Lighting.
 --
@@ -108,6 +109,18 @@ lightCubeDepthmapVS = unlines
   , "  vco = (model * vec4(co,1.)).xyz;"
   , "  vec4 vno = (transpose(inverse(model)) * vec4(no,1.)).xyz;"
   , "  gl_Position = projView * vno"
+  , "}"
+  ]
+
+lightCubeDepthmapFS :: String
+lightCubeDepthmapFS = unlines
+  [
+    "#version 330 core"
+
+  , "out vec4 frag;"
+
+  , "void main() {"
+  , "  frag = vec4(0.,0.,0.,0.);"
   , "}"
   ]
 

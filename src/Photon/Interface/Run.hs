@@ -45,8 +45,8 @@ import Photon.Core.Projection ( Projection )
 import Photon.Interface.Command ( Photon )
 import qualified Photon.Interface.Command as PC ( PhotonCmd(..) )
 import Photon.Interface.Event as E
-import Photon.Interface.Shaders ( accumVS, accumFS, emptyFS, lightCubeDepthmapVS
-                                , lightVS, lightFS )
+import Photon.Interface.Shaders ( accumVS, accumFS, lightCubeDepthmapVS
+                                , lightCubeDepthmapFS, lightVS, lightFS )
 import Photon.Render.Camera ( GPUCamera(..), gpuCamera )
 import Photon.Render.GL.Framebuffer
 import Photon.Render.GL.Offscreen
@@ -184,16 +184,16 @@ photonDriver width height _ logHandler = do
     omniLightProgram <- evalJournalT $
       gpuProgram [(VertexShader,lightVS),(FragmentShader,lightFS)] <* sinkLogs
     liftIO . print $ Log InfoLog CoreLog "generating light offscreen"
-    lightBuffer <- liftIO (genOffscreen width height RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
+    lightOff <- liftIO (genOffscreen width height RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
     liftIO . print $ Log InfoLog CoreLog "generating light cube depthmap offscreen"
-    (lightCubeDepthBuffer,lightCubeDepthmap) <- liftIO (genCubeOffscreen width height Depth32F Depth) >>= hoistEither
+    lightCubeDepthOff <- liftIO (genCubeOffscreen width height Depth32F Depth DepthAttachment RGB32F (ColorAttachment 0)) >>= hoistEither
     lightCubeDepthmapProgram <- evalJournalT $
-      gpuProgram [(VertexShader,lightCubeDepthmapVS),(FragmentShader,emptyFS)] <* sinkLogs
+      gpuProgram [(VertexShader,lightCubeDepthmapVS),(FragmentShader,lightCubeDepthmapFS)] <* sinkLogs
     -- accumulation step
     accumProgram <- evalJournalT $
       gpuProgram [(VertexShader,accumVS),(FragmentShader,accumFS)] <* sinkLogs
     liftIO . print $ Log InfoLog CoreLog "generating accumulation offscreen"
-    accumBuffer <- liftIO (genOffscreen width height RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
+    accumOff <- liftIO (genOffscreen width height RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
     accumVA <- liftIO $ do
       va <- genVertexArray
       bindVertexArray va
@@ -216,7 +216,7 @@ photonDriver width height _ logHandler = do
       ligPowU <- sem "ligPow"
       ligRadU <- sem "ligRad"
       -- post-process IORef to track the post image
-      postImage <- newIORef (accumBuffer^.offscreenTex)
+      postImage <- newIORef (accumOff^.offscreenTex)
       return $
         PhotonDriver
           gpuMesh
@@ -232,14 +232,14 @@ photonDriver width height _ logHandler = do
           (\name -> evalJournalT $ load name <* sinkLogs)
           (\gcam gpuligs meshes -> do
               -- Purge the accumulation buffer.
-              bindFramebuffer (accumBuffer^.offscreenFB) Write
+              bindFramebuffer (accumOff^.offscreenFB) Write
               glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
               -- Lighting phase.
               useProgram omniLightProgram
               runCamera gcam projViewU eyeU
               forM_ gpuligs $ \(lig,lent) -> do
                 -- Clean the light cube depth buffer.
-                bindFramebuffer lightCubeDepthBuffer Write
+                bindFramebuffer (lightCubeDepthOff^.offscreenFB) Write
                 glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
                 -- If the light casts shadows, alter the cube depthmap so that
                 -- we can create shadows.
@@ -253,7 +253,7 @@ photonDriver width height _ logHandler = do
                 -}
                 -- Prepare the omni light render.
                 useProgram omniLightProgram
-                bindFramebuffer (lightBuffer^.offscreenFB) Write
+                bindFramebuffer (lightOff^.offscreenFB) Write
                 glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
                 glDisable gl_BLEND
                 shadeWithLight lig ligColU ligPowU ligRadU ligPosU ligProjViewU lent
@@ -262,27 +262,27 @@ photonDriver width height _ logHandler = do
                   forM_ msh $ \(gmsh,ment) -> renderMesh gmsh modelU ment
                 -- Accumulation phase.
                 useProgram accumProgram
-                bindFramebuffer (accumBuffer^.offscreenFB) Write
+                bindFramebuffer (accumOff^.offscreenFB) Write
                 glClear gl_DEPTH_BUFFER_BIT -- FIXME: glDisable gl_DEPTH_TEST ?
                 glEnable gl_BLEND
                 glBlendFunc gl_ONE gl_ONE
-                bindTextureAt (lightBuffer^.offscreenTex) 0
+                bindTextureAt (lightOff^.offscreenTex) 0
                 bindVertexArray accumVA
                 glDrawArrays gl_TRIANGLE_STRIP 0 4
             )
           (\pfxs -> do
               glDisable gl_BLEND
               bindVertexArray accumVA
-              void . flip runStateT (accumBuffer,lightBuffer) $ do
+              void . flip runStateT (accumOff,lightOff) $ do
                 forM_ pfxs $ \pfx -> do
-                  (sourceBuffer,targetBuffer) <- get
+                  (sourceOff,targetOff) <- get
                   modify swap
                   lift $ do
-                    usePostFX pfx (sourceBuffer^.offscreenTex)
-                    bindFramebuffer (targetBuffer^.offscreenFB) Write
+                    usePostFX pfx (sourceOff^.offscreenTex)
+                    bindFramebuffer (targetOff^.offscreenFB) Write
                     glClear gl_DEPTH_BUFFER_BIT
                     glDrawArrays gl_TRIANGLE_STRIP 0 4
-                    writeIORef postImage (targetBuffer^.offscreenTex)
+                    writeIORef postImage (targetOff^.offscreenTex)
             )
           ( do
               useProgram accumProgram
