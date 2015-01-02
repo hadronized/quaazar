@@ -183,12 +183,7 @@ photonDriver width height _ logHandler = do
     omniLightProgram <- evalJournalT $
       gpuProgram [(VertexShader,lightVS),(FragmentShader,lightFS)] <* sinkLogs
     lightBuffer <- liftIO (genOffscreen width height RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
-    lightCubeDepthmap <- do
-      cube <- genCubemap
-      bindTexture cube
-      setTextureWrap cube Clamp
-      setTextureFilter cube Linear
-      setTextureNoImage cube Depth32F width height Depth
+    lightCubeDepthBuffer <- liftIO (genCubeOffscreen width height Depth32F Depth RGB32F) >>= hoistEither
     -- accumulation step
     accumProgram <- evalJournalT $
       gpuProgram [(VertexShader,accumVS),(FragmentShader,accumFS)] <* sinkLogs
@@ -209,6 +204,7 @@ photonDriver width height _ logHandler = do
       matDiffAlbU <- sem "matDiffAlb"
       matSpecAlbU <- sem "matSpecAlb"
       matShnU <- sem "matShn"
+      ligProjViewU <- sem "ligProjView"
       ligPosU <- sem "ligPos"
       ligColU <- sem "ligCol"
       ligPowU <- sem "ligPow"
@@ -236,11 +232,14 @@ photonDriver width height _ logHandler = do
               useProgram omniLightProgram
               runCamera gcam projViewU eyeU
               forM_ gpuligs $ \(lig,lent) -> do
+                -- clean the light cube depth buffer
+                bindFramebuffer (lightCubeDepthBuffer^.offscreenFB) Write
+                glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
                 useProgram omniLightProgram
                 bindFramebuffer (lightBuffer^.offscreenFB) Write
                 glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
                 glDisable gl_BLEND
-                runLight lig ligColU ligPowU ligRadU ligPosU lent
+                runLight lig ligColU ligPowU ligRadU ligPosU ligProjViewU lent 
                 forM_ meshes $ \(gmat,msh) -> do
                   runMaterial gmat matDiffAlbU matSpecAlbU matShnU
                   forM_ msh $ \(gmsh,ment) -> renderMesh gmsh modelU ment

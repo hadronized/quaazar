@@ -38,6 +38,7 @@ library
                      , Photon.Interface.Event
                      , Photon.Interface.Run
                      , Photon.Interface.Shaders
+                     , Photon.Interface.PostFX
                      , Photon.Render.Camera
                      , Photon.Render.Light
                      , Photon.Render.Material

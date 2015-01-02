@@ -14,6 +14,8 @@ module Photon.Interface.PostFX (
     gammaCorrection
   ) where
 
+import Photon.Core.PostFX ( PostFX(PostFX) )
+
 gammaCorrection :: PostFX
 gammaCorrection = PostFX $ unlines
   [

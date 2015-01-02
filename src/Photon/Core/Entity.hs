@@ -28,7 +28,7 @@ module Photon.Core.Entity (
   , Dir
   , Axis
   , Orientation
-  , Scale
+  , Scale(..)
   , origin3
   , xAxis
   , yAxis

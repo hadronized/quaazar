@@ -27,6 +27,7 @@ entityTransform e = mkTransformation o p
     p = e^.entityPosition
     o = e^.entityOrientation
 
+-- FIXME: cameraTransform is also used with lights; bad name!
 cameraTransform :: Entity -> M44 Float
 cameraTransform e = quaternionMatrix o !*! translationMatrix p
   where
