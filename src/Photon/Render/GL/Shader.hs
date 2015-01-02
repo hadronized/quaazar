@@ -116,8 +116,11 @@ uniform l = Uniform l (sendUniform l)
 
 getUniform :: (Uniformable a) => Program -> String -> IO (Uniform a)
 getUniform prog name = do
-  l <- getUniformLocation prog name
-  return $ Uniform l (sendUniform l)
+    l <- getUniformLocation prog name
+    if l < 0 then
+      return $ Uniform l (const $ return ())
+      else
+        return $ Uniform l (sendUniform_ l)
 
 (@?=) :: Maybe (Uniform a) -> a -> IO ()
 u @?= a = traverse_ (@= a) u
