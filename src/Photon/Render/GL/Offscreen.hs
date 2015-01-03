@@ -12,6 +12,7 @@
 module Photon.Render.GL.Offscreen where
 
 import Control.Lens ( makeLenses )
+import Foreign.Marshal.Utils ( with )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Photon.Render.GL.Framebuffer

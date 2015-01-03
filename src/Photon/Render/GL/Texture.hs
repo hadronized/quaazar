@@ -77,6 +77,7 @@ setTextureWrap :: Texture -> Wrap -> IO ()
 setTextureWrap t wrap = do
     glTexParameteri target gl_TEXTURE_WRAP_S wrap'
     glTexParameteri target gl_TEXTURE_WRAP_T wrap'
+    glTexParameteri target gl_TEXTURE_WRAP_R wrap'
   where
     target = textureTarget_ t
     wrap'  = fromIntegral (fromWrap wrap)

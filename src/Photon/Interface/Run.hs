@@ -50,7 +50,7 @@ import Photon.Interface.Shaders ( accumVS, accumFS, lightCubeDepthmapVS
 import Photon.Render.Camera ( GPUCamera(..), gpuCamera )
 import Photon.Render.GL.Framebuffer
 import Photon.Render.GL.Offscreen
-import Photon.Render.GL.Shader ( ShaderType(..), Uniform, Uniformable )
+import Photon.Render.GL.Shader ( ShaderType(..), Uniform, Uniformable, (@=) )
 import Photon.Render.GL.Texture
 import Photon.Render.GL.VertexArray ( bindVertexArray, genVertexArray
                                     , unbindVertexArray )
@@ -178,22 +178,46 @@ initGL = do
 --
 -- If the window’s dimensions change, the photon driver should be recreated.
 photonDriver :: Natural -> Natural -> Bool -> (Log -> IO ()) -> IO (Maybe PhotonDriver)
-photonDriver width height _ logHandler = do
+photonDriver w h _ logHandler = do
   gdrv <- runEitherT $ do
     -- Lighting step
     omniLightProgram <- evalJournalT $
       gpuProgram [(VertexShader,lightVS),(FragmentShader,lightFS)] <* sinkLogs
     liftIO . print $ Log InfoLog CoreLog "generating light offscreen"
-    lightOff <- liftIO (genOffscreen width height RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
+    lightOff <- liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
+    -- Shadows
     liftIO . print $ Log InfoLog CoreLog "generating light cube depthmap offscreen"
-    lightCubeDepthOff <- liftIO (genOffscreen width height RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
+    --lightCubeDepthOff <- liftIO (genCubeOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
+    (lightCubeDepthBuffer,lightCubeRender, lightCubeDepthmap) <- liftIO $ do
+      colorCubemap <- genCubemap
+      bindTexture colorCubemap
+      setTextureWrap colorCubemap Clamp
+      setTextureFilters colorCubemap Nearest
+      setTextureNoImage colorCubemap RGB32F w h RGB
+      unbindTexture colorCubemap
+
+      depthCubemap <- genCubemap
+      bindTexture depthCubemap
+      setTextureWrap depthCubemap Clamp
+      setTextureFilters depthCubemap Nearest
+      setTextureNoImage depthCubemap Depth32F w h Depth
+      glTexParameteri gl_TEXTURE_CUBE_MAP gl_TEXTURE_COMPARE_MODE (fromIntegral gl_COMPARE_REF_TO_TEXTURE)
+      glTexParameteri gl_TEXTURE_CUBE_MAP gl_TEXTURE_COMPARE_FUNC (fromIntegral gl_LEQUAL)
+      unbindTexture depthCubemap
+
+      fb <- genFramebuffer
+      bindFramebuffer fb Write
+      attachTexture Write colorCubemap (ColorAttachment 0)
+      attachTexture Write depthCubemap DepthAttachment
+
+      return (fb,colorCubemap,depthCubemap)
     lightCubeDepthmapProgram <- evalJournalT $
       gpuProgram [(VertexShader,lightCubeDepthmapVS),(FragmentShader,lightCubeDepthmapFS)] <* sinkLogs
     -- accumulation step
     accumProgram <- evalJournalT $
       gpuProgram [(VertexShader,accumVS),(FragmentShader,accumFS)] <* sinkLogs
     liftIO . print $ Log InfoLog CoreLog "generating accumulation offscreen"
-    accumOff <- liftIO (genOffscreen width height RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
+    accumOff <- liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
     accumVA <- liftIO $ do
       va <- genVertexArray
       bindVertexArray va
@@ -215,6 +239,7 @@ photonDriver width height _ logHandler = do
       ligColU <- sem "ligCol"
       ligPowU <- sem "ligPow"
       ligRadU <- sem "ligRad"
+      sem "ligDepthmap" >>= \ligDepthmap -> ligDepthmap @= (0 :: Int)
       -- post-process IORef to track the post image
       postImage <- newIORef (accumOff^.offscreenTex)
       return $
@@ -239,24 +264,23 @@ photonDriver width height _ logHandler = do
               runCamera gcam projViewU eyeU
               forM_ gpuligs $ \(lig,lent) -> do
                 -- Clean the light cube depth buffer.
-                bindFramebuffer (lightCubeDepthOff^.offscreenFB) Write
+                bindFramebuffer lightCubeDepthBuffer Write
                 glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
                 -- If the light casts shadows, alter the cube depthmap so that
                 -- we can create shadows.
-                -- TODO: this should be put in the gpuLight function.
-                {-
-                when (lig^.ligCastShadows) $ do
+                genDepthmap lig $ do
                   useProgram lightCubeDepthmapProgram
                   glDisable gl_BLEND
                   glEnable gl_DEPTH_TEST
                   forM_ meshes $ \(_,msh) -> forM_ msh $ \(gmsh,ment) -> renderMesh gmsh modelU ment
-                -}
                 -- Prepare the omni light render.
                 useProgram omniLightProgram
                 bindFramebuffer (lightOff^.offscreenFB) Write
                 glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
                 glDisable gl_BLEND
+                glEnable gl_DEPTH_TEST
                 shadeWithLight lig ligColU ligPowU ligRadU ligPosU ligProjViewU lent
+                bindTextureAt lightCubeDepthmap 0
                 forM_ meshes $ \(gmat,msh) -> do
                   runMaterial gmat matDiffAlbU matSpecAlbU matShnU
                   forM_ msh $ \(gmsh,ment) -> renderMesh gmsh modelU ment
