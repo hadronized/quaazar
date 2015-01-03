@@ -103,7 +103,7 @@ lightCubeDepthmapVS = unlines
   , "layout (location = 1) in vec3 no;"
 
   , "uniform mat4 model;"
-  , "uniform vec3 ligPos";
+  , "uniform vec3 ligPos;"
 
   , "void main() {"
   , "  gl_Position = model * vec4(co,1.) - vec4(ligPos,1.);"
