@@ -224,22 +224,24 @@ photonDriver w h _ logHandler = do
       unbindVertexArray
       return va
     let
-      sem :: (Uniformable a) => String -> IO (Uniform a)
-      sem = programSemantic omniLightProgram
+      lightSem :: (Uniformable a) => String -> IO (Uniform a)
+      lightSem = programSemantic omniLightProgram
     liftIO $ do
-      -- map light program’s semantics here as well
-      projViewU <- sem "projView"
-      modelU <- sem "model"
-      eyeU <- sem "eye"
-      matDiffAlbU <- sem "matDiffAlb"
-      matSpecAlbU <- sem "matSpecAlb"
-      matShnU <- sem "matShn"
-      ligProjViewU <- sem "ligProjView"
-      ligPosU <- sem "ligPos"
-      ligColU <- sem "ligCol"
-      ligPowU <- sem "ligPow"
-      ligRadU <- sem "ligRad"
-      sem "ligDepthmap" >>= \ligDepthmap -> ligDepthmap @= (0 :: Int)
+      -- light semantics
+      projViewU <- lightSem "projView"
+      modelU <- lightSem "model"
+      eyeU <- lightSem "eye"
+      matDiffAlbU <- lightSem "matDiffAlb"
+      matSpecAlbU <- lightSem "matSpecAlb"
+      matShnU <- lightSem "matShn"
+      ligProjViewU <- lightSem "ligProjView"
+      ligPosU <- lightSem "ligPos"
+      ligColU <- lightSem "ligCol"
+      ligPowU <- lightSem "ligPow"
+      ligRadU <- lightSem "ligRad"
+      lightSem "ligDepthmap" >>= \ligDepthmap -> ligDepthmap @= (0 :: Int)
+      -- shadow semantics
+
       -- post-process IORef to track the post image
       postImage <- newIORef (accumOff^.offscreenTex)
       return $
