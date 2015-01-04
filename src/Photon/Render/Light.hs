@@ -14,17 +14,17 @@ module Photon.Render.Light where
 import Control.Lens
 import Linear.Matrix ( M44 )
 import Linear.V3 ( V3 )
-import Photon.Core.Color ( unColor )
+import Photon.Core.Color ( Color )
 import Photon.Core.Entity ( Entity, entityPosition )
 import Photon.Core.Light ( Light(..) )
 import Photon.Render.GL.Entity ( cameraTransform )
 import Photon.Render.GL.Shader ( Uniform, (@=) )
 
 data GPULight = GPULight {
-    shadeWithLight :: Uniform (V3 Float) -- ^ color
+    shadeWithLight :: Uniform Color -- ^ color
                    -> Uniform Float -- ^ power
                    -> Uniform Float -- ^ radius
-                   -> Uniform (V3 Float) -- ^ position
+                   -> Uniform (V3 Float) -- ^ position -- TODO: no sense
                    -> Uniform (M44 Float) -- projection * view
                    -> Entity
                    -> IO ()
@@ -36,7 +36,7 @@ gpuLight (Light _ col power radius castShadows) =
     return (GPULight sendProperties sendDepthmap)
   where
     sendProperties colorU powerU radiusU posU projViewU ent = do
-      colorU @= unColor col
+      colorU @= col
       powerU @= power
       radiusU @= radius
       posU @= (ent^.entityPosition)

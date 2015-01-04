@@ -26,6 +26,9 @@ import Foreign.Ptr ( castPtr, nullPtr )
 import Foreign.Storable ( peek, poke )
 import Linear
 import Graphics.Rendering.OpenGL.Raw
+import Photon.Core.Color ( Color(unColor) )
+import Photon.Core.Material ( Albedo(unAlbedo) )
+import Photon.Core.Position ( Position(unPosition) )
 import Photon.Render.GL.GLObject
 import Photon.Render.GL.Log ( gllog )
 import Photon.Utils.Log
@@ -181,3 +184,12 @@ instance Uniformable (V4 Float) where
 
 instance Uniformable (M44 Float) where
   sendUniform l m = with m (glUniformMatrix4fv l 1 (fromBool True) . castPtr)
+
+instance Uniformable Albedo where
+  sendUniform l = sendUniform l . unAlbedo
+
+instance Uniformable Color where
+  sendUniform l = sendUniform l . unColor
+
+instance Uniformable Position where
+  sendUniform l = sendUniform l . unPosition

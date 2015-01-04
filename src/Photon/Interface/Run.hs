@@ -24,21 +24,23 @@ import Control.Concurrent.STM.TVar ( TVar, modifyTVar, newTVarIO, readTVar
 import Control.Monad ( forM_, void )
 import Control.Monad.Free ( Free(..) )
 import Control.Monad.Trans ( lift, liftIO )
-import Control.Monad.Trans.Either ( hoistEither, runEitherT )
+import Control.Monad.Trans.Either ( EitherT, hoistEither, runEitherT )
 import Control.Monad.Trans.Journal ( evalJournalT )
 import Control.Monad.Trans.State ( get, modify, runStateT )
 import Data.Bits ( (.|.) )
 import qualified Data.Either as Either (Either(..) )
-import Data.IORef ( newIORef, readIORef, writeIORef )
+import Data.IORef ( IORef, newIORef, readIORef, writeIORef )
 import Data.List ( intercalate )
 import Data.Tuple ( swap )
 import Graphics.Rendering.OpenGL.Raw
 import Graphics.UI.GLFW as GLFW
+import Linear hiding ( E )
 import Numeric.Natural ( Natural )
+import Photon.Core.Color ( Color )
 import Photon.Core.Entity ( Entity )
 import Photon.Core.Light ( Light )
 import Photon.Core.Loader ( Load(..) )
-import Photon.Core.Material ( Material )
+import Photon.Core.Material ( Albedo, Material )
 import Photon.Core.Mesh ( Mesh )
 import Photon.Core.PostFX ( PostFX )
 import Photon.Core.Projection ( Projection )
@@ -52,8 +54,8 @@ import Photon.Render.GL.Framebuffer
 import Photon.Render.GL.Offscreen
 import Photon.Render.GL.Shader ( ShaderType(..), Uniform, Uniformable, (@=) )
 import Photon.Render.GL.Texture
-import Photon.Render.GL.VertexArray ( bindVertexArray, genVertexArray
-                                    , unbindVertexArray )
+import Photon.Render.GL.VertexArray ( VertexArray, bindVertexArray
+                                    , genAttributelessVertexArray )
 import Photon.Render.Light ( GPULight(..), gpuLight )
 import Photon.Render.Material ( GPUMaterial(..), gpuMaterial )
 import Photon.Render.Mesh ( GPUMesh(..), gpuMesh )
@@ -61,6 +63,11 @@ import Photon.Render.PostFX ( GPUPostFX(..), gpuPostFX )
 import Photon.Render.Shader ( GPUProgram(..), gpuProgram )
 import Photon.Utils.Log ( Log(..), LogCommitter(..), LogType(..), sinkLogs )
 import Prelude hiding ( Either(Left,Right) )
+
+-- |Helper function to show 'GLSL.Version' type, because they didn’t pick the
+-- one from "Data.Version"…
+showGLFWVersion :: Version -> String
+showGLFWVersion (Version major minor rev) = intercalate "." $ map show [major,minor,rev]
 
 data PhotonDriver = PhotonDriver {
     drvRegisterMesh     :: Mesh -> IO GPUMesh
@@ -75,10 +82,131 @@ data PhotonDriver = PhotonDriver {
   , drvLog              :: Log -> IO ()
   }
 
--- |Helper function to show 'GLSL.Version' type, because they didn’t pick the
--- one from "Data.Version"…
-showGLFWVersion :: Version -> String
-showGLFWVersion (Version major minor rev) = intercalate "." $ map show [major,minor,rev]
+-- |'Lighting' gathers information about lighting in the scene.
+data Lighting = Lighting {
+    _omniLightProgram :: GPUProgram
+  , _lightOff         :: Offscreen
+  , _lightUniforms    :: LightingUniforms
+  }
+
+data LightingUniforms = LightingUniforms {
+    _lightProjViewU    :: Uniform (M44 Float)
+  , _lightModelU       :: Uniform (M44 Float)
+  , _lightEyeU         :: Uniform (V3 Float)
+  , _lightMatDiffAlbU  :: Uniform Albedo
+  , _lightMatSpecAlbU  :: Uniform Albedo
+  , _lightMatShnU      :: Uniform Float
+  , _lightLigProjViewU :: Uniform (M44 Float)
+  , _lightPosU         :: Uniform (V3 Float) -- FIXME: github issue #22
+  , _lightColU         :: Uniform Color
+  , _lightPowU         :: Uniform Float
+  , _lightRadU         :: Uniform Float
+  }
+
+data Shadowing = Shadowing {
+    _shadowCubeDepthFB :: Framebuffer
+  , _shadowCubeRender          :: Texture
+  , _shadowCubeDepthmap        :: Texture
+  , _shadowCubeDepthmapProgram :: GPUProgram
+  , _shadowUniforms            :: ShadowingUniforms
+  }
+
+data ShadowingUniforms = ShadowingUniforms {
+    _shadowProjU   :: Uniform (M44 Float)
+  , _shadowViewsU  :: Uniform (M44 Float)
+  , _shadowModelU  :: Uniform (M44 Float)
+  , _shadowLigPosU :: Uniform (V3 Float) -- FIXME: github issue #22
+  }
+
+data Accumulation = Accumulation {
+    _accumProgram :: GPUProgram
+  , _accumOff     :: Offscreen
+  , _accumVA      :: VertexArray
+  }
+
+makeLenses ''Lighting
+makeLenses ''LightingUniforms
+makeLenses ''Shadowing
+makeLenses ''ShadowingUniforms
+makeLenses ''Accumulation
+
+getLighting :: Natural -> Natural -> EitherT Log IO Lighting
+getLighting w h = do
+  program <- evalJournalT $
+    gpuProgram [(VertexShader,lightVS),(FragmentShader,lightFS)] <* sinkLogs
+  liftIO . print $ Log InfoLog CoreLog "generating light offscreen"
+  off <- liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
+  uniforms <- liftIO (getLightingUniforms program)
+  return (Lighting program off uniforms)
+
+getLightingUniforms :: GPUProgram -> IO LightingUniforms
+getLightingUniforms program = do
+    sem "ligDepthmap" >>= (@= (0 :: Int))
+    LightingUniforms
+      <$> sem "projView"
+      <*> sem "model"
+      <*> sem "eye"
+      <*> sem "matDiffAlb"
+      <*> sem "matSpecAlb"
+      <*> sem "matShn"
+      <*> sem "ligProjView"
+      <*> sem "ligPos"
+      <*> sem "ligCol"
+      <*> sem "ligPow"
+      <*> sem "ligRad"
+  where
+    sem :: (Uniformable a) => String -> IO (Uniform a)
+    sem = programSemantic program
+
+getShadowing :: Natural -> Natural -> EitherT Log IO Shadowing
+getShadowing w h = do
+  liftIO . print $ Log InfoLog CoreLog "generating light cube depthmap offscreen"
+  program <- evalJournalT $
+    gpuProgram [(VertexShader,lightCubeDepthmapVS),(FragmentShader,lightCubeDepthmapFS)] <* sinkLogs
+  liftIO $ do
+    colormap <- genCubemap
+    bindTexture colormap
+    setTextureWrap colormap Clamp
+    setTextureFilters colormap Nearest
+    setTextureNoImage colormap RGB32F w h RGB
+    unbindTexture colormap
+
+    depthmap <- genCubemap
+    bindTexture depthmap
+    setTextureWrap depthmap Clamp
+    setTextureFilters depthmap Nearest
+    setTextureNoImage depthmap Depth32F w h Depth
+    -- TODO: this should be put in GL.Texture
+    glTexParameteri gl_TEXTURE_CUBE_MAP gl_TEXTURE_COMPARE_MODE (fromIntegral gl_COMPARE_REF_TO_TEXTURE)
+    glTexParameteri gl_TEXTURE_CUBE_MAP gl_TEXTURE_COMPARE_FUNC (fromIntegral gl_LEQUAL)
+    unbindTexture depthmap
+
+    fb <- genFramebuffer
+    bindFramebuffer fb Write
+    attachTexture Write colormap (ColorAttachment 0)
+    attachTexture Write depthmap DepthAttachment
+
+    uniforms <- getShadowingUniforms program
+    return (Shadowing fb colormap depthmap program uniforms)
+
+getShadowingUniforms :: GPUProgram -> IO ShadowingUniforms
+getShadowingUniforms program =
+    ShadowingUniforms
+      <$> sem "proj"
+      <*> sem "views"
+      <*> sem "model"
+      <*> sem "ligPos"
+  where
+    sem :: (Uniformable a) => String -> IO (Uniform a)
+    sem = programSemantic program
+
+getAccumulation :: Natural -> Natural -> EitherT Log IO Accumulation
+getAccumulation w h = do
+  program <- evalJournalT $ gpuProgram [(VertexShader,accumVS),(FragmentShader,accumFS)] <* sinkLogs
+  liftIO . print $ Log InfoLog CoreLog "generating accumulation offscreen"
+  off <- liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
+  va <- liftIO genAttributelessVertexArray
+  return (Accumulation program off va)
 
 -------------------------------------------------------------------------------
 -- Run photon
@@ -180,152 +308,141 @@ initGL = do
 photonDriver :: Natural -> Natural -> Bool -> (Log -> IO ()) -> IO (Maybe PhotonDriver)
 photonDriver w h _ logHandler = do
   gdrv <- runEitherT $ do
-    -- Lighting step
-    omniLightProgram <- evalJournalT $
-      gpuProgram [(VertexShader,lightVS),(FragmentShader,lightFS)] <* sinkLogs
-    liftIO . print $ Log InfoLog CoreLog "generating light offscreen"
-    lightOff <- liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
-    -- Shadows
-    liftIO . print $ Log InfoLog CoreLog "generating light cube depthmap offscreen"
-    --lightCubeDepthOff <- liftIO (genCubeOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
-    (lightCubeDepthBuffer,lightCubeRender, lightCubeDepthmap) <- liftIO $ do
-      colorCubemap <- genCubemap
-      bindTexture colorCubemap
-      setTextureWrap colorCubemap Clamp
-      setTextureFilters colorCubemap Nearest
-      setTextureNoImage colorCubemap RGB32F w h RGB
-      unbindTexture colorCubemap
-
-      depthCubemap <- genCubemap
-      bindTexture depthCubemap
-      setTextureWrap depthCubemap Clamp
-      setTextureFilters depthCubemap Nearest
-      setTextureNoImage depthCubemap Depth32F w h Depth
-      glTexParameteri gl_TEXTURE_CUBE_MAP gl_TEXTURE_COMPARE_MODE (fromIntegral gl_COMPARE_REF_TO_TEXTURE)
-      glTexParameteri gl_TEXTURE_CUBE_MAP gl_TEXTURE_COMPARE_FUNC (fromIntegral gl_LEQUAL)
-      unbindTexture depthCubemap
-
-      fb <- genFramebuffer
-      bindFramebuffer fb Write
-      attachTexture Write colorCubemap (ColorAttachment 0)
-      attachTexture Write depthCubemap DepthAttachment
-
-      return (fb,colorCubemap,depthCubemap)
-    lightCubeDepthmapProgram <- evalJournalT $
-      gpuProgram [(VertexShader,lightCubeDepthmapVS),(FragmentShader,lightCubeDepthmapFS)] <* sinkLogs
-    -- accumulation step
-    accumProgram <- evalJournalT $
-      gpuProgram [(VertexShader,accumVS),(FragmentShader,accumFS)] <* sinkLogs
-    liftIO . print $ Log InfoLog CoreLog "generating accumulation offscreen"
-    accumOff <- liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
-    accumVA <- liftIO $ do
-      va <- genVertexArray
-      bindVertexArray va
-      unbindVertexArray
-      return va
-    let
-      lightSem,shhadowSem :: (Uniformable a) => String -> IO (Uniform a)
-      lightSem = programSemantic omniLightProgram
-      shadowSem = programSemantic lightCubeDepthmapProgram
+    lighting <- getLighting w h
+    shadowing <- getShadowing w h
+    accumulation <- getAccumulation w h
     liftIO $ do
-      -- light semantics
-      -- TODO: prepend these uniform names with light
-      projViewU <- lightSem "projView"
-      modelU <- lightSem "model"
-      eyeU <- lightSem "eye"
-      matDiffAlbU <- lightSem "matDiffAlb"
-      matSpecAlbU <- lightSem "matSpecAlb"
-      matShnU <- lightSem "matShn"
-      ligProjViewU <- lightSem "ligProjView"
-      ligPosU <- lightSem "ligPos"
-      ligColU <- lightSem "ligCol"
-      ligPowU <- lightSem "ligPow"
-      ligRadU <- lightSem "ligRad"
-      lightSem "ligDepthmap" >>= \ligDepthmap -> ligDepthmap @= (0 :: Int)
-      -- shadow semantics
-      shadowModelU <- shadowSem "model"
-      shadowLigPosU <- shadowSem "ligPos"
-      shadowLigProjU <- shadowSem "ligProj"
-      shadowLigViewU <- shadowSem "ligView"
       -- post-process IORef to track the post image
-      postImage <- newIORef (accumOff^.offscreenTex)
+      postImage <- newIORef (accumulation^.accumOff.offscreenTex)
       return $
         PhotonDriver
           gpuMesh
           gpuMaterial
           gpuLight
           gpuCamera
-          (\pfx -> evalJournalT $ do
-              gpfx <- runEitherT (gpuPostFX pfx)
-              case gpfx of
-                Either.Left gpfxError -> liftIO (print gpfxError) >> return Nothing
-                Either.Right gpfx' -> return (Just gpfx')
-            )
-          (\name -> evalJournalT $ load name <* sinkLogs)
-          (\gcam gpuligs meshes -> do
-              -- Purge the accumulation buffer.
-              bindFramebuffer (accumOff^.offscreenFB) Write
-              glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
-              -- Lighting phase.
-              useProgram omniLightProgram
-              runCamera gcam projViewU eyeU
-              forM_ gpuligs $ \(lig,lent) -> do
-                -- Clean the light cube depth buffer.
-                bindFramebuffer lightCubeDepthBuffer Write
-                glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
-                -- If the light casts shadows, alter the cube depthmap so that
-                -- we can create shadows.
-                genDepthmap lig $ do
-                  useProgram lightCubeDepthmapProgram
-                  glDisable gl_BLEND
-                  glEnable gl_DEPTH_TEST
-                  forM_ meshes $ \(_,msh) -> forM_ msh $ \(gmsh,ment) -> renderMesh gmsh modelU ment
-                -- Prepare the omni light render.
-                useProgram omniLightProgram
-                bindFramebuffer (lightOff^.offscreenFB) Write
-                glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
-                glDisable gl_BLEND
-                glEnable gl_DEPTH_TEST
-                shadeWithLight lig ligColU ligPowU ligRadU ligPosU ligProjViewU lent
-                bindTextureAt lightCubeDepthmap 0
-                forM_ meshes $ \(gmat,msh) -> do
-                  runMaterial gmat matDiffAlbU matSpecAlbU matShnU
-                  forM_ msh $ \(gmsh,ment) -> renderMesh gmsh modelU ment
-                -- Accumulation phase.
-                useProgram accumProgram
-                bindFramebuffer (accumOff^.offscreenFB) Write
-                glClear gl_DEPTH_BUFFER_BIT -- FIXME: glDisable gl_DEPTH_TEST ?
-                glEnable gl_BLEND
-                glBlendFunc gl_ONE gl_ONE
-                bindTextureAt (lightOff^.offscreenTex) 0
-                bindVertexArray accumVA
-                glDrawArrays gl_TRIANGLE_STRIP 0 4
-            )
-          (\pfxs -> do
-              glDisable gl_BLEND
-              bindVertexArray accumVA
-              void . flip runStateT (accumOff,lightOff) $ do
-                forM_ pfxs $ \pfx -> do
-                  (sourceOff,targetOff) <- get
-                  modify swap
-                  lift $ do
-                    usePostFX pfx (sourceOff^.offscreenTex)
-                    bindFramebuffer (targetOff^.offscreenFB) Write
-                    glClear gl_DEPTH_BUFFER_BIT
-                    glDrawArrays gl_TRIANGLE_STRIP 0 4
-                    writeIORef postImage (targetOff^.offscreenTex)
-            )
-          ( do
-              useProgram accumProgram
-              unbindFramebuffer Write
-              glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
-              post <- readIORef postImage
-              bindTextureAt post 0
-              bindVertexArray accumVA
-              glDrawArrays gl_TRIANGLE_STRIP 0 4
-            )
+          registerPostFX
+          loadObject
+          (render_ lighting shadowing accumulation)
+          (applyPostFXChain lighting accumulation postImage)
+          (display_ accumulation postImage)
           logHandler
   either (\e -> print e >> return Nothing) (return . Just) gdrv
+
+registerPostFX :: PostFX -> IO (Maybe GPUPostFX)
+registerPostFX pfx = evalJournalT $ do
+  gpfx <- runEitherT (gpuPostFX pfx)
+  case gpfx of
+    Either.Left gpfxError -> liftIO (print gpfxError) >> return Nothing
+    Either.Right gpfx' -> return (Just gpfx')
+
+loadObject :: (Load a) => String -> IO (Maybe a)
+loadObject name = evalJournalT (load name <* sinkLogs)
+
+render_ :: Lighting
+        -> Shadowing
+        -> Accumulation
+        -> GPUCamera
+        -> [(GPULight,Entity)]
+        -> [(GPUMaterial,[(GPUMesh,Entity)])]
+        -> IO ()
+render_ lighting shadowing accumulation gcam gpuligs meshes = do
+  purgeAccumulationFramebuffer accumulation
+  useProgram (lighting^.omniLightProgram)
+  pushCameraToLighting lighting gcam
+  forM_ gpuligs $ \(lig,lent) -> do
+    purgeShadowingFramebuffer shadowing
+    generateLightDepthmap shadowing (concatMap snd meshes) lig
+    renderWithLight lighting shadowing meshes lig lent
+    accumulateRender lighting accumulation
+
+purgeAccumulationFramebuffer :: Accumulation -> IO ()
+purgeAccumulationFramebuffer accumulation = do
+  bindFramebuffer (accumulation^.accumOff.offscreenFB) Write
+  glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
+
+pushCameraToLighting :: Lighting -> GPUCamera -> IO ()
+pushCameraToLighting lighting gcam = do
+    runCamera gcam projViewU eyeU
+  where
+    projViewU = unis^.lightProjViewU
+    eyeU = unis^.lightEyeU
+    unis = lighting^.lightUniforms
+
+purgeShadowingFramebuffer :: Shadowing -> IO ()
+purgeShadowingFramebuffer shadowing = do
+  bindFramebuffer (shadowing^.shadowCubeDepthFB) Write
+  glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
+
+generateLightDepthmap :: Shadowing -> [(GPUMesh,Entity)] -> GPULight -> IO ()
+generateLightDepthmap shadowing meshes lig = do
+    genDepthmap lig $ do
+      useProgram (shadowing^.shadowCubeDepthmapProgram)
+      glDisable gl_BLEND
+      glEnable gl_DEPTH_TEST
+      forM_ meshes $ \(gmsh,ment) -> renderMesh gmsh modelU ment
+  where
+    modelU = shadowing^.shadowUniforms.shadowModelU
+
+renderWithLight :: Lighting
+                -> Shadowing
+                -> [(GPUMaterial,[(GPUMesh,Entity)])]
+                -> GPULight
+                -> Entity
+                -> IO ()
+renderWithLight lighting shadowing meshes lig lent = do
+    useProgram (lighting^.omniLightProgram)
+    bindFramebuffer (lighting^.lightOff.offscreenFB) Write
+    glDisable gl_BLEND
+    glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
+    shadeWithLight lig (lunis^.lightColU) (lunis^.lightPowU) (lunis^.lightRadU)
+      (lunis^.lightPosU) (lunis^.lightProjViewU) lent
+    bindTextureAt (shadowing^.shadowCubeDepthmap) 0
+    forM_ meshes $ \(gmat,msh) -> do
+      runMaterial gmat (lunis^.lightMatDiffAlbU) (lunis^.lightMatSpecAlbU)
+        (lunis^.lightMatShnU)
+      forM_ msh $ \(gmsh,ment) -> renderMesh gmsh (lunis^.lightModelU) ment
+  where
+    lunis = lighting^.lightUniforms
+
+accumulateRender :: Lighting -> Accumulation -> IO ()
+accumulateRender lighting accumulation = do
+  useProgram (accumulation^.accumProgram)
+  bindFramebuffer (accumulation^.accumOff.offscreenFB) Write
+  glClear gl_DEPTH_BUFFER_BIT -- FIXME: glDisable gl_DEPTH_TEST ?
+  glEnable gl_BLEND
+  glBlendFunc gl_ONE gl_ONE
+  bindTextureAt (lighting^.lightOff.offscreenTex) 0
+  bindVertexArray (accumulation^.accumVA)
+  glDrawArrays gl_TRIANGLE_STRIP 0 4
+
+applyPostFXChain :: Lighting
+                 -> Accumulation
+                 -> IORef Texture
+                 -> [GPUPostFX]
+                 -> IO ()
+applyPostFXChain lighting accumulation postImage pfxs = do
+  glDisable gl_BLEND
+  bindVertexArray (accumulation^.accumVA)
+  void . flip runStateT (accumulation^.accumOff,lighting^.lightOff) $ do
+    forM_ pfxs $ \pfx -> do
+      (sourceOff,targetOff) <- get
+      modify swap
+      lift $ do
+        usePostFX pfx (sourceOff^.offscreenTex)
+        bindFramebuffer (targetOff^.offscreenFB) Write
+        glClear gl_DEPTH_BUFFER_BIT
+        glDrawArrays gl_TRIANGLE_STRIP 0 4
+        writeIORef postImage (targetOff^.offscreenTex)
+
+display_ :: Accumulation -> IORef Texture -> IO ()
+display_ accumulation postImage = do
+  useProgram (accumulation^.accumProgram)
+  unbindFramebuffer Write
+  glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
+  post <- readIORef postImage
+  bindTextureAt post 0
+  bindVertexArray (accumulation^.accumVA)
+  glDrawArrays gl_TRIANGLE_STRIP 0 4
 
 -- |Photon interpreter. This function turns the pure 'Photon a' structure into
 -- 'IO a'.

@@ -42,10 +42,11 @@ instance FromJSON Albedo where
     case x of
       [r,g,b] -> return (albedo r g b)
       _       -> typeMismatch "albedo" v
+
 -- |Material layer.
 data MaterialLayer = MaterialLayer {
     -- |Diffuse albedo of the material layer.
-    _matDiffuseAlbedo  :: Albedo 
+    _matDiffuseAlbedo  :: Albedo
     -- |Specular albedo of the material layer.
   , _matSpecularAlbedo :: Albedo
     -- |Shininess of the material layer. That property directly affects the

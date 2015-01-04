@@ -36,6 +36,13 @@ genVertexArray = do
   glGenVertexArrays 1 p
   VertexArray . GLObject <$> newForeignPtr p (glDeleteVertexArrays 1 p >> free p)
 
+genAttributelessVertexArray :: IO VertexArray
+genAttributelessVertexArray = do
+  va <- genVertexArray
+  bindVertexArray va
+  unbindVertexArray
+  return va
+  
 bindVertexArray :: VertexArray -> IO ()
 bindVertexArray (VertexArray va) = withGLObject va glBindVertexArray
 
