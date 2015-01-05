@@ -305,7 +305,11 @@ initGL = do
 -- viewport-related.
 --
 -- If the window’s dimensions change, the photon driver should be recreated.
-photonDriver :: Natural -> Natural -> Bool -> (Log -> IO ()) -> IO (Maybe PhotonDriver)
+photonDriver :: Natural
+             -> Natural
+             -> Bool
+             -> (Log -> IO ())
+             -> IO (Maybe PhotonDriver)
 photonDriver w h _ logHandler = do
   gdrv <- runEitherT $ do
     lighting <- getLighting w h
