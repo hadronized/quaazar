@@ -314,18 +314,10 @@ photonDriver w h _ logHandler = do
     liftIO $ do
       -- post-process IORef to track the post image
       postImage <- newIORef (accumulation^.accumOff.offscreenTex)
-      return $
-        PhotonDriver
-          gpuMesh
-          gpuMaterial
-          gpuLight
-          gpuCamera
-          registerPostFX
-          loadObject
-          (render_ lighting shadowing accumulation)
-          (applyPostFXChain lighting accumulation postImage)
-          (display_ accumulation postImage)
-          logHandler
+      return $ PhotonDriver gpuMesh gpuMaterial gpuLight gpuCamera
+        registerPostFX loadObject (render_ lighting shadowing accumulation)
+        (applyPostFXChain lighting accumulation postImage)
+        (display_ accumulation postImage) logHandler
   either (\e -> print e >> return Nothing) (return . Just) gdrv
 
 registerPostFX :: PostFX -> IO (Maybe GPUPostFX)
