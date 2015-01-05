@@ -141,6 +141,7 @@ getLighting w h = do
 
 getLightingUniforms :: GPUProgram -> IO LightingUniforms
 getLightingUniforms program = do
+    useProgram program
     sem "ligDepthmap" >>= (@= (0 :: Int))
     LightingUniforms
       <$> sem "projView"
@@ -190,7 +191,7 @@ getShadowing w h = do
     return (Shadowing fb colormap depthmap program uniforms)
 
 getShadowingUniforms :: GPUProgram -> IO ShadowingUniforms
-getShadowingUniforms program =
+getShadowingUniforms program = do
     ShadowingUniforms
       <$> sem "proj"
       <*> sem "views"
@@ -206,6 +207,9 @@ getAccumulation w h = do
   liftIO . print $ Log InfoLog CoreLog "generating accumulation offscreen"
   off <- liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
   va <- liftIO genAttributelessVertexArray
+  liftIO $ do
+    useProgram program
+    programSemantic program "source" >>= (@= (0 :: Int))
   return (Accumulation program off va)
 
 -------------------------------------------------------------------------------
@@ -357,8 +361,7 @@ purgeAccumulationFramebuffer accumulation = do
   glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
 
 pushCameraToLighting :: Lighting -> GPUCamera -> IO ()
-pushCameraToLighting lighting gcam = do
-    runCamera gcam projViewU eyeU
+pushCameraToLighting lighting gcam = runCamera gcam projViewU eyeU
   where
     projViewU = unis^.lightProjViewU
     eyeU = unis^.lightEyeU
@@ -388,8 +391,9 @@ renderWithLight :: Lighting
 renderWithLight lighting shadowing meshes lig lent = do
     useProgram (lighting^.omniLightProgram)
     bindFramebuffer (lighting^.lightOff.offscreenFB) Write
-    glDisable gl_BLEND
     glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
+    glDisable gl_BLEND
+    glEnable gl_DEPTH_TEST
     shadeWithLight lig (lunis^.lightColU) (lunis^.lightPowU) (lunis^.lightRadU)
       (lunis^.lightPosU) (lunis^.lightProjViewU) lent
     bindTextureAt (shadowing^.shadowCubeDepthmap) 0
