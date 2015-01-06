@@ -186,6 +186,7 @@ getShadowing w h = do
     bindFramebuffer fb Write
     attachTexture Write colormap (ColorAttachment 0)
     attachTexture Write depthmap DepthAttachment
+    unbindFramebuffer Write
 
     uniforms <- getShadowingUniforms program
     return (Shadowing fb colormap depthmap program uniforms)
@@ -317,13 +318,13 @@ photonDriver :: Natural
 photonDriver w h _ logHandler = do
   gdrv <- runEitherT $ do
     lighting <- getLighting w h
-    shadowing <- getShadowing w h
+    --shadowing <- getShadowing w h
     accumulation <- getAccumulation w h
     liftIO $ do
       -- post-process IORef to track the post image
       postImage <- newIORef (accumulation^.accumOff.offscreenTex)
       return $ PhotonDriver gpuMesh gpuMaterial gpuLight gpuCamera
-        registerPostFX loadObject (render_ lighting shadowing accumulation)
+        registerPostFX loadObject (render_ lighting {-shadowing-} accumulation)
         (applyPostFXChain lighting accumulation postImage)
         (display_ accumulation postImage) logHandler
   either (\e -> print e >> return Nothing) (return . Just) gdrv
@@ -339,20 +340,20 @@ loadObject :: (Load a) => String -> IO (Maybe a)
 loadObject name = evalJournalT (load name <* sinkLogs)
 
 render_ :: Lighting
-        -> Shadowing
+        -- -> Shadowing
         -> Accumulation
         -> GPUCamera
         -> [(GPULight,Entity)]
         -> [(GPUMaterial,[(GPUMesh,Entity)])]
         -> IO ()
-render_ lighting shadowing accumulation gcam gpuligs meshes = do
+render_ lighting {-shadowing-} accumulation gcam gpuligs meshes = do
   purgeAccumulationFramebuffer accumulation
-  useProgram (lighting^.omniLightProgram)
   pushCameraToLighting lighting gcam
   forM_ gpuligs $ \(lig,lent) -> do
-    purgeShadowingFramebuffer shadowing
-    generateLightDepthmap shadowing (concatMap snd meshes) lig
-    renderWithLight lighting shadowing meshes lig lent
+    --purgeShadowingFramebuffer shadowing
+    --generateLightDepthmap shadowing (concatMap snd meshes) lig
+    purgeLightingFramebuffer lighting
+    renderWithLight lighting {-shadowing-} meshes lig lent
     accumulateRender lighting accumulation
 
 purgeAccumulationFramebuffer :: Accumulation -> IO ()
@@ -361,7 +362,9 @@ purgeAccumulationFramebuffer accumulation = do
   glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
 
 pushCameraToLighting :: Lighting -> GPUCamera -> IO ()
-pushCameraToLighting lighting gcam = runCamera gcam projViewU eyeU
+pushCameraToLighting lighting gcam = do
+  useProgram (lighting^.omniLightProgram)
+  runCamera gcam projViewU eyeU
   where
     projViewU = unis^.lightProjViewU
     eyeU = unis^.lightEyeU
@@ -371,6 +374,11 @@ purgeShadowingFramebuffer :: Shadowing -> IO ()
 purgeShadowingFramebuffer shadowing = do
   bindFramebuffer (shadowing^.shadowCubeDepthFB) Write
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
+
+purgeLightingFramebuffer :: Lighting -> IO ()
+purgeLightingFramebuffer lighting = do
+    bindFramebuffer (lighting^.lightOff.offscreenFB) Write
+    glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
 
 generateLightDepthmap :: Shadowing -> [(GPUMesh,Entity)] -> GPULight -> IO ()
 generateLightDepthmap shadowing meshes lig = do
@@ -383,20 +391,18 @@ generateLightDepthmap shadowing meshes lig = do
     modelU = shadowing^.shadowUniforms.shadowModelU
 
 renderWithLight :: Lighting
-                -> Shadowing
+                -- -> Shadowing
                 -> [(GPUMaterial,[(GPUMesh,Entity)])]
                 -> GPULight
                 -> Entity
                 -> IO ()
-renderWithLight lighting shadowing meshes lig lent = do
+renderWithLight lighting {-shadowing-} meshes lig lent = do
     useProgram (lighting^.omniLightProgram)
-    bindFramebuffer (lighting^.lightOff.offscreenFB) Write
-    glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
     glDisable gl_BLEND
     glEnable gl_DEPTH_TEST
     shadeWithLight lig (lunis^.lightColU) (lunis^.lightPowU) (lunis^.lightRadU)
       (lunis^.lightPosU) (lunis^.lightProjViewU) lent
-    bindTextureAt (shadowing^.shadowCubeDepthmap) 0
+    --bindTextureAt (shadowing^.shadowCubeDepthmap) 0
     forM_ meshes $ \(gmat,msh) -> do
       runMaterial gmat (lunis^.lightMatDiffAlbU) (lunis^.lightMatSpecAlbU)
         (lunis^.lightMatShnU)

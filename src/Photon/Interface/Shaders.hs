@@ -62,7 +62,7 @@ lightFS = unlines
   , "uniform vec3 ligCol;"
   , "uniform float ligPow;"
   , "uniform float ligRad;"
-  , "uniform mat4 lightProjViewSem;"
+  , "uniform mat4 lightProjView;"
   , "uniform samplerCube ligDepthmap;"
 
   , "out vec4 frag;"

@@ -25,7 +25,8 @@ data GPUCamera = GPUCamera {
   }
 
 gpuCamera :: (Monad m) => Projection -> Entity -> m GPUCamera
-gpuCamera proj ent = return . GPUCamera $ \projViewU eyeu -> do
+gpuCamera proj ent = return . GPUCamera $ \projViewU eyeU -> do
+  print $ "projection matrix:" ++ show (projectionMatrix proj)
   projViewU @= projectionMatrix proj !*! cameraTransform ent
-  eyeu @= ent^.entityPosition
+  eyeU @= ent^.entityPosition
   -- TODO: forward
