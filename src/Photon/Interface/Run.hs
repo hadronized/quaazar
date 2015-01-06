@@ -130,89 +130,6 @@ makeLenses ''Shadowing
 makeLenses ''ShadowingUniforms
 makeLenses ''Accumulation
 
-getLighting :: Natural -> Natural -> EitherT Log IO Lighting
-getLighting w h = do
-  program <- evalJournalT $
-    gpuProgram [(VertexShader,lightVS),(FragmentShader,lightFS)] <* sinkLogs
-  liftIO . print $ Log InfoLog CoreLog "generating light offscreen"
-  off <- liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
-  uniforms <- liftIO (getLightingUniforms program)
-  return (Lighting program off uniforms)
-
-getLightingUniforms :: GPUProgram -> IO LightingUniforms
-getLightingUniforms program = do
-    useProgram program
-    sem "ligDepthmap" >>= (@= (0 :: Int))
-    LightingUniforms
-      <$> sem "projView"
-      <*> sem "model"
-      <*> sem "eye"
-      <*> sem "matDiffAlb"
-      <*> sem "matSpecAlb"
-      <*> sem "matShn"
-      <*> sem "ligProjView"
-      <*> sem "ligPos"
-      <*> sem "ligCol"
-      <*> sem "ligPow"
-      <*> sem "ligRad"
-  where
-    sem :: (Uniformable a) => String -> IO (Uniform a)
-    sem = programSemantic program
-
-getShadowing :: Natural -> Natural -> EitherT Log IO Shadowing
-getShadowing w h = do
-  liftIO . print $ Log InfoLog CoreLog "generating light cube depthmap offscreen"
-  program <- evalJournalT $
-    gpuProgram [(VertexShader,lightCubeDepthmapVS),(FragmentShader,lightCubeDepthmapFS)] <* sinkLogs
-  liftIO $ do
-    colormap <- genCubemap
-    bindTexture colormap
-    setTextureWrap colormap Clamp
-    setTextureFilters colormap Nearest
-    setTextureNoImage colormap RGB32F w h RGB
-    unbindTexture colormap
-
-    depthmap <- genCubemap
-    bindTexture depthmap
-    setTextureWrap depthmap Clamp
-    setTextureFilters depthmap Nearest
-    setTextureNoImage depthmap Depth32F w h Depth
-    -- TODO: this should be put in GL.Texture
-    glTexParameteri gl_TEXTURE_CUBE_MAP gl_TEXTURE_COMPARE_MODE (fromIntegral gl_COMPARE_REF_TO_TEXTURE)
-    glTexParameteri gl_TEXTURE_CUBE_MAP gl_TEXTURE_COMPARE_FUNC (fromIntegral gl_LEQUAL)
-    unbindTexture depthmap
-
-    fb <- genFramebuffer
-    bindFramebuffer fb Write
-    attachTexture Write colormap (ColorAttachment 0)
-    attachTexture Write depthmap DepthAttachment
-    unbindFramebuffer Write
-
-    uniforms <- getShadowingUniforms program
-    return (Shadowing fb colormap depthmap program uniforms)
-
-getShadowingUniforms :: GPUProgram -> IO ShadowingUniforms
-getShadowingUniforms program = do
-    ShadowingUniforms
-      <$> sem "proj"
-      <*> sem "views"
-      <*> sem "model"
-      <*> sem "ligPos"
-  where
-    sem :: (Uniformable a) => String -> IO (Uniform a)
-    sem = programSemantic program
-
-getAccumulation :: Natural -> Natural -> EitherT Log IO Accumulation
-getAccumulation w h = do
-  program <- evalJournalT $ gpuProgram [(VertexShader,accumVS),(FragmentShader,accumFS)] <* sinkLogs
-  liftIO . print $ Log InfoLog CoreLog "generating accumulation offscreen"
-  off <- liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
-  va <- liftIO genAttributelessVertexArray
-  liftIO $ do
-    useProgram program
-    programSemantic program "source" >>= (@= (0 :: Int))
-  return (Accumulation program off va)
-
 -------------------------------------------------------------------------------
 -- Run photon
 
@@ -328,6 +245,89 @@ photonDriver w h _ logHandler = do
         (applyPostFXChain lighting accumulation postImage)
         (display_ accumulation postImage) logHandler
   either (\e -> print e >> return Nothing) (return . Just) gdrv
+
+getLighting :: Natural -> Natural -> EitherT Log IO Lighting
+getLighting w h = do
+  program <- evalJournalT $
+    gpuProgram [(VertexShader,lightVS),(FragmentShader,lightFS)] <* sinkLogs
+  liftIO . print $ Log InfoLog CoreLog "generating light offscreen"
+  off <- liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
+  uniforms <- liftIO (getLightingUniforms program)
+  return (Lighting program off uniforms)
+
+getLightingUniforms :: GPUProgram -> IO LightingUniforms
+getLightingUniforms program = do
+    useProgram program
+    sem "ligDepthmap" >>= (@= (0 :: Int))
+    LightingUniforms
+      <$> sem "projView"
+      <*> sem "model"
+      <*> sem "eye"
+      <*> sem "matDiffAlb"
+      <*> sem "matSpecAlb"
+      <*> sem "matShn"
+      <*> sem "ligProjView"
+      <*> sem "ligPos"
+      <*> sem "ligCol"
+      <*> sem "ligPow"
+      <*> sem "ligRad"
+  where
+    sem :: (Uniformable a) => String -> IO (Uniform a)
+    sem = programSemantic program
+
+getShadowing :: Natural -> Natural -> EitherT Log IO Shadowing
+getShadowing w h = do
+  liftIO . print $ Log InfoLog CoreLog "generating light cube depthmap offscreen"
+  program <- evalJournalT $
+    gpuProgram [(VertexShader,lightCubeDepthmapVS),(FragmentShader,lightCubeDepthmapFS)] <* sinkLogs
+  liftIO $ do
+    colormap <- genCubemap
+    bindTexture colormap
+    setTextureWrap colormap Clamp
+    setTextureFilters colormap Nearest
+    setTextureNoImage colormap RGB32F w h RGB
+    unbindTexture colormap
+
+    depthmap <- genCubemap
+    bindTexture depthmap
+    setTextureWrap depthmap Clamp
+    setTextureFilters depthmap Nearest
+    setTextureNoImage depthmap Depth32F w h Depth
+    -- TODO: this should be put in GL.Texture
+    glTexParameteri gl_TEXTURE_CUBE_MAP gl_TEXTURE_COMPARE_MODE (fromIntegral gl_COMPARE_REF_TO_TEXTURE)
+    glTexParameteri gl_TEXTURE_CUBE_MAP gl_TEXTURE_COMPARE_FUNC (fromIntegral gl_LEQUAL)
+    unbindTexture depthmap
+
+    fb <- genFramebuffer
+    bindFramebuffer fb Write
+    attachTexture Write colormap (ColorAttachment 0)
+    attachTexture Write depthmap DepthAttachment
+    unbindFramebuffer Write
+
+    uniforms <- getShadowingUniforms program
+    return (Shadowing fb colormap depthmap program uniforms)
+
+getShadowingUniforms :: GPUProgram -> IO ShadowingUniforms
+getShadowingUniforms program = do
+    ShadowingUniforms
+      <$> sem "proj"
+      <*> sem "views"
+      <*> sem "model"
+      <*> sem "ligPos"
+  where
+    sem :: (Uniformable a) => String -> IO (Uniform a)
+    sem = programSemantic program
+
+getAccumulation :: Natural -> Natural -> EitherT Log IO Accumulation
+getAccumulation w h = do
+  program <- evalJournalT $ gpuProgram [(VertexShader,accumVS),(FragmentShader,accumFS)] <* sinkLogs
+  liftIO . print $ Log InfoLog CoreLog "generating accumulation offscreen"
+  off <- liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
+  va <- liftIO genAttributelessVertexArray
+  liftIO $ do
+    useProgram program
+    programSemantic program "source" >>= (@= (0 :: Int))
+  return (Accumulation program off va)
 
 registerPostFX :: PostFX -> IO (Maybe GPUPostFX)
 registerPostFX pfx = evalJournalT $ do
