@@ -90,7 +90,7 @@ data Lighting = Lighting {
   }
 
 data LightingUniforms = LightingUniforms {
-    _lightProjViewU    :: Uniform (M44 Float)
+    _lightCamProjViewU :: Uniform (M44 Float)
   , _lightModelU       :: Uniform (M44 Float)
   , _lightEyeU         :: Uniform (V3 Float)
   , _lightMatDiffAlbU  :: Uniform Albedo
@@ -365,7 +365,7 @@ pushCameraToLighting lighting gcam = do
   useProgram (lighting^.omniLightProgram)
   runCamera gcam projViewU eyeU
   where
-    projViewU = unis^.lightProjViewU
+    projViewU = unis^.lightCamProjViewU
     eyeU = unis^.lightEyeU
     unis = lighting^.lightUniforms
 
@@ -400,7 +400,7 @@ renderWithLight lighting {-shadowing-} meshes lig lent = do
     glDisable gl_BLEND
     glEnable gl_DEPTH_TEST
     shadeWithLight lig (lunis^.lightColU) (lunis^.lightPowU) (lunis^.lightRadU)
-      (lunis^.lightPosU) (lunis^.lightProjViewU) lent
+      (lunis^.lightPosU) (lunis^.lightLigProjViewU) lent
     --bindTextureAt (shadowing^.shadowCubeDepthmap) 0
     forM_ meshes $ \(gmat,msh) -> do
       runMaterial gmat (lunis^.lightMatDiffAlbU) (lunis^.lightMatSpecAlbU)
