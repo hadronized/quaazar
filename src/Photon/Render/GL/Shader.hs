@@ -20,7 +20,7 @@ import Data.Word ( Word32 )
 import Foreign.Concurrent
 import Foreign.C.String ( peekCString, withCString )
 import Foreign.Marshal ( alloca, malloc, free )
-import Foreign.Marshal.Array ( allocaArray )
+import Foreign.Marshal.Array ( allocaArray, withArrayLen )
 import Foreign.Marshal.Utils ( fromBool, with )
 import Foreign.Ptr ( castPtr, nullPtr )
 import Foreign.Storable ( peek, poke )
@@ -131,59 +131,112 @@ class Uniformable a where
 instance Uniformable Int where
   sendUniform l x = glUniform1i l (fromIntegral x)
 
+instance Uniformable [Int] where
+  sendUniform l a =
+    withArrayLen a $ \s p -> glUniform1iv l (fromIntegral s) (castPtr p)
+
 instance Uniformable Word32 where
   sendUniform l x = glUniform1ui l (fromIntegral x)
 
+instance Uniformable [Word32] where
+  sendUniform l a =
+    withArrayLen a $ \s p -> glUniform1uiv l (fromIntegral s) (castPtr p)
+
 instance Uniformable Float where
   sendUniform l x = glUniform1f l (realToFrac x)
+
+instance Uniformable [Float] where
+  sendUniform l a =
+    withArrayLen a $ \s p -> glUniform1fv l (fromIntegral s) (castPtr p)
 
 instance Uniformable (V2 Int) where
   sendUniform l v2 = glUniform2i l x y
     where
       V2 x y = fmap fromIntegral v2
 
+instance Uniformable [V2 Int] where
+  sendUniform l a =
+    withArrayLen a $ \s p -> glUniform2iv l (fromIntegral s) (castPtr p)
+
 instance Uniformable (V2 Word32) where
   sendUniform l v2 = glUniform2ui l x y
     where
       V2 x y = fmap fromIntegral v2
+
+instance Uniformable [V2 Word32] where
+  sendUniform l a =
+    withArrayLen a $ \s p -> glUniform2uiv l (fromIntegral s) (castPtr p)
 
 instance Uniformable (V2 Float) where
   sendUniform l v2 = glUniform2f l x y
     where
       V2 x y = fmap realToFrac v2
 
+instance Uniformable [V2 Float] where
+  sendUniform l a =
+    withArrayLen a $ \s p -> glUniform2fv l (fromIntegral s) (castPtr p)
+
 instance Uniformable (V3 Int) where
   sendUniform l v3 = glUniform3i l x y z
     where
       V3 x y z = fmap fromIntegral v3
+
+instance Uniformable [V3 Int] where
+  sendUniform l a =
+    withArrayLen a $ \s p -> glUniform3iv l (fromIntegral s) (castPtr p)
 
 instance Uniformable (V3 Word32) where
   sendUniform l v3 = glUniform3ui l x y z
     where
       V3 x y z = fmap fromIntegral v3
 
+instance Uniformable [V3 Word32] where
+  sendUniform l a =
+    withArrayLen a $ \s p -> glUniform3uiv l (fromIntegral s) (castPtr p)
+
 instance Uniformable (V3 Float) where
   sendUniform l v3 = glUniform3f l x y z
     where
       V3 x y z = fmap realToFrac v3
+
+instance Uniformable [V3 Float] where
+  sendUniform l a =
+    withArrayLen a $ \s p -> glUniform3fv l (fromIntegral s) (castPtr p)
 
 instance Uniformable (V4 Int) where
   sendUniform l v4 = glUniform4i l x y z w
     where
       V4 x y z w = fmap fromIntegral v4
 
+instance Uniformable [V4 Int] where
+  sendUniform l a =
+    withArrayLen a $ \s p -> glUniform4iv l (fromIntegral s) (castPtr p)
+
 instance Uniformable (V4 Word32) where
   sendUniform l v4 = glUniform4ui l x y z w
     where
       V4 x y z w = fmap fromIntegral v4
+
+instance Uniformable [V4 Word32] where
+  sendUniform l a =
+    withArrayLen a $ \s p -> glUniform4uiv l (fromIntegral s) (castPtr p)
 
 instance Uniformable (V4 Float) where
   sendUniform l v4 = glUniform4f l x y z w
     where
       V4 x y z w = fmap realToFrac v4
 
+instance Uniformable [V4 Float] where
+  sendUniform l a =
+    withArrayLen a $ \s p -> glUniform4fv l (fromIntegral s) (castPtr p)
+
 instance Uniformable (M44 Float) where
   sendUniform l m = with m (glUniformMatrix4fv l 1 (fromBool True) . castPtr)
+
+instance Uniformable [M44 Float] where
+  sendUniform l a =
+    withArrayLen a $ \s p ->
+      glUniformMatrix4fv l (fromIntegral s) (fromBool True) (castPtr p)
 
 instance Uniformable Albedo where
   sendUniform l = sendUniform l . unAlbedo
