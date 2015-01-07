@@ -37,7 +37,7 @@ import Graphics.UI.GLFW as GLFW
 import Linear hiding ( E )
 import Numeric.Natural ( Natural )
 import Photon.Core.Color ( Color )
-import Photon.Core.Entity ( Entity )
+import Photon.Core.Entity
 import Photon.Core.Light ( Light )
 import Photon.Core.Loader ( Load(..) )
 import Photon.Core.Material ( Albedo, Material )
@@ -50,6 +50,7 @@ import Photon.Interface.Event as E
 import Photon.Interface.Shaders ( accumVS, accumFS, lightCubeDepthmapVS
                                 , lightCubeDepthmapFS, lightVS, lightFS )
 import Photon.Render.Camera ( GPUCamera(..), gpuCamera )
+import Photon.Render.GL.Entity ( entityTransform )
 import Photon.Render.GL.Framebuffer
 import Photon.Render.GL.Offscreen
 import Photon.Render.GL.Shader ( ShaderType(..), Uniform, Uniformable, (@=) )
@@ -112,10 +113,10 @@ data Shadowing = Shadowing {
   }
 
 data ShadowingUniforms = ShadowingUniforms {
-    _shadowProjU   :: Uniform (M44 Float)
-  , _shadowViewsU  :: Uniform (M44 Float)
-  , _shadowModelU  :: Uniform (M44 Float)
-  , _shadowLigPosU :: Uniform (V3 Float) -- FIXME: github issue #22
+    _shadowLigProjU   :: Uniform (M44 Float)
+  , _shadowLigViewsU  :: Uniform [M44 Float]
+  , _shadowLigPosU    :: Uniform (V3 Float) -- FIXME: github issue #22
+  , _shadowModelU     :: Uniform (M44 Float)
   }
 
 data Accumulation = Accumulation {
@@ -309,10 +310,10 @@ getShadowing w h = do
 getShadowingUniforms :: GPUProgram -> IO ShadowingUniforms
 getShadowingUniforms program = do
     ShadowingUniforms
-      <$> sem "proj"
-      <*> sem "views"
-      <*> sem "model"
+      <$> sem "ligProj"
+      <*> sem "ligViews"
       <*> sem "ligPos"
+      <*> sem "model"
   where
     sem :: (Uniformable a) => String -> IO (Uniform a)
     sem = programSemantic program
@@ -350,7 +351,7 @@ render_ lighting shadowing accumulation gcam gpuligs meshes = do
   pushCameraToLighting lighting gcam
   forM_ gpuligs $ \(lig,lent) -> do
     purgeShadowingFramebuffer shadowing
-    generateLightDepthmap shadowing (concatMap snd meshes) lig
+    generateLightDepthmap shadowing (cameraProjection gcam) (concatMap snd meshes) lig lent
     purgeLightingFramebuffer lighting
     renderWithLight lighting shadowing meshes lig lent
     accumulateRender lighting accumulation
@@ -379,15 +380,36 @@ purgeLightingFramebuffer lighting = do
     bindFramebuffer (lighting^.lightOff.offscreenFB) Write
     glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
 
-generateLightDepthmap :: Shadowing -> [(GPUMesh,Entity)] -> GPULight -> IO ()
-generateLightDepthmap shadowing meshes lig = do
+generateLightDepthmap :: Shadowing
+                      -> M44 Float
+                      -> [(GPUMesh,Entity)]
+                      -> GPULight
+                      -> Entity
+                      -> IO ()
+generateLightDepthmap shadowing proj meshes lig lent = do
     genDepthmap lig $ do
       useProgram (shadowing^.shadowCubeDepthmapProgram)
+      ligPosU @= lent^.entityPosition
+      ligProjU @= proj
+      ligViewsU @= ligViews
       glDisable gl_BLEND
       glEnable gl_DEPTH_TEST
       forM_ meshes $ \(gmsh,ment) -> renderMesh gmsh modelU ment
   where
-    modelU = shadowing^.shadowUniforms.shadowModelU
+    sunis = shadowing^.shadowUniforms
+    ligProjU = sunis^.shadowLigProjU
+    ligViewsU = sunis^.shadowLigViewsU
+    ligPosU = sunis^.shadowLigPosU
+    modelU = sunis^.shadowModelU
+    ligViews = map entityTransform
+      [
+        origin & entityOrientation .~ axisAngle yAxis (-pi/2) -- positive x
+      , origin & entityOrientation .~ axisAngle yAxis (pi/2) -- negative x
+      , origin & entityOrientation .~ axisAngle xAxis (pi/2) -- positive y
+      , origin & entityOrientation .~ axisAngle xAxis (-pi/2) -- negative y
+      , origin & entityOrientation .~ axisAngle yAxis 0 -- positive z
+      , origin & entityOrientation .~ axisAngle yAxis pi -- negative z
+      ]
 
 renderWithLight :: Lighting
                 -> Shadowing

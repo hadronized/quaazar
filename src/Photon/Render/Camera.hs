@@ -22,10 +22,14 @@ data GPUCamera = GPUCamera {
     runCamera :: Uniform (M44 Float) -- ^ projection * view
               -> Uniform (V3 Float) -- ^ eye
               -> IO ()
+  , cameraProjection :: M44 Float
   }
 
 gpuCamera :: (Monad m) => Projection -> Entity -> m GPUCamera
-gpuCamera proj ent = return . GPUCamera $ \projViewU eyeU -> do
-  projViewU @= projectionMatrix proj !*! cameraTransform ent
-  eyeU @= ent^.entityPosition
-  -- TODO: forward
+gpuCamera proj ent = return (GPUCamera sendCamera proj')
+  where
+    sendCamera projViewU eyeU = do
+      projViewU @= proj' !*! cameraTransform ent
+      eyeU @= ent^.entityPosition
+      -- TODO: forward
+    proj' = projectionMatrix proj

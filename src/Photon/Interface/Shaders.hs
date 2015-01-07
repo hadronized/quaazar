@@ -103,10 +103,9 @@ lightCubeDepthmapVS = unlines
   , "layout (location = 1) in vec3 no;"
 
   , "uniform mat4 model;"
-  , "uniform vec3 ligPos;"
 
   , "void main() {"
-  , "  gl_Position = model * vec4(co,1.) - vec4(ligPos,1.);"
+  , "  gl_Position = model * vec4(co,1.);"
   , "}"
   ]
 
@@ -122,13 +121,13 @@ lightCubeDepthmapGS = unlines
   , "layout (triangle_strip, max_vertices = 18) out;"
 
   , "uniform mat4 ligProj;"
-  , "uniform mat4 ligView[];" -- 6 views
+  , "uniform mat4 ligViews[];" -- 6 views
 
   , "void main() {"
   , "  for (int i = 0; i < 6; ++i) {"
   , "    for (int j = 0; j < 3; ++j) {"
   , "      gl_LayerID = i;"
-  , "      gl_Position = ligProj * ligView[i] * gl_in[j].gl_Position;"
+  , "      gl_Position = ligProj * ligViews[i] * gl_in[j].gl_Position;"
   , "      EmitVertex();"
   , "    }"
   , "    EndPrimitive();"
