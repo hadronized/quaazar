@@ -62,7 +62,6 @@ lightFS = unlines
   , "uniform vec3 ligCol;"
   , "uniform float ligPow;"
   , "uniform float ligRad;"
-  , "uniform mat4 lightProjView;"
   , "uniform samplerCube ligDepthmap;"
 
   , "out vec4 frag;"
@@ -80,12 +79,11 @@ lightFS = unlines
   , "  vec3 illum = atten * (diff + spec);"
 
     -- shadows
-  {-
-  , "  float ligDepth = texture(shadowmap, normalize(forward)).r;"
+  , "  vec3 depthDir = normalize(vco - ligPos);"
+  , "  float ligDepth = texture(ligDepthmap, normalize()).r;"
   , "  float shadow = 1.;"
 
-  , "  if (gl_FragCoord.z
-  -}
+  , "  if (gl_FragCoord.z"
 
     -- final color
   , "  frag = vec4(illum,1.);"
@@ -121,7 +119,7 @@ lightCubeDepthmapGS = unlines
   , "layout (triangle_strip, max_vertices = 18) out;"
 
   , "uniform mat4 ligProj;"
-  , "uniform mat4 ligViews[];" -- 6 views
+  , "uniform mat4 ligViews[6];" -- 6 views
 
   , "void main() {"
   , "  for (int i = 0; i < 6; ++i) {"

@@ -54,7 +54,8 @@ import Photon.Render.Camera ( GPUCamera(..), gpuCamera )
 import Photon.Render.GL.Entity ( entityTransform )
 import Photon.Render.GL.Framebuffer
 import Photon.Render.GL.Offscreen
-import Photon.Render.GL.Shader ( ShaderType(..), Uniform, Uniformable, (@=) )
+import Photon.Render.GL.Shader ( ShaderType(..), Uniform, Uniformable, (@=)
+                               , unused )
 import Photon.Render.GL.Texture
 import Photon.Render.GL.VertexArray ( VertexArray, bindVertexArray
                                     , genAttributelessVertexArray )
@@ -98,7 +99,6 @@ data LightingUniforms = LightingUniforms {
   , _lightMatDiffAlbU  :: Uniform Albedo
   , _lightMatSpecAlbU  :: Uniform Albedo
   , _lightMatShnU      :: Uniform Float
-  , _lightLigProjViewU :: Uniform (M44 Float)
   , _lightPosU         :: Uniform (V3 Float) -- FIXME: github issue #22
   , _lightColU         :: Uniform Color
   , _lightPowU         :: Uniform Float
@@ -266,7 +266,6 @@ getLightingUniforms program = do
       <*> sem "matDiffAlb"
       <*> sem "matSpecAlb"
       <*> sem "matShn"
-      <*> sem "ligProjView"
       <*> sem "ligPos"
       <*> sem "ligCol"
       <*> sem "ligPow"
@@ -302,7 +301,7 @@ getShadowing w h = do
     setTextureWrap depthmap Clamp
     setTextureFilters depthmap Nearest
     setTextureNoImage depthmap Depth32F w h Depth
-    setTextureCompareFunc depthmap (Just LessOrEqual)
+    --setTextureCompareFunc depthmap (Just LessOrEqual)
     unbindTexture depthmap
 
     -- TODO: refactoring
@@ -429,7 +428,7 @@ renderWithLight lighting shadowing meshes lig lent = do
     glDisable gl_BLEND
     glEnable gl_DEPTH_TEST
     shadeWithLight lig (lunis^.lightColU) (lunis^.lightPowU) (lunis^.lightRadU)
-      (lunis^.lightPosU) (lunis^.lightLigProjViewU) lent
+      (lunis^.lightPosU) unused lent
     bindTextureAt (shadowing^.shadowCubeDepthmap) 0
     forM_ meshes $ \(gmat,msh) -> do
       runMaterial gmat (lunis^.lightMatDiffAlbU) (lunis^.lightMatSpecAlbU)
