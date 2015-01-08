@@ -47,8 +47,9 @@ import Photon.Core.Projection ( Projection )
 import Photon.Interface.Command ( Photon )
 import qualified Photon.Interface.Command as PC ( PhotonCmd(..) )
 import Photon.Interface.Event as E
-import Photon.Interface.Shaders ( accumVS, accumFS, lightCubeDepthmapVS
-                                , lightCubeDepthmapFS, lightVS, lightFS )
+import Photon.Interface.Shaders ( accumVS, accumFS, lightCubeDepthmapFS
+                                , lightCubeDepthmapGS, lightCubeDepthmapVS
+                                , lightFS, lightVS )
 import Photon.Render.Camera ( GPUCamera(..), gpuCamera )
 import Photon.Render.GL.Entity ( entityTransform )
 import Photon.Render.GL.Framebuffer
@@ -278,8 +279,15 @@ getLightingUniforms program = do
 getShadowing :: Natural -> Natural -> EitherT Log IO Shadowing
 getShadowing w h = do
   liftIO . print $ Log InfoLog CoreLog "generating light cube depthmap offscreen"
-  program <- evalJournalT $
-    gpuProgram [(VertexShader,lightCubeDepthmapVS),(FragmentShader,lightCubeDepthmapFS)] <* sinkLogs
+  program <- evalJournalT $ do
+    program <- gpuProgram
+      [
+        (VertexShader,lightCubeDepthmapVS)
+      , (GeometryShader,lightCubeDepthmapGS)
+      , (FragmentShader,lightCubeDepthmapFS)
+      ]
+    sinkLogs
+    return program
   liftIO $ do
     colormap <- genCubemap
     bindTexture colormap

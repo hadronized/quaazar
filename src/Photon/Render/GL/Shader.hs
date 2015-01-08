@@ -40,6 +40,7 @@ newtype Shader = Shader { unShader :: GLObject } deriving (Eq,Show)
 
 data ShaderType
   = VertexShader
+  | GeometryShader
   | FragmentShader
     deriving (Eq,Show)
 
@@ -78,6 +79,7 @@ genShader stype src = do
 fromShaderType :: ShaderType -> GLenum
 fromShaderType shaderType = case shaderType of
   VertexShader   -> gl_VERTEX_SHADER
+  GeometryShader -> gl_GEOMETRY_SHADER
   FragmentShader -> gl_FRAGMENT_SHADER
 
 genProgram :: (MonadIO m,MonadError Log m) => [Shader] -> m Program
