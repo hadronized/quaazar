@@ -302,8 +302,7 @@ getShadowing w h = do
     setTextureFilters depthmap Nearest
     setTextureNoImage depthmap Depth32F w h Depth
     -- TODO: this should be put in GL.Texture
-    glTexParameteri gl_TEXTURE_CUBE_MAP gl_TEXTURE_COMPARE_MODE (fromIntegral gl_COMPARE_REF_TO_TEXTURE)
-    glTexParameteri gl_TEXTURE_CUBE_MAP gl_TEXTURE_COMPARE_FUNC (fromIntegral gl_LEQUAL)
+    setTextureCompareFunc depthmap (Just LessOrEqual)
     unbindTexture depthmap
 
     fb <- genFramebuffer
@@ -529,7 +528,7 @@ handleKey events _ k _ s _ = atomically . modifyTVar events $ (++ keys)
         Key'8            -> r Eight
         Key'9            -> r Nine
         Key'Semicolon    -> r Semicolon
-        Key'Equal        -> r Equal
+        Key'Equal        -> r E.Equal
         Key'A            -> r A
         Key'B            -> r B
         Key'C            -> r C

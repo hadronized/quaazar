@@ -52,6 +52,17 @@ data Format
   | Depth
     deriving (Eq,Show)
 
+data CompareFunc
+  = Never
+  | Less
+  | Equal
+  | LessOrEqual
+  | Greater
+  | GreaterOrEqual
+  | NotEqual
+  | Always
+    deriving (Eq,Show)
+
 genTexture2D :: IO Texture
 genTexture2D = fmap Texture2D genTexture_
 
@@ -71,7 +82,7 @@ bindTextureAt tex unit = do
 unbindTexture :: Texture -> IO ()
 unbindTexture t = glBindTexture target 0
   where
-    target = textureTarget_ t
+    target = textureTarget t
 
 setTextureWrap :: Texture -> Wrap -> IO ()
 setTextureWrap t wrap = do
@@ -79,7 +90,7 @@ setTextureWrap t wrap = do
     glTexParameteri target gl_TEXTURE_WRAP_T wrap'
     glTexParameteri target gl_TEXTURE_WRAP_R wrap'
   where
-    target = textureTarget_ t
+    target = textureTarget t
     wrap'  = fromIntegral (fromWrap wrap)
 
 setTextureFilters :: Texture -> Filter -> IO ()
@@ -87,14 +98,24 @@ setTextureFilters t filt = do
     glTexParameteri target gl_TEXTURE_MIN_FILTER filt'
     glTexParameteri target gl_TEXTURE_MAG_FILTER filt'
   where
-    target = textureTarget_ t
+    target = textureTarget t
     filt'  = fromIntegral (fromFilter filt)
+
+setTextureCompareFunc :: Texture -> Maybe CompareFunc -> IO ()
+setTextureCompareFunc t = maybe compareNothing compareRefToTexture
+  where
+    compareNothing =
+      glTexParameteri target gl_TEXTURE_COMPARE_MODE (fromIntegral gl_NONE)
+    compareRefToTexture func = do
+      glTexParameteri target gl_TEXTURE_COMPARE_MODE (fromIntegral gl_COMPARE_REF_TO_TEXTURE)
+      glTexParameteri target gl_TEXTURE_COMPARE_FUNC (fromIntegral $ fromCompareFunc func)
+    target = textureTarget t
 
 setTextureImage :: (Storable a) => Texture -> InternalFormat -> Natural -> Natural -> Format -> [a] -> IO ()
 setTextureImage t ift w h ft texels =
     withArray texels (glTexImage2D target 0 ift' (fromIntegral w) (fromIntegral h) 0 ft' gl_FLOAT)
   where
-    target = textureTarget_ t
+    target = textureTarget t
     ift'   = fromIntegral (fromInternalFormat ift)
     ft'    = fromFormat ft
 
@@ -127,8 +148,8 @@ genTexture_ = do
   glGenTextures 1 p
   GLObject <$> newForeignPtr p (glDeleteTextures 1 p >> free p)
 
-textureTarget_ :: Texture -> GLenum
-textureTarget_ t = case t of
+textureTarget :: Texture -> GLenum
+textureTarget t = case t of
   Texture2D{} -> gl_TEXTURE_2D
   Cubemap{}   -> gl_TEXTURE_CUBE_MAP
 
@@ -157,3 +178,14 @@ fromFormat ft = case ft of
   RGB   -> gl_RGB
   RGBA  -> gl_RGBA
   Depth -> gl_DEPTH_COMPONENT
+
+fromCompareFunc :: CompareFunc -> GLenum
+fromCompareFunc func = case func of
+  Never -> gl_NEVER
+  Less -> gl_LESS
+  Equal -> gl_EQUAL
+  LessOrEqual -> gl_LEQUAL
+  Greater -> gl_GREATER
+  GreaterOrEqual -> gl_GEQUAL
+  NotEqual -> gl_NOTEQUAL
+  Always -> gl_ALWAYS
