@@ -21,18 +21,14 @@ import Photon.Render.GL.Shader ( Uniform, (@=) )
 data GPUCamera = GPUCamera {
     runCamera :: Uniform (M44 Float) -- ^ projection * view
               -> Uniform (V3 Float) -- ^ eye
-              -> Uniform Float -- zfar -- TODO: change that with deprojection
               -> IO ()
   , cameraProjection :: M44 Float
-  , cameraZFar :: Float
   }
 
 gpuCamera :: (Monad m) => Projection -> Entity -> m GPUCamera
-gpuCamera proj ent = return (GPUCamera sendCamera proj' zfar)
+gpuCamera proj ent = return (GPUCamera sendCamera proj')
   where
-    sendCamera projViewU eyeU zfarU = do
+    sendCamera projViewU eyeU = do
       projViewU @= proj' !*! cameraTransform ent
       eyeU @= ent^.entityPosition
-      zfarU @= zfar
     proj' = projectionMatrix proj
-    zfar = projectionZFar proj

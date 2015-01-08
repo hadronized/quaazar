@@ -63,7 +63,6 @@ lightFS = unlines
   , "uniform float ligPow;"
   , "uniform float ligRad;"
   , "uniform samplerCube ligDepthmap;"
-  , "uniform float zfar;"
 
   , "out vec4 frag;"
 
@@ -81,12 +80,12 @@ lightFS = unlines
 
     -- shadows
   , "  vec3 depthDir = vco - ligPos;"
-  , "  float pointDepth = length(depthDir);"
-  , "  float ligDepth = texture(ligDepthmap, depthDir).r;"
+  , "  float dist = length(depthDir);"
+  , "  float ligDistance = texture(ligDepthmap, depthDir).r * ligRad;"
   , "  float shadow = 1.;"
 
-  , "  if (ligDepth <= pointDepth) {"
-  , "    shadow = 1.;"
+  , "  if (ligDistance <= dist) {"
+  , "    shadow = 0.;"
   , "  }"
 
     -- final color
@@ -148,10 +147,10 @@ lightCubeDepthmapFS = unlines
   , "out vec4 frag;"
 
   , "uniform vec3 ligPos;"
-  , "uniform float izfar;"
+  , "uniform float ligIRad;"
 
   , "void main() {"
-  , "  frag = vec4(length(gco - ligPos) * izfar);"
+  , "  frag = vec4(length(gco - ligPos) * ligIRad);"
   , "}"
   ]
 
