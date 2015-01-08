@@ -65,10 +65,10 @@ genShader stype src = do
     info gllog "done..."
     liftIO $ Shader . GLObject <$> newForeignPtr p (glDeleteShader s >> free p)
   where
-    shaderType
-        | stype == VertexShader   = "vertex"
-        | stype == FragmentShader = "fragment"
-        | otherwise               = "unknown"
+    shaderType = case stype of
+        VertexShader   -> "vertex"
+        FragmentShader -> "fragment"
+        GeometryShader -> "geometry"
     isCompiled s = fmap ((==gl_TRUE) . fromIntegral) .
         alloca $ liftA2 (*>) (glGetShaderiv s gl_COMPILE_STATUS) peek
     clogLength s = fmap fromIntegral .

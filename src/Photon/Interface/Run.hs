@@ -116,7 +116,6 @@ data Shadowing = Shadowing {
 data ShadowingUniforms = ShadowingUniforms {
     _shadowLigProjU   :: Uniform (M44 Float)
   , _shadowLigViewsU  :: Uniform [M44 Float]
-  , _shadowLigPosU    :: Uniform (V3 Float) -- FIXME: github issue #22
   , _shadowModelU     :: Uniform (M44 Float)
   }
 
@@ -321,7 +320,6 @@ getShadowingUniforms program = do
     ShadowingUniforms
       <$> sem "ligProj"
       <*> sem "ligViews"
-      <*> sem "ligPos"
       <*> sem "model"
   where
     sem :: (Uniformable a) => String -> IO (Uniform a)
@@ -399,7 +397,6 @@ generateLightDepthmap :: Shadowing
 generateLightDepthmap shadowing proj meshes lig lent = do
     genDepthmap lig $ do
       useProgram (shadowing^.shadowCubeDepthmapProgram)
-      ligPosU @= lent^.entityPosition
       ligProjU @= proj
       ligViewsU @= lightViews
       glDisable gl_BLEND
@@ -409,7 +406,6 @@ generateLightDepthmap shadowing proj meshes lig lent = do
     sunis = shadowing^.shadowUniforms
     ligProjU = sunis^.shadowLigProjU
     ligViewsU = sunis^.shadowLigViewsU
-    ligPosU = sunis^.shadowLigPosU
     modelU = sunis^.shadowModelU
     lightViews = map entityTransform
       [
