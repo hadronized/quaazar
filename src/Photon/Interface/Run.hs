@@ -289,6 +289,7 @@ getShadowing w h = do
     sinkLogs
     return program
   liftIO $ do
+    -- TODO: refactoring
     colormap <- genCubemap
     bindTexture colormap
     setTextureWrap colormap Clamp
@@ -296,15 +297,16 @@ getShadowing w h = do
     setTextureNoImage colormap RGB32F w h RGB
     unbindTexture colormap
 
+    -- TODO: refactoring
     depthmap <- genCubemap
     bindTexture depthmap
     setTextureWrap depthmap Clamp
     setTextureFilters depthmap Nearest
     setTextureNoImage depthmap Depth32F w h Depth
-    -- TODO: this should be put in GL.Texture
     setTextureCompareFunc depthmap (Just LessOrEqual)
     unbindTexture depthmap
 
+    -- TODO: refactoring
     fb <- genFramebuffer
     bindFramebuffer fb Write
     attachTexture Write colormap (ColorAttachment 0)
