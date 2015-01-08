@@ -110,7 +110,6 @@ data Shadowing = Shadowing {
   , _shadowCubeDepthmap        :: Texture
   , _shadowCubeDepthmapProgram :: GPUProgram
   , _shadowUniforms            :: ShadowingUniforms
-  , _shadowLightViews          :: [M44 Float]
   }
 
 data ShadowingUniforms = ShadowingUniforms {
@@ -278,46 +277,35 @@ getLightingUniforms program = do
 
 getShadowing :: Natural -> Natural -> EitherT Log IO Shadowing
 getShadowing w h = do
-    liftIO . print $ Log InfoLog CoreLog "generating light cube depthmap offscreen"
-    program <- evalJournalT $
-      gpuProgram [(VertexShader,lightCubeDepthmapVS),(FragmentShader,lightCubeDepthmapFS)] <* sinkLogs
-    liftIO $ do
-      colormap <- genCubemap
-      bindTexture colormap
-      setTextureWrap colormap Clamp
-      setTextureFilters colormap Nearest
-      setTextureNoImage colormap RGB32F w h RGB
-      unbindTexture colormap
+  liftIO . print $ Log InfoLog CoreLog "generating light cube depthmap offscreen"
+  program <- evalJournalT $
+    gpuProgram [(VertexShader,lightCubeDepthmapVS),(FragmentShader,lightCubeDepthmapFS)] <* sinkLogs
+  liftIO $ do
+    colormap <- genCubemap
+    bindTexture colormap
+    setTextureWrap colormap Clamp
+    setTextureFilters colormap Nearest
+    setTextureNoImage colormap RGB32F w h RGB
+    unbindTexture colormap
 
-      depthmap <- genCubemap
-      bindTexture depthmap
-      setTextureWrap depthmap Clamp
-      setTextureFilters depthmap Nearest
-      setTextureNoImage depthmap Depth32F w h Depth
-      -- TODO: this should be put in GL.Texture
-      glTexParameteri gl_TEXTURE_CUBE_MAP gl_TEXTURE_COMPARE_MODE (fromIntegral gl_COMPARE_REF_TO_TEXTURE)
-      glTexParameteri gl_TEXTURE_CUBE_MAP gl_TEXTURE_COMPARE_FUNC (fromIntegral gl_LEQUAL)
-      unbindTexture depthmap
+    depthmap <- genCubemap
+    bindTexture depthmap
+    setTextureWrap depthmap Clamp
+    setTextureFilters depthmap Nearest
+    setTextureNoImage depthmap Depth32F w h Depth
+    -- TODO: this should be put in GL.Texture
+    glTexParameteri gl_TEXTURE_CUBE_MAP gl_TEXTURE_COMPARE_MODE (fromIntegral gl_COMPARE_REF_TO_TEXTURE)
+    glTexParameteri gl_TEXTURE_CUBE_MAP gl_TEXTURE_COMPARE_FUNC (fromIntegral gl_LEQUAL)
+    unbindTexture depthmap
 
-      fb <- genFramebuffer
-      bindFramebuffer fb Write
-      attachTexture Write colormap (ColorAttachment 0)
-      attachTexture Write depthmap DepthAttachment
-      unbindFramebuffer Write
+    fb <- genFramebuffer
+    bindFramebuffer fb Write
+    attachTexture Write colormap (ColorAttachment 0)
+    attachTexture Write depthmap DepthAttachment
+    unbindFramebuffer Write
 
-      uniforms <- getShadowingUniforms program
-      return (Shadowing fb colormap depthmap program uniforms lightViews)
-  where
-    lightViews = map entityTransform
-      [
-        origin & entityOrientation .~ axisAngle yAxis (-pi/2) -- positive x
-      , origin & entityOrientation .~ axisAngle yAxis (pi/2) -- negative x
-      , origin & entityOrientation .~ axisAngle xAxis (pi/2) -- positive y
-      , origin & entityOrientation .~ axisAngle xAxis (-pi/2) -- negative y
-      , origin & entityOrientation .~ axisAngle yAxis 0 -- positive z
-      , origin & entityOrientation .~ axisAngle yAxis pi -- negative z
-      ]
-
+    uniforms <- getShadowingUniforms program
+    return (Shadowing fb colormap depthmap program uniforms)
 
 getShadowingUniforms :: GPUProgram -> IO ShadowingUniforms
 getShadowingUniforms program = do
@@ -364,7 +352,7 @@ render_ lighting shadowing accumulation gcam gpuligs meshes = do
   forM_ gpuligs $ \(lig,lent) -> do
     purgeShadowingFramebuffer shadowing
     generateLightDepthmap shadowing (cameraProjection gcam)
-      (shadowing^.shadowLightViews) (concatMap snd meshes) lig lent
+      (concatMap snd meshes) lig lent
     purgeLightingFramebuffer lighting
     renderWithLight lighting shadowing meshes lig lent
     accumulateRender lighting accumulation
@@ -395,12 +383,11 @@ purgeLightingFramebuffer lighting = do
 
 generateLightDepthmap :: Shadowing
                       -> M44 Float
-                      -> [M44 Float]
                       -> [(GPUMesh,Entity)]
                       -> GPULight
                       -> Entity
                       -> IO ()
-generateLightDepthmap shadowing proj lightViews meshes lig lent = do
+generateLightDepthmap shadowing proj meshes lig lent = do
     genDepthmap lig $ do
       useProgram (shadowing^.shadowCubeDepthmapProgram)
       ligPosU @= lent^.entityPosition
@@ -415,6 +402,16 @@ generateLightDepthmap shadowing proj lightViews meshes lig lent = do
     ligViewsU = sunis^.shadowLigViewsU
     ligPosU = sunis^.shadowLigPosU
     modelU = sunis^.shadowModelU
+    lightViews = map entityTransform
+      [
+        lent' & entityOrientation .~ axisAngle yAxis (-pi/2) -- positive x
+      , lent' & entityOrientation .~ axisAngle yAxis (pi/2) -- negative x
+      , lent' & entityOrientation .~ axisAngle xAxis (pi/2) -- positive y
+      , lent' & entityOrientation .~ axisAngle xAxis (-pi/2) -- negative y
+      , lent' & entityOrientation .~ axisAngle yAxis 0 -- positive z
+      , lent' & entityOrientation .~ axisAngle yAxis pi -- negative z
+      ]
+    lent' = origin & entityPosition -~ (lent^.entityPosition)
 
 renderWithLight :: Lighting
                 -> Shadowing
