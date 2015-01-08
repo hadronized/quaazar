@@ -126,7 +126,7 @@ lightCubeDepthmapGS = unlines
   , "void main() {"
   , "  for (int i = 0; i < 6; ++i) {"
   , "    for (int j = 0; j < 3; ++j) {"
-  , "      gl_LayerID = i;"
+  , "      gl_Layer = i;"
   , "      gl_Position = ligProj * ligViews[i] * gl_in[j].gl_Position;"
   , "      EmitVertex();"
   , "    }"
