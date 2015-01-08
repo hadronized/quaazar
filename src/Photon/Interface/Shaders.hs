@@ -63,6 +63,7 @@ lightFS = unlines
   , "uniform float ligPow;"
   , "uniform float ligRad;"
   , "uniform samplerCube ligDepthmap;"
+  , "uniform float zfar;"
 
   , "out vec4 frag;"
 
@@ -79,14 +80,17 @@ lightFS = unlines
   , "  vec3 illum = atten * (diff + spec);"
 
     -- shadows
-  , "  vec3 depthDir = normalize(vco - ligPos);"
-  , "  float ligDepth = texture(ligDepthmap, normalize()).r;"
+  , "  vec3 depthDir = vco - ligPos;"
+  , "  float pointDepth = length(depthDir);"
+  , "  float ligDepth = texture(ligDepthmap, depthDir).r;"
   , "  float shadow = 1.;"
 
-  , "  if (gl_FragCoord.z"
+  , "  if (ligDepth <= pointDepth) {"
+  , "    shadow = 1.;"
+  , "  }"
 
     -- final color
-  , "  frag = vec4(illum,1.);"
+  , "  frag = vec4(illum,1.) * shadow;"
   , "}"
   ]
 
@@ -118,14 +122,16 @@ lightCubeDepthmapGS = unlines
   , "layout (triangles) in;"
   , "layout (triangle_strip, max_vertices = 18) out;"
 
-  , "uniform mat4 ligProj;"
-  , "uniform mat4 ligViews[6];" -- 6 views
+  , "out vec3 gco;"
+
+  , "uniform mat4 ligProjViews[6];" -- 6 views
 
   , "void main() {"
   , "  for (int i = 0; i < 6; ++i) {"
   , "    for (int j = 0; j < 3; ++j) {"
   , "      gl_Layer = i;"
-  , "      gl_Position = ligProj * ligViews[i] * gl_in[j].gl_Position;"
+  , "      gco = gl_in[j].gl_Position.xyz;"
+  , "      gl_Position = ligProjViews[i] * gl_in[j].gl_Position;"
   , "      EmitVertex();"
   , "    }"
   , "    EndPrimitive();"
@@ -138,10 +144,14 @@ lightCubeDepthmapFS = unlines
   [
     "#version 330 core"
 
+  , "in vec3 gco;"
   , "out vec4 frag;"
 
+  , "uniform vec3 ligPos;"
+  , "uniform float izfar;"
+
   , "void main() {"
-  , "  frag = vec4(gl_FragCoord.z);"
+  , "  frag = vec4(length(gco - ligPos) * izfar);"
   , "}"
   ]
 

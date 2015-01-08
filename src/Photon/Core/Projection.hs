@@ -15,6 +15,7 @@ module Photon.Core.Projection (
     -- * Projection
     Projection(..)
   , projectionMatrix
+  , projectionZFar
   ) where
 
 import Linear
@@ -48,3 +49,6 @@ perspectiveMatrix ratio fovy znear zfar =
     itanfovyr = itanfovy / ratio
     inf       = 1 / (znear - zfar)
     nfinf     = (znear + zfar) * inf
+
+projectionZFar :: Projection -> Float
+projectionZFar (Perspective _ _ _ zfar) = zfar

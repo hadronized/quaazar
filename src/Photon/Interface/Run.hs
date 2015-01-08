@@ -56,7 +56,7 @@ import Photon.Render.GL.Framebuffer
 import Photon.Render.GL.Offscreen
 import Photon.Render.GL.Shader ( ShaderType(..), Uniform, Uniformable, (@=)
                                , unused )
-import Photon.Render.GL.Texture
+import Photon.Render.GL.Texture as Tex
 import Photon.Render.GL.VertexArray ( VertexArray, bindVertexArray
                                     , genAttributelessVertexArray )
 import Photon.Render.Light ( GPULight(..), gpuLight )
@@ -103,6 +103,7 @@ data LightingUniforms = LightingUniforms {
   , _lightColU         :: Uniform Color
   , _lightPowU         :: Uniform Float
   , _lightRadU         :: Uniform Float
+  , _lightZFar         :: Uniform Float
   }
 
 data Shadowing = Shadowing {
@@ -114,9 +115,10 @@ data Shadowing = Shadowing {
   }
 
 data ShadowingUniforms = ShadowingUniforms {
-    _shadowLigProjU   :: Uniform (M44 Float)
-  , _shadowLigViewsU  :: Uniform [M44 Float]
-  , _shadowModelU     :: Uniform (M44 Float)
+    _shadowLigProjViewsU :: Uniform [M44 Float]
+  , _shadowModelU        :: Uniform (M44 Float)
+  , _shadowLigPosU       :: Uniform (V3 Float)
+  , _shadowInverseZFarU  :: Uniform Float
   }
 
 data Accumulation = Accumulation {
@@ -270,6 +272,7 @@ getLightingUniforms program = do
       <*> sem "ligCol"
       <*> sem "ligPow"
       <*> sem "ligRad"
+      <*> sem "zfar"
   where
     sem :: (Uniformable a) => String -> IO (Uniform a)
     sem = programSemantic program
@@ -292,7 +295,7 @@ getShadowing w h = do
     bindTexture colormap
     setTextureWrap colormap Clamp
     setTextureFilters colormap Nearest
-    setTextureNoImage colormap RGB32F w h RGB
+    setTextureNoImage colormap R32F w h Tex.R
     unbindTexture colormap
 
     -- TODO: refactoring
@@ -317,9 +320,10 @@ getShadowing w h = do
 getShadowingUniforms :: GPUProgram -> IO ShadowingUniforms
 getShadowingUniforms program = do
     ShadowingUniforms
-      <$> sem "ligProj"
-      <*> sem "ligViews"
+      <$> sem "ligProjViews"
       <*> sem "model"
+      <*> sem "ligPos"
+      <*> sem "izfar"
   where
     sem :: (Uniformable a) => String -> IO (Uniform a)
     sem = programSemantic program
@@ -357,7 +361,7 @@ render_ lighting shadowing accumulation gcam gpuligs meshes = do
   pushCameraToLighting lighting gcam
   forM_ gpuligs $ \(lig,lent) -> do
     purgeShadowingFramebuffer shadowing
-    generateLightDepthmap shadowing (cameraProjection gcam)
+    generateLightDepthmap shadowing (cameraProjection gcam) (cameraZFar gcam)
       (concatMap snd meshes) lig lent
     purgeLightingFramebuffer lighting
     renderWithLight lighting shadowing meshes lig lent
@@ -371,10 +375,11 @@ purgeAccumulationFramebuffer accumulation = do
 pushCameraToLighting :: Lighting -> GPUCamera -> IO ()
 pushCameraToLighting lighting gcam = do
   useProgram (lighting^.omniLightProgram)
-  runCamera gcam projViewU eyeU
+  runCamera gcam projViewU eyeU zfarU
   where
     projViewU = unis^.lightCamProjViewU
     eyeU = unis^.lightEyeU
+    zfarU = unis^.lightZFar
     unis = lighting^.lightUniforms
 
 purgeShadowingFramebuffer :: Shadowing -> IO ()
@@ -384,29 +389,32 @@ purgeShadowingFramebuffer shadowing = do
 
 purgeLightingFramebuffer :: Lighting -> IO ()
 purgeLightingFramebuffer lighting = do
-    bindFramebuffer (lighting^.lightOff.offscreenFB) Write
-    glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
+  bindFramebuffer (lighting^.lightOff.offscreenFB) Write
+  glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
 
 generateLightDepthmap :: Shadowing
                       -> M44 Float
+                      -> Float
                       -> [(GPUMesh,Entity)]
                       -> GPULight
                       -> Entity
                       -> IO ()
-generateLightDepthmap shadowing proj meshes lig lent = do
+generateLightDepthmap shadowing proj zfar meshes lig lent = do
     genDepthmap lig $ do
       useProgram (shadowing^.shadowCubeDepthmapProgram)
-      ligProjU @= proj
-      ligViewsU @= lightViews
+      ligProjViewsU @= lightProjViews
+      ligPosU @= (lent^.entityPosition)
+      ligInverseZFarU @= 1 / zfar
       glDisable gl_BLEND
       glEnable gl_DEPTH_TEST
       forM_ meshes $ \(gmsh,ment) -> renderMesh gmsh modelU ment
   where
     sunis = shadowing^.shadowUniforms
-    ligProjU = sunis^.shadowLigProjU
-    ligViewsU = sunis^.shadowLigViewsU
+    ligProjViewsU = sunis^.shadowLigProjViewsU
+    ligPosU = sunis^.shadowLigPosU
+    ligInverseZFarU = sunis^.shadowInverseZFarU
     modelU = sunis^.shadowModelU
-    lightViews = map entityTransform
+    lightProjViews = map ((proj !*!) . entityTransform)
       [
         lent' & entityOrientation .~ axisAngle yAxis (-pi/2) -- positive x
       , lent' & entityOrientation .~ axisAngle yAxis (pi/2) -- negative x
