@@ -128,23 +128,21 @@ buildProgram :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
              -> m Program
 buildProgram vsSrc gsSrc fsSrc = do
   program <- liftIO genObject
-
   vs :: VertexShader <- liftIO genObject
   fs :: FragmentShader <- liftIO genObject
   sequence_ [compile vs vsSrc,compile fs fsSrc]
+  liftIO $ sequence_ [attach program vs,attach program fs]
+  case gsSrc of
+    Just src -> do
+      gs :: VertexShader <- liftIO genObject
+      compile gs src
+      liftIO (attach program gs)
+      link program
+      liftIO (deleteObject gs)
+    Nothing -> link program
   liftIO $ do
-    sequence_ [attach program vs,attach program fs]
     deleteObject vs
     deleteObject fs
-
-  flip traverse_ gsSrc $ \src -> do
-    gs :: VertexShader <- liftIO genObject
-    compile gs src
-    liftIO $ do
-      attach program gs
-      deleteObject gs
-
-  link program
   return program
 
 useProgram :: Program -> IO ()
