@@ -48,6 +48,7 @@ import Photon.Interface.Event as E
 import Photon.Interface.Shaders ( accumVS, accumFS, lightVS, lightFS )
 import Photon.Render.Camera ( GPUCamera(..), gpuCamera )
 import Photon.Render.GL.Framebuffer
+import Photon.Render.GL.GLObject
 import Photon.Render.GL.Offscreen
 import Photon.Render.GL.Shader
 import Photon.Render.GL.Texture
@@ -56,7 +57,7 @@ import Photon.Render.Light ( GPULight(..), gpuLight )
 import Photon.Render.Material ( GPUMaterial(..), gpuMaterial )
 import Photon.Render.Mesh ( GPUMesh(..), gpuMesh )
 import Photon.Render.PostFX ( GPUPostFX(..), gpuPostFX )
-import Photon.Render.Shader ( GPUProgram(..) )
+import Photon.Render.Shader ( GPUProgram )
 import Photon.Utils.Log ( Log(..), LogCommitter(..), LogType(..), sinkLogs )
 import Prelude hiding ( Either(Left,Right) )
 
@@ -180,20 +181,20 @@ photonDriver width height _ logHandler = do
   gdrv <- runEitherT $ do
     -- Lighting step
     omniLightProgram <- evalJournalT $
-      gpuProgram [(VertexShader,lightVS),(FragmentShader,lightFS)] <* sinkLogs
+      buildProgram lightVS Nothing lightFS <* sinkLogs
     lightBuffer <- liftIO (genOffscreen width height RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
     -- accumulation step
     accumProgram <- evalJournalT $
-      gpuProgram [(VertexShader,accumVS),(FragmentShader,accumFS)] <* sinkLogs
+      buildProgram accumVS Nothing accumFS <* sinkLogs
     accumBuffer <- liftIO (genOffscreen width height RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
     accumVA <- liftIO $ do
-      va <- genVertexArray
+      va <- genObject
       bindVertexArray va
       unbindVertexArray
       return va
     let
       sem :: (Uniformable a) => String -> IO (Uniform a)
-      sem = programSemantic omniLightProgram
+      sem = getUniform omniLightProgram
     liftIO $ do
       -- map light program’s semantics here as well
       projViewU <- sem "projView"
