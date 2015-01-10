@@ -35,6 +35,7 @@ module Photon.Core.Entity (
   , zAxis
     -- * Combinators
   , origin
+  , noScale
   , move
   , position
   , orient
@@ -83,6 +84,10 @@ zAxis = V3 0 0 1
 -- |Origin entity.
 origin :: Entity
 origin = Entity origin3 (axisAngle (-zAxis) 0) (Scale 1 1 1)
+
+-- |No scale.
+noScale :: Scale
+noScale = Scale 1 1 1
 
 -- |Move an entity along a direction.
 move :: Dir -> Entity -> Entity

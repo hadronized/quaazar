@@ -44,7 +44,7 @@ import Photon.Core.Loader ( Load(..) )
 import Photon.Core.Material ( Albedo, Material )
 import Photon.Core.Mesh ( Mesh )
 import Photon.Core.PostFX ( PostFX )
-import Photon.Core.Projection ( Projection )
+import Photon.Core.Projection
 import Photon.Interface.Command ( Photon )
 import qualified Photon.Interface.Command as PC ( PhotonCmd(..) )
 import Photon.Interface.Event as E
@@ -111,6 +111,7 @@ data Shadowing = Shadowing {
   , _shadowCubeDepthmap        :: Cubemap
   , _shadowCubeDepthmapProgram :: GPUProgram
   , _shadowUniforms            :: ShadowingUniforms
+  , _shadowProjection          :: M44 Float
   }
 
 data ShadowingUniforms = ShadowingUniforms {
@@ -237,7 +238,7 @@ photonDriver :: Natural
 photonDriver w h _ logHandler = do
   gdrv <- runEitherT $ do
     lighting <- getLighting w h
-    shadowing <- getShadowing w h
+    shadowing <- getShadowing w h 0.1 1000
     accumulation <- getAccumulation w h
     -- post-process IORef to track the post image
     postImage <- liftIO $ newIORef (accumulation^.accumOff.offscreenTex)
@@ -274,8 +275,8 @@ getLightingUniforms program = do
     sem :: (Uniformable a) => String -> IO (Uniform a)
     sem = getUniform program
 
-getShadowing :: Natural -> Natural -> EitherT Log IO Shadowing
-getShadowing w h = do
+getShadowing :: Natural -> Natural -> Float -> Float -> EitherT Log IO Shadowing
+getShadowing w h znear zfar = do
   liftIO . print $ Log InfoLog CoreLog "generating light cube depthmap offscreen"
   program <- evalJournalT $
     buildProgram lightCubeDepthmapVS (Just lightCubeDepthmapGS) lightCubeDepthmapFS <* sinkLogs
@@ -304,7 +305,9 @@ getShadowing w h = do
     attachTexture ReadWrite colormap (ColorAttachment 0)
     attachTexture ReadWrite depthmap DepthAttachment
   fb <- hoistEither fb'
-  return (Shadowing fb colormap depthmap program uniforms)
+  return (Shadowing fb colormap depthmap program uniforms proj)
+  where
+    proj = projectionMatrix $ Perspective 1 (pi/4) znear zfar
 
 getShadowingUniforms :: GPUProgram -> IO ShadowingUniforms
 getShadowingUniforms program = do
@@ -350,7 +353,7 @@ render_ lighting shadowing accumulation gcam gpuligs meshes = do
   pushCameraToLighting lighting gcam
   forM_ gpuligs $ \(lig,lent) -> do
     purgeShadowingFramebuffer shadowing
-    generateLightDepthmap shadowing (cameraProjection gcam)
+    generateLightDepthmap shadowing
       (concatMap snd meshes) lig lent
     purgeLightingFramebuffer lighting
     renderWithLight lighting shadowing meshes lig lent
@@ -384,21 +387,21 @@ purgeLightingFramebuffer lighting = do
   glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
 
 generateLightDepthmap :: Shadowing
-                      -> M44 Float
                       -> [(GPUMesh,Entity)]
                       -> GPULight
                       -> Entity
                       -> IO ()
-generateLightDepthmap shadowing proj meshes lig lent = do
+generateLightDepthmap shadowing meshes lig lent = do
     genDepthmap lig $ do
       useProgram (shadowing^.shadowCubeDepthmapProgram)
       ligProjViewsU @= lightProjViews
-      ligPosU @= (lent^.entityPosition)
+      ligPosU @= ligPos
       ligIRadU @= 1 / lightRadius lig
       glDisable gl_BLEND
       glEnable gl_DEPTH_TEST
       forM_ meshes $ \(gmsh,ment) -> renderMesh gmsh modelU ment
   where
+    proj = shadowing^.shadowProjection
     sunis = shadowing^.shadowUniforms
     ligProjViewsU = sunis^.shadowLigProjViewsU
     ligPosU = sunis^.shadowLigPosU
@@ -406,14 +409,14 @@ generateLightDepthmap shadowing proj meshes lig lent = do
     modelU = sunis^.shadowModelU
     lightProjViews = map ((proj !*!) . cameraTransform)
       [
-        lent' & entityOrientation .~ axisAngle yAxis (-pi/2) -- positive x
-      , lent' & entityOrientation .~ axisAngle yAxis (pi/2) -- negative x
-      , lent' & entityOrientation .~ axisAngle xAxis (pi/2) -- positive y
-      , lent' & entityOrientation .~ axisAngle xAxis (-pi/2) -- negative y
-      , lent' & entityOrientation .~ axisAngle yAxis 0 -- positive z
-      , lent' & entityOrientation .~ axisAngle yAxis pi -- negative z
+        Entity ligPos (axisAngle yAxis (-pi/2)) noScale -- positive x
+      , Entity ligPos (axisAngle yAxis (pi/2)) noScale -- negative x
+      , Entity ligPos (axisAngle xAxis (pi/2)) noScale -- positive y
+      , Entity ligPos (axisAngle xAxis (-pi/2)) noScale -- negative y
+      , Entity ligPos (axisAngle yAxis 0) noScale -- positive z
+      , Entity ligPos (axisAngle yAxis pi) noScale -- negative z
       ]
-    lent' = origin & entityPosition .~ (lent^.entityPosition)
+    ligPos = lent^.entityPosition
 
 renderWithLight :: Lighting
                 -> Shadowing

@@ -85,7 +85,7 @@ lightFS = unlines
   , "  float shadow = 1.;"
 
   , "  if (ligDistance <= dist) {"
-  , "    shadow = 0.;"
+  , "    shadow = 0.1;"
   , "  }"
 
     -- final color
