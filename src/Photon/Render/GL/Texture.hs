@@ -73,7 +73,7 @@ class TextureLike t where
   -- |
   setTextureNoImage :: t -> InternalFormat -> Natural -> Natural -> Format -> IO ()
   -- |
-  setTextureCompareFunc :: t -> Maybe CompareFunc -> IO
+  setTextureCompareFunc :: t -> Maybe CompareFunc -> IO ()
 
 newtype Texture2D = Texture2D { unTexture2D :: GLuint } deriving (Eq,Ord,Show)
 

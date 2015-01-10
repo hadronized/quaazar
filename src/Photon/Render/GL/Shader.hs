@@ -18,13 +18,8 @@ import Control.Monad.Error.Class ( MonadError(..) )
 import Data.Foldable ( traverse_ )
 import Data.Word ( Word32 )
 import Foreign.C.String ( peekCString, withCString )
-<<<<<<< HEAD
-import Foreign.Marshal ( alloca, malloc, free )
-import Foreign.Marshal.Array ( allocaArray, withArrayLen )
-=======
 import Foreign.Marshal ( alloca )
-import Foreign.Marshal.Array ( allocaArray )
->>>>>>> gl_explicit_deletes
+import Foreign.Marshal.Array ( allocaArray, withArrayLen )
 import Foreign.Marshal.Utils ( fromBool, with )
 import Foreign.Ptr ( castPtr, nullPtr )
 import Foreign.Storable ( peek )
@@ -42,17 +37,9 @@ throwError_ = throwError . Log ErrorLog gllog
 
 newtype VertexShader = VertexShader { unVertexShader :: GLuint } deriving (Eq,Show)
 
-<<<<<<< HEAD
-data ShaderType
-  = VertexShader
-  | GeometryShader
-  | FragmentShader
-    deriving (Eq,Show)
-=======
 instance GLObject VertexShader where
   genObject = fmap VertexShader $ glCreateShader gl_VERTEX_SHADER
   deleteObject (VertexShader s) = glDeleteShader s
->>>>>>> gl_explicit_deletes
 
 newtype GeometryShader = GeometryShader { unGeometryShader :: GLuint } deriving (Eq,Show)
 
@@ -106,14 +93,7 @@ compile_ sname shdr src = do
       return (compiled,cl)
     unless compiled $ throwError_ cl
   where
-<<<<<<< HEAD
-    shaderType = case stype of
-        VertexShader   -> "vertex"
-        FragmentShader -> "fragment"
-        GeometryShader -> "geometry"
-=======
     sid = shaderID shdr
->>>>>>> gl_explicit_deletes
     isCompiled s = fmap ((==gl_TRUE) . fromIntegral) .
         alloca $ liftA2 (*>) (glGetShaderiv s gl_COMPILE_STATUS) peek
     clogLength s = fmap fromIntegral .
@@ -121,26 +101,6 @@ compile_ sname shdr src = do
     clog l s     = allocaArray l $
         liftA2 (*>) (glGetShaderInfoLog s (fromIntegral l) nullPtr) (peekCString . castPtr)
 
-<<<<<<< HEAD
-fromShaderType :: ShaderType -> GLenum
-fromShaderType shaderType = case shaderType of
-  VertexShader   -> gl_VERTEX_SHADER
-  GeometryShader -> gl_GEOMETRY_SHADER
-  FragmentShader -> gl_FRAGMENT_SHADER
-
-genProgram :: (MonadIO m,MonadError Log m) => [Shader] -> m Program
-genProgram shaders = do
-    (p,sp,linked,cl) <- liftIO $ do
-      p <- malloc
-      sp <- glCreateProgram
-      poke p sp
-      mapM_ (\shd -> withGLObject (unShader shd) $ glAttachShader sp) shaders
-      glLinkProgram sp
-      linked <- isLinked sp
-      ll <- clogLength sp
-      cl <- clog ll sp
-      return (p,sp,linked,cl)
-=======
 attach :: (MonadIO m,ShaderLike s) => Program -> s -> m ()
 attach (Program pid) shdr = liftIO $ glAttachShader pid (shaderID shdr)
 
@@ -152,7 +112,6 @@ link (Program pid) = do
       ll <- clogLength pid
       cl <- clog ll pid
       return (linked,cl)
->>>>>>> gl_explicit_deletes
     unless linked $ throwError_ cl
   where
     isLinked s   = fmap ((==gl_TRUE) . fromIntegral) .
