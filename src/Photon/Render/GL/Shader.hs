@@ -71,7 +71,7 @@ instance ShaderLike GeometryShader where
 instance ShaderLike FragmentShader where
   shaderID = unFragmentShader
   compile = compile_ "fragment"
-  
+
 compile_ :: (MonadIO m,MonadLogger m,MonadError Log m,ShaderLike s)
          => String
          -> s
@@ -117,6 +117,32 @@ link (Program pid) = do
         alloca $ liftA2 (*>) (glGetProgramiv s gl_INFO_LOG_LENGTH) peek
     clog l s     = allocaArray l $
         liftA2 (*>) (glGetProgramInfoLog s (fromIntegral l) nullPtr) (peekCString . castPtr)
+
+buildProgram :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
+             => String
+             -> Maybe String
+             -> String
+             -> m Program
+buildProgram vsSrc gsSrc fsSrc = do
+  program <- liftIO genObject
+
+  vs :: VertexShader <- liftIO genObject
+  fs :: FragmentShader <- liftIO genObject
+  sequence_ [compile vs vsSrc,compile fs fsSrc]
+  liftIO $ do
+    sequence_ [attach program vs,attach program fs]
+    deleteObject vs
+    deleteObject fs
+
+  flip traverse_ gsSrc $ \src -> do
+    gs :: VertexShader <- liftIO genObject
+    compile gs src
+    liftIO $ do
+      attach program gs
+      deleteObject gs
+
+  link program
+  return program
 
 useProgram :: Program -> IO ()
 useProgram (Program pid) = glUseProgram pid
