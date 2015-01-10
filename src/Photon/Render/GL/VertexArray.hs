@@ -20,7 +20,7 @@ import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Photon.Render.GL.GLObject
 
-newtype VertexArray = VertexArray { unVertexArray :: GLuint } deriving (Eq,Show)
+newtype VertexArray = VertexArray { unVertexArray :: GLuint } deriving (Eq,Ord,Show)
 
 instance GLObject VertexArray where
   genObjects n = alloca $ \p -> do

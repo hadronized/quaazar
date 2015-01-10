@@ -19,7 +19,7 @@ import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Photon.Render.GL.GLObject
 
-newtype Buffer = Buffer { unBuffer :: GLuint } deriving (Eq,Show)
+newtype Buffer = Buffer { unBuffer :: GLuint } deriving (Eq,Ord,Show)
 
 instance GLObject Buffer where
   genObjects n = alloca $ \p -> do
