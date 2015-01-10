@@ -282,14 +282,12 @@ getShadowing w h = do
   uniforms <- liftIO (getShadowingUniforms program)
   (colormap,depthmap) <- liftIO $ do
     -- TODO: refactoring
-    {-
     colormap <- genObject
     bindTexture colormap
     setTextureWrap colormap ClampToEdge
     setTextureFilters colormap Nearest
     setTextureNoImage colormap R32F w h Tex.R
     unbindTexture colormap
-    -}
 
     -- TODO: refactoring
     depthmap <- genObject
@@ -300,16 +298,13 @@ getShadowing w h = do
     --setTextureCompareFunc depthmap (Just LessOrEqual)
     unbindTexture depthmap
 
-    return (depthmap,depthmap)
+    return (colormap,depthmap)
 
   fb' <- liftIO $ buildFramebuffer Write $ \_ -> do
-    --attachTexture Write colormap (ColorAttachment 0)
-    --attachTexture Write depthmap DepthAttachment
-    glFramebufferTexture2D gl_FRAMEBUFFER gl_COLOR_ATTACHMENT0 gl_TEXTURE_CUBE_MAP_POSITIVE_X (textureID depthmap) 0
-    glDrawBuffer gl_NONE
-    glReadBuffer gl_NONE
+    attachTexture Write colormap (ColorAttachment 0)
+    attachTexture Write depthmap DepthAttachment
   fb <- hoistEither fb'
-  return (Shadowing fb depthmap depthmap program uniforms)
+  return (Shadowing fb colormap depthmap program uniforms)
 
 getShadowingUniforms :: GPUProgram -> IO ShadowingUniforms
 getShadowingUniforms program = do
