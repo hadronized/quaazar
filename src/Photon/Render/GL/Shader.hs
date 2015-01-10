@@ -33,12 +33,11 @@ import Photon.Utils.Log
 throwError_ :: (MonadError Log m) => String -> m a
 throwError_ = throwError . Log ErrorLog gllog
 
-newtype Shader = Shader { unShader :: GLObject } deriving (Eq,Show)
+newtype VertexShader = VertexShader { unVertexShader :: GLuint } deriving (Eq,Show)
 
-data ShaderType
-  = VertexShader
-  | FragmentShader
-    deriving (Eq,Show)
+instance GLObject VertexShader where
+  genObject = glCreateShader gl_VERTEX_SHADER
+  deleteObject (VertexShader s) = glDeleteShader s
 
 newtype Program = Program { unProgram :: GLObject } deriving (Eq,Show)
 

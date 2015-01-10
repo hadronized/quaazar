@@ -14,21 +14,22 @@ module Photon.Render.Texture where
 import Control.Monad.Trans ( MonadIO(..) )
 import Numeric.Natural ( Natural )
 import Photon.Core.Texture ( TexelFormat(..), Texture(..) )
-import qualified Photon.Render.GL.Texture as GL ( Format(..), InternalFormat(..)
-                                           , bindTextureAt )
-import Photon.Render.GL.Texture ( Filter(..), Wrap(..), genTexture2D
-                                , setTextureFilters, setTextureImage
-                                , setTextureWrap )
+import Photon.Render.GL.GLObject
+import qualified Photon.Render.GL.Texture as GL
 
 newtype GPUTexture = GPUTexture { bindTextureAt :: Natural -> IO () }
 
-gpuTexture :: (MonadIO m) => Texture -> Wrap -> Filter -> m GPUTexture
+gpuTexture :: (MonadIO m)
+           => Texture
+           -> GL.Wrap
+           -> GL.Filter
+           -> m GPUTexture
 gpuTexture (Texture width height format texels) wrap flt = liftIO $ do
-    tex <- genTexture2D
+    tex <- genObject :: IO GL.Texture2D
     GL.bindTextureAt tex 0
-    setTextureWrap tex wrap
-    setTextureFilters tex flt
-    setTextureImage tex ift width height ft texels
+    GL.setTextureWrap tex wrap
+    GL.setTextureFilters tex flt
+    GL.setTextureImage tex ift width height ft texels
     return . GPUTexture $ GL.bindTextureAt tex
   where
     (ft,ift) = case format of

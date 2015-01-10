@@ -12,10 +12,10 @@
 module Photon.Render.GL.Offscreen where
 
 import Control.Lens ( makeLenses )
-import Control.Monad ( forM_ )
 import Numeric.Natural ( Natural )
 import Photon.Render.GL.Framebuffer
 import Photon.Render.GL.Log ( gllog )
+import Photon.Render.GL.GLObject
 import Photon.Render.GL.Renderbuffer
 import Photon.Render.GL.Texture
 import Photon.Utils.Log
@@ -29,7 +29,7 @@ import Photon.Utils.Log
 -- The 'Offscreen' type gathers those three objects and expose a simple
 -- interface to deal with offscreen renders.
 data Offscreen = Offscreen {
-    _offscreenTex :: Texture
+    _offscreenTex :: Texture2D
   , _offscreenFB  :: Framebuffer
   , _offscreenRB  :: Renderbuffer
   } deriving (Eq)
@@ -45,19 +45,19 @@ genOffscreen :: Natural
              -> AttachmentPoint
              -> IO (Either Log Offscreen)
 genOffscreen w h texift texft texap rbift rbap = do
-  tex <- genTexture2D
+  tex <- genObject
   bindTexture tex
-  setTextureWrap tex Clamp
+  setTextureWrap tex ClampToEdge
   setTextureFilters tex Nearest
   setTextureNoImage tex texift w h texft
   unbindTexture tex
 
-  rb <- genRenderbuffer
+  rb <- genObject
   bindRenderbuffer rb
   renderbufferStorage rbift w h
   unbindRenderbuffer
 
-  fb <- genFramebuffer
+  fb <- genObject
   bindFramebuffer fb Write
   attachTexture Write tex texap
   attachRenderbuffer Write rb rbap
@@ -66,32 +66,3 @@ genOffscreen w h texift texft texap rbift rbap = do
   unbindFramebuffer Write
 
   maybe (return . Right $ Offscreen tex fb rb) (return . Left . Log ErrorLog gllog) status
-
-genCubeOffscreen :: Natural
-                 -> Natural
-                 -> InternalFormat
-                 -> Format
-                 -> InternalFormat
-                 -> IO (Either Log Offscreen)
-genCubeOffscreen w h texift texft rbift = do
-  cube <- genCubemap
-  bindTexture cube
-  setTextureWrap cube Clamp
-  setTextureFilters cube Nearest
-  setTextureNoImage cube texift w h texft
-  unbindTexture cube
-
-  rb <- genRenderbuffer
-  bindRenderbuffer rb
-  renderbufferStorage rbift w h
-  unbindRenderbuffer
-
-  fb <- genFramebuffer
-  bindFramebuffer fb Write
-  forM_ [0..5] (attachTextureLayer Write cube DepthAttachment)
-  attachRenderbuffer Write rb (ColorAttachment 0)
-
-  status <- checkFramebufferStatus
-  unbindFramebuffer Write
-
-  maybe (return . Right $ Offscreen cube fb rb) (return . Left . Log ErrorLog gllog) status
