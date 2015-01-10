@@ -64,6 +64,14 @@ instance ShaderLike VertexShader where
   shaderID = unVertexShader
   compile = compile_ "vertex"
 
+instance ShaderLike GeometryShader where
+  shaderID = unGeometryShader
+  compile = compile_ "geometry"
+
+instance ShaderLike FragmentShader where
+  shaderID = unFragmentShader
+  compile = compile_ "fragment"
+  
 compile_ :: (MonadIO m,MonadLogger m,MonadError Log m,ShaderLike s)
          => String
          -> s
