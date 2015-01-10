@@ -48,6 +48,8 @@ data Format
 
 class TextureLike t where
   -- |
+  textureID :: t -> GLuint
+  -- |
   bindTexture :: t -> IO ()
   -- |
   unbindTexture :: t -> IO ()
@@ -70,6 +72,7 @@ instance GLObject Texture2D where
     glDeleteTextures (fromIntegral s) p
 
 instance TextureLike Texture2D where
+  textureID = unTexture2D
   bindTexture (Texture2D t) = glBindTexture gl_TEXTURE_2D t
   unbindTexture _ = glBindTexture gl_TEXTURE_2D 0
   setTextureWrap _ = setTextureWrap_ gl_TEXTURE_2D
@@ -91,6 +94,7 @@ instance GLObject Cubemap where
     glDeleteTextures (fromIntegral s) p
 
 instance TextureLike Cubemap where
+  textureID = unCubemap
   bindTexture (Cubemap t) = glBindTexture gl_TEXTURE_CUBE_MAP t
   unbindTexture _ = glBindTexture gl_TEXTURE_CUBE_MAP 0
   setTextureWrap _ = setTextureWrap_ gl_TEXTURE_CUBE_MAP
