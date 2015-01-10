@@ -12,15 +12,23 @@
 module Photon.Render.GL.GLObject (
     -- * OpenGL object
     GLObject(..)
-  , withGLObject
+    -- * Re-exported
+  , GLuint
   ) where
 
-import Control.Monad ( (>=>) )
-import Foreign.ForeignPtr ( ForeignPtr, withForeignPtr )
-import Foreign.Storable ( peek )
+import Control.Monad ( replicateM )
 import Graphics.Rendering.OpenGL.Raw ( GLuint )
 
-newtype GLObject = GLObject { unGLObject :: ForeignPtr GLuint } deriving (Eq,Show)
-
-withGLObject :: GLObject -> (GLuint -> IO a) -> IO a
-withGLObject o f = withForeignPtr (unGLObject o) (peek >=> f)
+class GLObject a where
+  -- |
+  genObject :: IO a
+  genObject = fmap head (genObjects 1)
+  -- |
+  genObjects :: Int -> IO [a]
+  genObjects n = replicateM n genObject
+  -- |
+  deleteObject :: a -> IO ()
+  deleteObject a = deleteObjects [a]
+  -- |
+  deleteObjects :: [a] -> IO ()
+  deleteObjects = mapM_ deleteObject
