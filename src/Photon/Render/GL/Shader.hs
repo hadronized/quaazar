@@ -50,7 +50,7 @@ instance GLObject GeometryShader where
 newtype FragmentShader = FragmentShader { unFragmentShader :: GLuint } deriving (Eq,Show)
 
 instance GLObject FragmentShader where
-  genObject = fmap FragmentShader $ glCreateShader gl_GEOMETRY_SHADER
+  genObject = fmap FragmentShader $ glCreateShader gl_FRAGMENT_SHADER
   deleteObject (FragmentShader s) = glDeleteShader s
 
 newtype Program = Program { unProgram :: GLuint } deriving (Eq,Show)
