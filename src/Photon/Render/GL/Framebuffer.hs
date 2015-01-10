@@ -11,17 +11,22 @@
 
 module Photon.Render.GL.Framebuffer where
 
-import Control.Applicative
-import Foreign.Concurrent
-import Foreign.Marshal ( malloc, free )
-import Foreign.Marshal.Array ( withArrayLen )
+import Foreign.Marshal ( alloca )
+import Foreign.Marshal.Array ( peekArray, withArrayLen )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Photon.Render.GL.GLObject
 import Photon.Render.GL.Renderbuffer ( Renderbuffer(..) )
-import Photon.Render.GL.Texture ( Texture(..), unTexture )
+import Photon.Render.GL.Texture ( TextureLike(textureID) )
 
-newtype Framebuffer = Framebuffer { unFramebuffer :: GLObject } deriving (Eq,Show)
+newtype Framebuffer = Framebuffer { unFramebuffer :: GLuint } deriving (Eq,Show)
+
+instance GLObject Framebuffer where
+  genObjects n = alloca $ \p -> do
+    glGenFramebuffers (fromIntegral n) p
+    fmap (map Framebuffer) $ peekArray n p
+  deleteObjects a = withArrayLen (map unFramebuffer a) $ \s p ->
+    glDeleteFramebuffers (fromIntegral s) p
 
 data Target
   = Read
@@ -33,14 +38,8 @@ data AttachmentPoint
   | DepthAttachment
     deriving (Eq,Show)
 
-genFramebuffer :: IO Framebuffer
-genFramebuffer = do
-  p <- malloc
-  glGenFramebuffers 1 p
-  Framebuffer . GLObject <$> newForeignPtr p (glDeleteFramebuffers 1 p >> free p)
-
 bindFramebuffer :: Framebuffer -> Target -> IO ()
-bindFramebuffer (Framebuffer fb) target = withGLObject fb (glBindFramebuffer target')
+bindFramebuffer (Framebuffer fb) target = glBindFramebuffer target' fb
   where
     target' = fromTarget target
 
@@ -62,32 +61,24 @@ checkFramebufferStatus = fmap treatStatus (glCheckFramebufferStatus gl_DRAW_FRAM
         | status == gl_FRAMEBUFFER_UNSUPPORTED = Just "internal formats mismatch"
         | otherwise = Just "unknown error"
 
-attachTextureAt :: Target -> Texture -> AttachmentPoint -> Natural -> IO ()
-attachTextureAt target tex ap level =
-    withGLObject (unTexture tex) (\tex' -> glFramebufferTexture target' ap' tex' lvl)
+attachTextureAt :: (TextureLike t)
+                => Target
+                -> t
+                -> AttachmentPoint
+                -> Natural
+                -> IO ()
+attachTextureAt target tex ap level = glFramebufferTexture target' ap' tid lvl
   where
     target' = fromTarget target
     ap' = fromAttachmentPoint ap
+    tid = textureID tex
     lvl = fromIntegral level
 
-attachTexture :: Target -> Texture -> AttachmentPoint -> IO ()
+attachTexture :: (TextureLike t) => Target -> t -> AttachmentPoint -> IO ()
 attachTexture target tex ap = attachTextureAt target tex ap 0
 
-attachTextureLayerAt :: Target -> Texture -> AttachmentPoint -> Natural -> Natural -> IO ()
-attachTextureLayerAt target tex ap level layer =
-    withGLObject (unTexture tex) (\tex' -> glFramebufferTextureLayer target' ap' tex' lvl lyr)
-  where
-    target' = fromTarget target
-    ap' = fromAttachmentPoint ap
-    lvl = fromIntegral level
-    lyr = fromIntegral layer
-
-attachTextureLayer :: Target -> Texture -> AttachmentPoint -> Natural -> IO ()
-attachTextureLayer target tex ap = attachTextureLayerAt target tex ap 0
-
 attachRenderbuffer :: Target -> Renderbuffer -> AttachmentPoint -> IO ()
-attachRenderbuffer target rbuf ap =
-    withGLObject (unRenderbuffer rbuf) (glFramebufferRenderbuffer target' ap' gl_RENDERBUFFER)
+attachRenderbuffer target (Renderbuffer rbuf) ap = glFramebufferRenderbuffer target' ap' gl_RENDERBUFFER rbuf
   where
     target' = fromTarget target
     ap'     = fromAttachmentPoint ap
