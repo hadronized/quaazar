@@ -30,6 +30,8 @@ gpuPostFX (PostFX src) = do
     sequence_ [attach program vs,attach program fs]
     link program
     liftIO $ do
+      deleteObject vs
+      deleteObject fs
       sourceTexU <- getUniform program "sourceTex"
       useProgram program
       sourceTexU @= (0 :: Int)

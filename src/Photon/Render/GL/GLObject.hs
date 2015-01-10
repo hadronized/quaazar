@@ -12,6 +12,8 @@
 module Photon.Render.GL.GLObject (
     -- * OpenGL object
     GLObject(..)
+  , withObject
+  , withObjects
     -- * Re-exported
   , GLuint
   ) where
@@ -32,3 +34,17 @@ class GLObject a where
   -- |
   deleteObjects :: [a] -> IO ()
   deleteObjects = mapM_ deleteObject
+
+withObject :: (GLObject o) => (o -> IO a) -> IO a
+withObject f = do
+  obj <- genObject
+  r <- f obj
+  deleteObject obj
+  return r
+
+withObjects :: (GLObject o) => Int -> ([o] -> IO a) -> IO a
+withObjects n f = do
+  objs <- genObjects n
+  r <- f objs
+  deleteObjects objs
+  return r

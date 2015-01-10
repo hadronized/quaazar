@@ -24,6 +24,7 @@ import Photon.Core.Normal
 import Photon.Core.Position
 import Photon.Core.UV
 import Photon.Render.GL.Buffer
+import Photon.Render.GL.GLObject
 import Photon.Render.GL.Entity ( entityTransform )
 import Photon.Render.GL.Primitive
 import Photon.Render.GL.Shader ( Uniform, (@=) )
@@ -31,10 +32,10 @@ import Photon.Render.GL.VertexArray
 
 data GPUMesh = GPUMesh {
     vertexBuffer :: Buffer
-  , indexBuffer :: Buffer
-  , renderMesh :: Uniform (M44 Float)
-               -> Entity
-               -> IO ()
+  , indexBuffer  :: Buffer
+  , renderMesh   :: Uniform (M44 Float)
+                 -> Entity
+                 -> IO ()
   }
 
 makeLenses ''GPUMesh
@@ -44,9 +45,8 @@ gpuMesh :: Mesh -> IO GPUMesh
 gpuMesh msh = case msh^.meshVertices of
     Interleaved v -> gpuMesh (msh & meshVertices .~ deinterleaved v)
     Deinterleaved vnb positions normals uvs -> do
-      vb <- genBuffer
-      ib <- genBuffer
-      va <- genVertexArray
+      [vb,ib] <- genObjects 2
+      va <- genObject
 
       -- VBO
       let
