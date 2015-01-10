@@ -90,8 +90,8 @@ compile_ sname shdr src = do
     clog l s     = allocaArray l $
         liftA2 (*>) (glGetShaderInfoLog s (fromIntegral l) nullPtr) (peekCString . castPtr)
 
-attach :: (MonadIO m,ShaderLike s) => s -> Program -> m ()
-attach shdr (Program pid) = liftIO $ glAttachShader pid (shaderID shdr)
+attach :: (MonadIO m,ShaderLike s) => Program -> s -> m ()
+attach (Program pid) shdr = liftIO $ glAttachShader pid (shaderID shdr)
 
 link :: (MonadIO m,MonadError Log m) => Program -> m ()
 link (Program pid) = do
