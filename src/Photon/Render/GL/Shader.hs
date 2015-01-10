@@ -134,7 +134,7 @@ buildProgram vsSrc gsSrc fsSrc = do
   liftIO $ sequence_ [attach program vs,attach program fs]
   case gsSrc of
     Just src -> do
-      gs :: VertexShader <- liftIO genObject
+      gs :: GeometryShader <- liftIO genObject
       compile gs src
       liftIO (attach program gs)
       link program
