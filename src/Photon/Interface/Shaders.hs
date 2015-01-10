@@ -89,7 +89,7 @@ lightFS = unlines
   , "  }"
 
     -- final color
-  , "  frag = vec4(illum,1.) * shadow;"
+  , "  frag = vec4(illum,1.) * texture(ligDepthmap,vec3(1.,0.,0.)).r;"
   , "}"
   ]
 

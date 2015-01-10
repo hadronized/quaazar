@@ -11,13 +11,16 @@
 
 module Photon.Render.GL.Framebuffer where
 
+import Control.Monad ( void )
 import Foreign.Marshal ( alloca )
 import Foreign.Marshal.Array ( peekArray, withArrayLen )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Photon.Render.GL.GLObject
+import Photon.Render.GL.Log
 import Photon.Render.GL.Renderbuffer ( Renderbuffer(..) )
 import Photon.Render.GL.Texture ( TextureLike(textureID) )
+import Photon.Utils.Log
 
 newtype Framebuffer = Framebuffer { unFramebuffer :: GLuint } deriving (Eq,Show)
 
@@ -59,6 +62,8 @@ checkFramebufferStatus = fmap treatStatus (glCheckFramebufferStatus gl_DRAW_FRAM
         | status == gl_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER = Just "doesn't have any color attachment"
         | status == gl_FRAMEBUFFER_INCOMPLETE_READ_BUFFER = Just "read buffer"
         | status == gl_FRAMEBUFFER_UNSUPPORTED = Just "internal formats mismatch"
+        | status == gl_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE = Just "incomplete multisample"
+        | status == gl_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS = Just "layer targets"
         | otherwise = Just "unknown error"
 
 attachTextureAt :: (TextureLike t)
@@ -82,6 +87,15 @@ attachRenderbuffer target (Renderbuffer rbuf) ap = glFramebufferRenderbuffer tar
   where
     target' = fromTarget target
     ap'     = fromAttachmentPoint ap
+
+buildFramebuffer :: Target -> (Framebuffer -> IO a) -> IO (Either Log Framebuffer)
+buildFramebuffer target f = do
+    fb <- genObject
+    bindFramebuffer fb target
+    void (f fb)
+    checkFramebufferStatus >>= return . maybe (Right fb) onError
+  where
+    onError = Left . Log ErrorLog gllog
 
 drawBuffers :: [Natural] -> IO ()
 drawBuffers bufs = withArrayLen (map fromIntegral bufs) (\s b -> glDrawBuffers (fromIntegral s) b)

@@ -280,14 +280,16 @@ getShadowing w h = do
   program <- evalJournalT $
     buildProgram lightCubeDepthmapVS (Just lightCubeDepthmapGS) lightCubeDepthmapFS <* sinkLogs
   uniforms <- liftIO (getShadowingUniforms program)
-  (colormap,depthmap,fb) <- liftIO $ do
+  (colormap,depthmap) <- liftIO $ do
     -- TODO: refactoring
+    {-
     colormap <- genObject
     bindTexture colormap
     setTextureWrap colormap ClampToEdge
     setTextureFilters colormap Nearest
     setTextureNoImage colormap R32F w h Tex.R
     unbindTexture colormap
+    -}
 
     -- TODO: refactoring
     depthmap <- genObject
@@ -298,18 +300,16 @@ getShadowing w h = do
     --setTextureCompareFunc depthmap (Just LessOrEqual)
     unbindTexture depthmap
 
-    -- TODO: refactoring
-    fb <- genObject
-    bindFramebuffer fb Write
+    return (depthmap,depthmap)
+
+  fb' <- liftIO $ buildFramebuffer Write $ \_ -> do
     --attachTexture Write colormap (ColorAttachment 0)
-    attachTexture Write depthmap DepthAttachment
-
-    return (colormap,depthmap,fb)
-
-  status <- liftIO checkFramebufferStatus
-  case status of
-    Nothing -> return (Shadowing fb colormap depthmap program uniforms)
-    Just err -> throwError (Log ErrorLog CoreLog err)
+    --attachTexture Write depthmap DepthAttachment
+    glFramebufferTexture2D gl_FRAMEBUFFER gl_COLOR_ATTACHMENT0 gl_TEXTURE_CUBE_MAP_POSITIVE_X (textureID depthmap) 0
+    glDrawBuffer gl_NONE
+    glReadBuffer gl_NONE
+  fb <- hoistEither fb'
+  return (Shadowing fb depthmap depthmap program uniforms)
 
 getShadowingUniforms :: GPUProgram -> IO ShadowingUniforms
 getShadowingUniforms program = do
