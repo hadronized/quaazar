@@ -22,6 +22,7 @@ import Control.Concurrent.STM ( atomically )
 import Control.Concurrent.STM.TVar ( TVar, modifyTVar, newTVarIO, readTVar
                                    , writeTVar )
 import Control.Monad ( forM_, void )
+import Control.Monad.Error.Class ( throwError )
 import Control.Monad.Free ( Free(..) )
 import Control.Monad.Trans ( lift, liftIO )
 import Control.Monad.Trans.Either ( EitherT, hoistEither, runEitherT )
@@ -287,14 +288,17 @@ getShadowing w h = do
       ]
     sinkLogs
     return program
-  liftIO $ do
+  uniforms <- liftIO (getShadowingUniforms program)
+  (colormap,depthmap,fb) <- liftIO $ do
     -- TODO: refactoring
+    {-
     colormap <- genCubemap
     bindTexture colormap
     setTextureWrap colormap Clamp
     setTextureFilters colormap Nearest
     setTextureNoImage colormap R32F w h Tex.R
     unbindTexture colormap
+    -}
 
     -- TODO: refactoring
     depthmap <- genCubemap
@@ -308,12 +312,18 @@ getShadowing w h = do
     -- TODO: refactoring
     fb <- genFramebuffer
     bindFramebuffer fb Write
-    attachTexture Write colormap (ColorAttachment 0)
+    --attachTexture Write colormap (ColorAttachment 0)
     attachTexture Write depthmap DepthAttachment
-    unbindFramebuffer Write
 
-    uniforms <- getShadowingUniforms program
-    return (Shadowing fb colormap depthmap program uniforms)
+    glDrawBuffer gl_NONE
+    glReadBuffer gl_NONE
+
+    return ({-colormap-}depthmap,depthmap,fb)
+
+  status <- liftIO checkFramebufferStatus
+  case status of
+    Nothing -> return (Shadowing fb colormap depthmap program uniforms)
+    Just err -> throwError (Log ErrorLog CoreLog err)
 
 getShadowingUniforms :: GPUProgram -> IO ShadowingUniforms
 getShadowingUniforms program = do
@@ -436,7 +446,7 @@ renderWithLight lighting shadowing meshes lig lent = do
     glEnable gl_DEPTH_TEST
     shadeWithLight lig (lunis^.lightColU) (lunis^.lightPowU) (lunis^.lightRadU)
       (lunis^.lightPosU) unused lent
-    bindTextureAt (shadowing^.shadowCubeRender) 0
+    bindTextureAt (shadowing^.shadowCubeDepthmap) 0
     forM_ meshes $ \(gmat,msh) -> do
       runMaterial gmat (lunis^.lightMatDiffAlbU) (lunis^.lightMatSpecAlbU)
         (lunis^.lightMatShnU)
