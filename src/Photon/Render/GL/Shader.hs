@@ -164,6 +164,7 @@ uniform l = Uniform l (sendUniform l)
 getUniform :: (Uniformable a) => Program -> String -> IO (Uniform a)
 getUniform prog name = do
     l <- getUniformLocation prog name
+    print . Log InfoLog gllog $ "uniform '" ++ name ++ "': " ++ show l
     if l < 0 then
       return $ Uniform l (const $ return ())
       else

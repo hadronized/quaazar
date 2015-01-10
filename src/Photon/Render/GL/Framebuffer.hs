@@ -34,6 +34,7 @@ instance GLObject Framebuffer where
 data Target
   = Read
   | Write
+  | ReadWrite
     deriving (Eq,Show)
 
 data AttachmentPoint
@@ -52,7 +53,7 @@ unbindFramebuffer target = glBindFramebuffer target' 0
     target' = fromTarget target
 
 checkFramebufferStatus :: IO (Maybe String)
-checkFramebufferStatus = fmap treatStatus (glCheckFramebufferStatus gl_DRAW_FRAMEBUFFER)
+checkFramebufferStatus = fmap treatStatus (glCheckFramebufferStatus gl_FRAMEBUFFER)
   where
     treatStatus status
         | status == gl_FRAMEBUFFER_COMPLETE = Nothing
@@ -97,13 +98,14 @@ buildFramebuffer target f = do
   where
     onError = Left . Log ErrorLog gllog
 
-drawBuffers :: [Natural] -> IO ()
-drawBuffers bufs = withArrayLen (map fromIntegral bufs) (\s b -> glDrawBuffers (fromIntegral s) b)
+drawBuffers :: [AttachmentPoint] -> IO ()
+drawBuffers bufs = withArrayLen (map fromAttachmentPoint bufs) (\s b -> glDrawBuffers (fromIntegral s) b)
 
 fromTarget :: Target -> GLenum
 fromTarget target = case target of
   Read  -> gl_READ_FRAMEBUFFER
   Write -> gl_DRAW_FRAMEBUFFER
+  ReadWrite -> gl_FRAMEBUFFER
 
 fromAttachmentPoint :: AttachmentPoint -> GLenum
 fromAttachmentPoint ap = case ap of

@@ -286,8 +286,7 @@ getShadowing w h = do
     bindTexture colormap
     setTextureWrap colormap ClampToEdge
     setTextureFilters colormap Nearest
-    setTextureNoImage colormap R32F w h Tex.R
-    setTextureMaxLevel colormap 0
+    setTextureNoImage colormap R32F 512 512 Tex.R
     unbindTexture colormap
 
     -- TODO: refactoring
@@ -295,17 +294,15 @@ getShadowing w h = do
     bindTexture depthmap
     setTextureWrap depthmap ClampToEdge
     setTextureFilters depthmap Nearest
-    setTextureNoImage depthmap Depth32F w h Depth
+    setTextureNoImage depthmap Depth32F 512 512 Depth
     --setTextureCompareFunc depthmap (Just LessOrEqual)
-    setTextureMaxLevel depthmap 0
     unbindTexture depthmap
 
     return (colormap,depthmap)
 
-  fb' <- liftIO $ buildFramebuffer Write $ \_ -> do
-    attachTexture Write colormap (ColorAttachment 0)
-    attachTexture Write depthmap DepthAttachment
-    glDrawBuffer gl_COLOR_ATTACHMENT0
+  fb' <- liftIO $ buildFramebuffer ReadWrite $ \_ -> do
+    attachTexture ReadWrite colormap (ColorAttachment 0)
+    attachTexture ReadWrite depthmap DepthAttachment
   fb <- hoistEither fb'
   return (Shadowing fb colormap depthmap program uniforms)
 
@@ -361,7 +358,7 @@ render_ lighting shadowing accumulation gcam gpuligs meshes = do
 
 purgeAccumulationFramebuffer :: Accumulation -> IO ()
 purgeAccumulationFramebuffer accumulation = do
-  bindFramebuffer (accumulation^.accumOff.offscreenFB) Write
+  bindFramebuffer (accumulation^.accumOff.offscreenFB) ReadWrite
   glClearColor 0 0 0 0
   glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
 
@@ -376,13 +373,13 @@ pushCameraToLighting lighting gcam = do
 
 purgeShadowingFramebuffer :: Shadowing -> IO ()
 purgeShadowingFramebuffer shadowing = do
-  bindFramebuffer (shadowing^.shadowCubeDepthFB) Write
+  bindFramebuffer (shadowing^.shadowCubeDepthFB) ReadWrite
   glClearColor 1 1 1 1
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
 
 purgeLightingFramebuffer :: Lighting -> IO ()
 purgeLightingFramebuffer lighting = do
-  bindFramebuffer (lighting^.lightOff.offscreenFB) Write
+  bindFramebuffer (lighting^.lightOff.offscreenFB) ReadWrite
   glClearColor 0 0 0 0
   glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
 
@@ -430,7 +427,7 @@ renderWithLight lighting shadowing meshes lig lent = do
     glEnable gl_DEPTH_TEST
     shadeWithLight lig (lunis^.lightColU) (lunis^.lightPowU) (lunis^.lightRadU)
       (lunis^.lightPosU) unused lent
-    bindTextureAt (shadowing^.shadowCubeDepthmap) 0
+    bindTextureAt (shadowing^.shadowCubeRender) 0
     forM_ meshes $ \(gmat,msh) -> do
       runMaterial gmat (lunis^.lightMatDiffAlbU) (lunis^.lightMatSpecAlbU)
         (lunis^.lightMatShnU)
@@ -441,7 +438,7 @@ renderWithLight lighting shadowing meshes lig lent = do
 accumulateRender :: Lighting -> Accumulation -> IO ()
 accumulateRender lighting accumulation = do
   useProgram (accumulation^.accumProgram)
-  bindFramebuffer (accumulation^.accumOff.offscreenFB) Write
+  bindFramebuffer (accumulation^.accumOff.offscreenFB) ReadWrite
   glClear gl_DEPTH_BUFFER_BIT -- FIXME: glDisable gl_DEPTH_TEST ?
   glEnable gl_BLEND
   glBlendFunc gl_ONE gl_ONE
@@ -463,7 +460,7 @@ applyPostFXChain lighting accumulation postImage pfxs = do
       modify swap
       lift $ do
         usePostFX pfx (sourceOff^.offscreenTex)
-        bindFramebuffer (targetOff^.offscreenFB) Write
+        bindFramebuffer (targetOff^.offscreenFB) ReadWrite
         glClear gl_DEPTH_BUFFER_BIT
         glDrawArrays gl_TRIANGLE_STRIP 0 4
         writeIORef postImage (targetOff^.offscreenTex)
@@ -471,7 +468,7 @@ applyPostFXChain lighting accumulation postImage pfxs = do
 display_ :: Accumulation -> IORef Texture2D -> IO ()
 display_ accumulation postImage = do
   useProgram (accumulation^.accumProgram)
-  unbindFramebuffer Write
+  unbindFramebuffer ReadWrite
   glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
   post <- readIORef postImage
   bindTextureAt post 0
