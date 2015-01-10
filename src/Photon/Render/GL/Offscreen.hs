@@ -12,11 +12,10 @@
 module Photon.Render.GL.Offscreen where
 
 import Control.Lens ( makeLenses )
-import Foreign.Marshal.Utils ( with )
-import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Photon.Render.GL.Framebuffer
 import Photon.Render.GL.Log ( gllog )
+import Photon.Render.GL.GLObject
 import Photon.Render.GL.Renderbuffer
 import Photon.Render.GL.Texture
 import Photon.Utils.Log
@@ -30,7 +29,7 @@ import Photon.Utils.Log
 -- The 'Offscreen' type gathers those three objects and expose a simple
 -- interface to deal with offscreen renders.
 data Offscreen = Offscreen {
-    _offscreenTex :: Texture
+    _offscreenTex :: Texture2D
   , _offscreenFB  :: Framebuffer
   , _offscreenRB  :: Renderbuffer
   } deriving (Eq)
@@ -45,31 +44,20 @@ genOffscreen :: Natural
              -> InternalFormat
              -> AttachmentPoint
              -> IO (Either Log Offscreen)
-genOffscreen = genOffscreen_ genTexture2D
-
-genOffscreen_ :: IO Texture
-              -> Natural
-              -> Natural
-              -> InternalFormat
-              -> Format
-              -> AttachmentPoint
-              -> InternalFormat
-              -> AttachmentPoint
-              -> IO (Either Log Offscreen)
-genOffscreen_ gen w h texift texft texap rbift rbap = do
-  tex <- gen
+genOffscreen w h texift texft texap rbift rbap = do
+  tex <- genObject
   bindTexture tex
-  setTextureWrap tex Clamp
+  setTextureWrap tex ClampToEdge
   setTextureFilters tex Nearest
   setTextureNoImage tex texift w h texft
   unbindTexture tex
 
-  rb <- genRenderbuffer
+  rb <- genObject
   bindRenderbuffer rb
   renderbufferStorage rbift w h
   unbindRenderbuffer
 
-  fb <- genFramebuffer
+  fb <- genObject
   bindFramebuffer fb Write
   attachTexture Write tex texap
   attachRenderbuffer Write rb rbap
@@ -78,13 +66,3 @@ genOffscreen_ gen w h texift texft texap rbift rbap = do
   unbindFramebuffer Write
 
   maybe (return . Right $ Offscreen tex fb rb) (return . Left . Log ErrorLog gllog) status
-
-genCubeOffscreen :: Natural
-                 -> Natural
-                 -> InternalFormat
-                 -> Format
-                 -> AttachmentPoint
-                 -> InternalFormat
-                 -> AttachmentPoint
-                 -> IO (Either Log Offscreen)
-genCubeOffscreen = genOffscreen_ genCubemap

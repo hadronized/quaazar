@@ -11,24 +11,18 @@
 
 module Photon.Render.GL.Texture where
 
-import Control.Applicative
-import Foreign.Concurrent
-import Foreign.Marshal ( malloc, free )
-import Foreign.Marshal.Array ( withArray )
+import Foreign.Marshal ( alloca )
+import Foreign.Marshal.Array ( peekArray, withArray, withArrayLen )
 import Foreign.Ptr ( nullPtr )
 import Foreign.Storable ( Storable )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Photon.Render.GL.GLObject
 
-data Texture
-  = Texture2D GLObject
-  | Cubemap GLObject
-    deriving (Eq,Show)
-
 data Wrap
-  = Clamp
-  | Fract
+  = ClampToEdge
+  | ClampToBorder
+  | Repeat
     deriving (Eq,Show)
 
 data Filter
@@ -63,100 +57,120 @@ data CompareFunc
   | Always
     deriving (Eq,Show)
 
-genTexture2D :: IO Texture
-genTexture2D = fmap Texture2D genTexture_
+class TextureLike t where
+  -- |
+  textureID :: t -> GLuint
+  -- |
+  bindTexture :: t -> IO ()
+  -- |
+  unbindTexture :: t -> IO ()
+  -- |
+  setTextureWrap :: t -> Wrap -> IO ()
+  -- |
+  setTextureFilters :: t -> Filter -> IO ()
+  -- |
+  setTextureImage :: (Storable a) => t -> InternalFormat -> Natural -> Natural -> Format -> [a] -> IO ()
+  -- |
+  setTextureNoImage :: t -> InternalFormat -> Natural -> Natural -> Format -> IO ()
+  -- |
+  setTextureCompareFunc :: t -> Maybe CompareFunc -> IO
 
-genCubemap :: IO Texture
-genCubemap = fmap Cubemap genTexture_
+newtype Texture2D = Texture2D { unTexture2D :: GLuint } deriving (Eq,Ord,Show)
 
-bindTexture :: Texture -> IO ()
-bindTexture t = case t of
-    Texture2D tex -> withGLObject tex (glBindTexture gl_TEXTURE_2D)
-    Cubemap   tex -> withGLObject tex (glBindTexture gl_TEXTURE_CUBE_MAP)
+instance GLObject Texture2D where
+  genObjects n = alloca $ \p -> do
+    glGenTextures (fromIntegral n) p
+    fmap (map Texture2D) $ peekArray n p
+  deleteObjects a = withArrayLen (map unTexture2D a) $ \s p ->
+    glDeleteTextures (fromIntegral s) p
 
-bindTextureAt :: Texture -> Natural -> IO ()
+instance TextureLike Texture2D where
+  textureID = unTexture2D
+  bindTexture (Texture2D t) = glBindTexture gl_TEXTURE_2D t
+  unbindTexture _ = glBindTexture gl_TEXTURE_2D 0
+  setTextureWrap _ = setTextureWrap_ gl_TEXTURE_2D
+  setTextureFilters _ = setTextureFilters_ gl_TEXTURE_2D
+  setTextureImage _ = setTextureImage_ gl_TEXTURE_2D
+  setTextureNoImage _ ift w h ft =
+      glTexImage2D gl_TEXTURE_2D 0 ift' (fromIntegral w) (fromIntegral h) 0 ft' gl_FLOAT nullPtr
+    where
+      ift' = fromIntegral (fromInternalFormat ift)
+      ft' = fromFormat ft
+  setTextureCompareFunc _ = setTextureCompareFunc_ gl_TEXTURE_2D
+
+newtype Cubemap = Cubemap { unCubemap :: GLuint } deriving (Eq,Ord,Show)
+
+instance GLObject Cubemap where
+  genObjects n = alloca $ \p -> do
+    glGenTextures (fromIntegral n) p
+    fmap (map Cubemap) $ peekArray n p
+  deleteObjects a = withArrayLen (map unCubemap a) $ \s p ->
+    glDeleteTextures (fromIntegral s) p
+
+instance TextureLike Cubemap where
+  textureID = unCubemap
+  bindTexture (Cubemap t) = glBindTexture gl_TEXTURE_CUBE_MAP t
+  unbindTexture _ = glBindTexture gl_TEXTURE_CUBE_MAP 0
+  setTextureWrap _ = setTextureWrap_ gl_TEXTURE_CUBE_MAP
+  setTextureFilters _ = setTextureFilters_ gl_TEXTURE_CUBE_MAP
+  setTextureImage = error "setting image of cubemap not supported yet"
+  setTextureNoImage _ ift w h ft = mapM_ texImage2D
+      [
+        gl_TEXTURE_CUBE_MAP_POSITIVE_X
+      , gl_TEXTURE_CUBE_MAP_NEGATIVE_X
+      , gl_TEXTURE_CUBE_MAP_POSITIVE_Y
+      , gl_TEXTURE_CUBE_MAP_NEGATIVE_Y
+      , gl_TEXTURE_CUBE_MAP_POSITIVE_Z
+      , gl_TEXTURE_CUBE_MAP_NEGATIVE_Z
+      ]
+    where
+      ift' = fromIntegral (fromInternalFormat ift)
+      ft' = fromFormat ft
+      texImage2D target =
+        glTexImage2D target 0 ift' (fromIntegral w) (fromIntegral h) 0 ft' gl_FLOAT nullPtr
+  setTextureCompareFunc _ = setTextureCompareFunc_ gl_TEXTURE_CUBE_MAP
+
+bindTextureAt :: (TextureLike t) => t -> Natural -> IO ()
 bindTextureAt tex unit = do
   glActiveTexture (gl_TEXTURE0 + fromIntegral unit)
   bindTexture tex
 
-unbindTexture :: Texture -> IO ()
-unbindTexture t = glBindTexture target 0
+setTextureWrap_ :: GLenum -> Wrap -> IO ()
+setTextureWrap_ t wrap = do
+    glTexParameteri t gl_TEXTURE_WRAP_R wrap'
+    glTexParameteri t gl_TEXTURE_WRAP_S wrap'
+    glTexParameteri t gl_TEXTURE_WRAP_T wrap'
   where
-    target = textureTarget t
-
-setTextureWrap :: Texture -> Wrap -> IO ()
-setTextureWrap t wrap = do
-    glTexParameteri target gl_TEXTURE_WRAP_S wrap'
-    glTexParameteri target gl_TEXTURE_WRAP_T wrap'
-    glTexParameteri target gl_TEXTURE_WRAP_R wrap'
-  where
-    target = textureTarget t
     wrap'  = fromIntegral (fromWrap wrap)
 
-setTextureFilters :: Texture -> Filter -> IO ()
-setTextureFilters t filt = do
-    glTexParameteri target gl_TEXTURE_MIN_FILTER filt'
-    glTexParameteri target gl_TEXTURE_MAG_FILTER filt'
+setTextureFilters_ :: GLenum -> Filter -> IO ()
+setTextureFilters_ t filt = do
+    glTexParameteri t gl_TEXTURE_MIN_FILTER filt'
+    glTexParameteri t gl_TEXTURE_MAG_FILTER filt'
   where
-    target = textureTarget t
     filt'  = fromIntegral (fromFilter filt)
 
-setTextureCompareFunc :: Texture -> Maybe CompareFunc -> IO ()
-setTextureCompareFunc t = maybe compareNothing compareRefToTexture
+setTextureImage_ :: (Storable a) => GLenum -> InternalFormat -> Natural -> Natural -> Format -> [a] -> IO ()
+setTextureImage_ t ift w h ft texels =
+    withArray texels (glTexImage2D t 0 ift' (fromIntegral w) (fromIntegral h) 0 ft' gl_FLOAT)
   where
-    compareNothing =
-      glTexParameteri target gl_TEXTURE_COMPARE_MODE (fromIntegral gl_NONE)
-    compareRefToTexture func = do
-      glTexParameteri target gl_TEXTURE_COMPARE_MODE (fromIntegral gl_COMPARE_REF_TO_TEXTURE)
-      glTexParameteri target gl_TEXTURE_COMPARE_FUNC (fromIntegral $ fromCompareFunc func)
-    target = textureTarget t
-
-setTextureImage :: (Storable a) => Texture -> InternalFormat -> Natural -> Natural -> Format -> [a] -> IO ()
-setTextureImage t ift w h ft texels =
-    withArray texels (glTexImage2D target 0 ift' (fromIntegral w) (fromIntegral h) 0 ft' gl_FLOAT)
-  where
-    target = textureTarget t
     ift'   = fromIntegral (fromInternalFormat ift)
     ft'    = fromFormat ft
 
-setTextureNoImage :: Texture -> InternalFormat -> Natural -> Natural -> Format -> IO ()
-setTextureNoImage t ift w h ft =
-    case t of
-      Texture2D{} -> texImage2D gl_TEXTURE_2D
-      Cubemap{}   -> mapM_ texImage2D
-        [
-          gl_TEXTURE_CUBE_MAP_POSITIVE_X
-        , gl_TEXTURE_CUBE_MAP_NEGATIVE_X
-        , gl_TEXTURE_CUBE_MAP_POSITIVE_Y
-        , gl_TEXTURE_CUBE_MAP_NEGATIVE_Y
-        , gl_TEXTURE_CUBE_MAP_POSITIVE_Z
-        , gl_TEXTURE_CUBE_MAP_NEGATIVE_Z
-        ]
+setTextureCompareFunc_ :: GLenum -> Maybe CompareFunc -> IO ()
+setTextureCompareFunc_ t = maybe compareNothing compareRefToTexture
   where
-    ift' = fromIntegral (fromInternalFormat ift)
-    ft' = fromFormat ft
-    texImage2D target = glTexImage2D target 0 ift' (fromIntegral w) (fromIntegral h) 0 ft' gl_FLOAT nullPtr
-
-unTexture :: Texture -> GLObject
-unTexture t = case t of
-  Texture2D o -> o
-  Cubemap   o -> o
-
-genTexture_ :: IO GLObject
-genTexture_ = do
-  p <- malloc
-  glGenTextures 1 p
-  GLObject <$> newForeignPtr p (glDeleteTextures 1 p >> free p)
-
-textureTarget :: Texture -> GLenum
-textureTarget t = case t of
-  Texture2D{} -> gl_TEXTURE_2D
-  Cubemap{}   -> gl_TEXTURE_CUBE_MAP
+    compareNothing =
+      glTexParameteri t gl_TEXTURE_COMPARE_MODE (fromIntegral gl_NONE)
+    compareRefToTexture func = do
+      glTexParameteri t gl_TEXTURE_COMPARE_MODE (fromIntegral gl_COMPARE_REF_TO_TEXTURE)
+      glTexParameteri t gl_TEXTURE_COMPARE_FUNC (fromIntegral $ fromCompareFunc func)
 
 fromWrap :: Wrap -> GLenum
 fromWrap wrap = case wrap of
-  Clamp -> gl_CLAMP_TO_EDGE
-  Fract -> gl_REPEAT
+  ClampToEdge -> gl_CLAMP_TO_EDGE
+  ClampToBorder -> gl_CLAMP_TO_BORDER
+  Repeat -> gl_REPEAT
 
 fromFilter :: Filter -> GLenum
 fromFilter filt = case filt of

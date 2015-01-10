@@ -11,24 +11,24 @@
 
 module Photon.Render.GL.Renderbuffer where
 
-import Control.Applicative
-import Foreign.Concurrent
-import Foreign.Marshal ( malloc, free )
+import Foreign.Marshal ( alloca )
+import Foreign.Marshal.Array ( peekArray, withArrayLen )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Photon.Render.GL.GLObject
 import Photon.Render.GL.Texture ( InternalFormat, fromInternalFormat )
 
-newtype Renderbuffer = Renderbuffer { unRenderbuffer :: GLObject } deriving (Eq,Show)
+newtype Renderbuffer = Renderbuffer { unRenderbuffer :: GLuint } deriving (Eq,Show)
 
-genRenderbuffer :: IO Renderbuffer
-genRenderbuffer = do
-  p <- malloc
-  glGenRenderbuffers 1 p
-  Renderbuffer . GLObject <$> newForeignPtr p (glDeleteRenderbuffers 1 p >> free p)
+instance GLObject Renderbuffer where
+  genObjects n = alloca $ \p -> do
+    glGenRenderbuffers (fromIntegral n) p
+    fmap (map Renderbuffer) $ peekArray n p
+  deleteObjects a = withArrayLen (map unRenderbuffer a) $ \s p ->
+    glDeleteRenderbuffers (fromIntegral s) p
 
 bindRenderbuffer :: Renderbuffer -> IO ()
-bindRenderbuffer (Renderbuffer rb) = withGLObject rb (glBindRenderbuffer gl_RENDERBUFFER)
+bindRenderbuffer (Renderbuffer rb) = glBindRenderbuffer gl_RENDERBUFFER rb
 
 unbindRenderbuffer :: IO ()
 unbindRenderbuffer = glBindRenderbuffer gl_RENDERBUFFER 0

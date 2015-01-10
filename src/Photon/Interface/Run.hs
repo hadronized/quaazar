@@ -54,17 +54,16 @@ import Photon.Interface.Shaders ( accumVS, accumFS, lightCubeDepthmapFS
 import Photon.Render.Camera ( GPUCamera(..), gpuCamera )
 import Photon.Render.GL.Entity ( cameraTransform, entityTransform )
 import Photon.Render.GL.Framebuffer
+import Photon.Render.GL.GLObject
 import Photon.Render.GL.Offscreen
-import Photon.Render.GL.Shader ( ShaderType(..), Uniform, Uniformable, (@=)
-                               , unused )
-import Photon.Render.GL.Texture as Tex
-import Photon.Render.GL.VertexArray ( VertexArray, bindVertexArray
-                                    , genAttributelessVertexArray )
+import Photon.Render.GL.Shader
+import Photon.Render.GL.Texture
+import Photon.Render.GL.VertexArray ( bindVertexArray, unbindVertexArray )
 import Photon.Render.Light ( GPULight(..), gpuLight )
 import Photon.Render.Material ( GPUMaterial(..), gpuMaterial )
 import Photon.Render.Mesh ( GPUMesh(..), gpuMesh )
 import Photon.Render.PostFX ( GPUPostFX(..), gpuPostFX )
-import Photon.Render.Shader ( GPUProgram(..), gpuProgram )
+import Photon.Render.Shader ( GPUProgram )
 import Photon.Utils.Log ( Log(..), LogCommitter(..), LogType(..), sinkLogs )
 import Prelude hiding ( Either(Left,Right) )
 

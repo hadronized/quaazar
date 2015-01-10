@@ -11,18 +11,23 @@
 
 module Photon.Render.GL.VertexArray where
 
-import Control.Applicative
 import Data.Word ( Word8 )
-import Foreign.Concurrent
-import Foreign.Marshal ( malloc, free )
-import Foreign.Marshal.Array ( advancePtr )
+import Foreign.Marshal ( alloca )
+import Foreign.Marshal.Array ( advancePtr, peekArray, withArrayLen )
 import Foreign.Marshal.Utils ( fromBool )
 import Foreign.Ptr ( Ptr, nullPtr )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Photon.Render.GL.GLObject
 
-newtype VertexArray = VertexArray { unVertexArray :: GLObject } deriving (Eq,Show)
+newtype VertexArray = VertexArray { unVertexArray :: GLuint } deriving (Eq,Ord,Show)
+
+instance GLObject VertexArray where
+  genObjects n = alloca $ \p -> do
+    glGenVertexArrays (fromIntegral n) p
+    fmap (map VertexArray) $ peekArray n p
+  deleteObjects a = withArrayLen (map unVertexArray a) $ \s p ->
+    glDeleteVertexArrays (fromIntegral s) p
 
 data AttribType
   = Ints
@@ -30,21 +35,15 @@ data AttribType
   | Floats
     deriving (Eq,Show)
 
-genVertexArray :: IO VertexArray
-genVertexArray = do
-  p <- malloc
-  glGenVertexArrays 1 p
-  VertexArray . GLObject <$> newForeignPtr p (glDeleteVertexArrays 1 p >> free p)
-
 genAttributelessVertexArray :: IO VertexArray
 genAttributelessVertexArray = do
-  va <- genVertexArray
+  va <- genObject
   bindVertexArray va
   unbindVertexArray
   return va
-  
+
 bindVertexArray :: VertexArray -> IO ()
-bindVertexArray (VertexArray va) = withGLObject va glBindVertexArray
+bindVertexArray (VertexArray va) = glBindVertexArray va
 
 unbindVertexArray :: IO ()
 unbindVertexArray = glBindVertexArray 0
