@@ -287,6 +287,7 @@ getShadowing w h = do
     setTextureWrap colormap ClampToEdge
     setTextureFilters colormap Nearest
     setTextureNoImage colormap R32F w h Tex.R
+    setTextureMaxLevel colormap 0
     unbindTexture colormap
 
     -- TODO: refactoring
@@ -296,6 +297,7 @@ getShadowing w h = do
     setTextureFilters depthmap Nearest
     setTextureNoImage depthmap Depth32F w h Depth
     --setTextureCompareFunc depthmap (Just LessOrEqual)
+    setTextureMaxLevel depthmap 0
     unbindTexture depthmap
 
     return (colormap,depthmap)
@@ -303,6 +305,7 @@ getShadowing w h = do
   fb' <- liftIO $ buildFramebuffer Write $ \_ -> do
     attachTexture Write colormap (ColorAttachment 0)
     attachTexture Write depthmap DepthAttachment
+    glDrawBuffer gl_COLOR_ATTACHMENT0
   fb <- hoistEither fb'
   return (Shadowing fb colormap depthmap program uniforms)
 

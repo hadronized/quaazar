@@ -74,6 +74,8 @@ class TextureLike t where
   setTextureNoImage :: t -> InternalFormat -> Natural -> Natural -> Format -> IO ()
   -- |
   setTextureCompareFunc :: t -> Maybe CompareFunc -> IO ()
+  -- |
+  setTextureMaxLevel :: t -> Int -> IO ()
 
 newtype Texture2D = Texture2D { unTexture2D :: GLuint } deriving (Eq,Ord,Show)
 
@@ -97,6 +99,7 @@ instance TextureLike Texture2D where
       ift' = fromIntegral (fromInternalFormat ift)
       ft' = fromFormat ft
   setTextureCompareFunc _ = setTextureCompareFunc_ gl_TEXTURE_2D
+  setTextureMaxLevel _ = setTextureMaxLevel_ gl_TEXTURE_2D
 
 newtype Cubemap = Cubemap { unCubemap :: GLuint } deriving (Eq,Ord,Show)
 
@@ -129,6 +132,7 @@ instance TextureLike Cubemap where
       texImage2D target =
         glTexImage2D target 0 ift' (fromIntegral w) (fromIntegral h) 0 ft' gl_FLOAT nullPtr
   setTextureCompareFunc _ = setTextureCompareFunc_ gl_TEXTURE_CUBE_MAP
+  setTextureMaxLevel _ = setTextureMaxLevel_ gl_TEXTURE_CUBE_MAP
 
 bindTextureAt :: (TextureLike t) => t -> Natural -> IO ()
 bindTextureAt tex unit = do
@@ -165,6 +169,10 @@ setTextureCompareFunc_ t = maybe compareNothing compareRefToTexture
     compareRefToTexture func = do
       glTexParameteri t gl_TEXTURE_COMPARE_MODE (fromIntegral gl_COMPARE_REF_TO_TEXTURE)
       glTexParameteri t gl_TEXTURE_COMPARE_FUNC (fromIntegral $ fromCompareFunc func)
+
+setTextureMaxLevel_ :: GLenum -> Int -> IO ()
+setTextureMaxLevel_ t l =
+    glTexParameteri t gl_TEXTURE_MAX_LEVEL (fromIntegral l)
 
 fromWrap :: Wrap -> GLenum
 fromWrap wrap = case wrap of
