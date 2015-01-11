@@ -79,13 +79,13 @@ lightFS = unlines
   , "  vec3 illum = atten * (diff + spec);"
 
     -- shadows
-  , "  vec3 depthDir = vco - ligPos;"
+  , "  vec3 depthDir = -(vco - ligPos);"
   , "  float dist = length(depthDir);"
   , "  float ligDistance = texture(ligDepthmap, depthDir).r * ligRad;"
   , "  float shadow = 1.;"
 
-  , "  if (ligDistance <= dist) {"
-  , "    shadow = 0.1;"
+  , "  if (ligDistance < dist) {"
+  , "    shadow = 0.;"
   , "  }"
 
     -- final color
@@ -128,7 +128,7 @@ lightCubeDepthmapGS = unlines
   , "void main() {"
   , "  for (int i = 0; i < 6; ++i) {"
   , "    for (int j = 0; j < 3; ++j) {"
-  , "      gl_Layer = i;"
+  , "      gl_Layer = 5;"
   , "      gco = gl_in[j].gl_Position.xyz;"
   , "      gl_Position = ligProjViews[i] * gl_in[j].gl_Position;"
   , "      EmitVertex();"
@@ -144,13 +144,13 @@ lightCubeDepthmapFS = unlines
     "#version 330 core"
 
   , "in vec3 gco;"
-  , "out vec4 frag;"
+  , "out float outDistance;"
 
   , "uniform vec3 ligPos;"
   , "uniform float ligIRad;"
 
   , "void main() {"
-  , "  frag = vec4(length(gco - ligPos) * ligIRad);"
+  , "  outDistance = distance(gco, ligPos) * ligIRad;"
   , "}"
   ]
 

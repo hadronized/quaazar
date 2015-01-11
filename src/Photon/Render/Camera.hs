@@ -14,7 +14,7 @@ module Photon.Render.Camera where
 import Control.Lens
 import Linear ( (!*!), M44, V3 )
 import Photon.Core.Entity ( Entity, entityPosition )
-import Photon.Core.Projection ( Projection, projectionMatrix, projectionZFar )
+import Photon.Core.Projection ( Projection, projectionMatrix )
 import Photon.Render.GL.Entity ( cameraTransform )
 import Photon.Render.GL.Shader ( Uniform, (@=) )
 

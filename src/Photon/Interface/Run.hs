@@ -238,7 +238,7 @@ photonDriver :: Natural
 photonDriver w h _ logHandler = do
   gdrv <- runEitherT $ do
     lighting <- getLighting w h
-    shadowing <- getShadowing w h 0.1 1000
+    shadowing <- getShadowing w h 0.1 40
     accumulation <- getAccumulation w h
     -- post-process IORef to track the post image
     postImage <- liftIO $ newIORef (accumulation^.accumOff.offscreenTex)
@@ -287,7 +287,7 @@ getShadowing w h znear zfar = do
     bindTexture colormap
     setTextureWrap colormap ClampToEdge
     setTextureFilters colormap Nearest
-    setTextureNoImage colormap R32F 512 512 Tex.R
+    setTextureNoImage colormap R32F 1024 1024 Tex.R
     unbindTexture colormap
 
     -- TODO: refactoring
@@ -295,7 +295,7 @@ getShadowing w h znear zfar = do
     bindTexture depthmap
     setTextureWrap depthmap ClampToEdge
     setTextureFilters depthmap Nearest
-    setTextureNoImage depthmap Depth32F 512 512 Depth
+    setTextureNoImage depthmap Depth32F 1024 1024 Depth
     --setTextureCompareFunc depthmap (Just LessOrEqual)
     unbindTexture depthmap
 
@@ -307,7 +307,7 @@ getShadowing w h znear zfar = do
   fb <- hoistEither fb'
   return (Shadowing fb colormap depthmap program uniforms proj)
   where
-    proj = projectionMatrix $ Perspective 1 (pi/4) znear zfar
+    proj = projectionMatrix $ Perspective 1 (pi/2) znear zfar
 
 getShadowingUniforms :: GPUProgram -> IO ShadowingUniforms
 getShadowingUniforms program = do
@@ -407,14 +407,14 @@ generateLightDepthmap shadowing meshes lig lent = do
     ligPosU = sunis^.shadowLigPosU
     ligIRadU = sunis^.shadowLigIRadU
     modelU = sunis^.shadowModelU
-    lightProjViews = map ((proj !*!) . cameraTransform)
+    lightProjViews = map (proj !*!)
       [
-        Entity ligPos (axisAngle yAxis (-pi/2)) noScale -- positive x
-      , Entity ligPos (axisAngle yAxis (pi/2)) noScale -- negative x
-      , Entity ligPos (axisAngle xAxis (pi/2)) noScale -- positive y
-      , Entity ligPos (axisAngle xAxis (-pi/2)) noScale -- negative y
-      , Entity ligPos (axisAngle yAxis 0) noScale -- positive z
-      , Entity ligPos (axisAngle yAxis pi) noScale -- negative z
+        lookAt ligPos (ligPos & _x +~ 1) (-yAxis) -- Entity ligPos (axisAngle yAxis (-pi/2)) noScale -- positive x
+      , lookAt ligPos (ligPos & _x -~ 1) (-yAxis) -- Entity ligPos (axisAngle yAxis (pi/2)) noScale -- negative x
+      , lookAt ligPos (ligPos & _y +~ 1) zAxis -- Entity ligPos (axisAngle xAxis (pi/2)) noScale -- positive y
+      , lookAt ligPos (ligPos & _y -~ 1) (-zAxis) -- Entity ligPos (axisAngle xAxis (-pi/2)) noScale -- negative y
+      , lookAt ligPos (ligPos & _z +~ 1) (-yAxis) -- Entity ligPos (axisAngle yAxis pi) noScale -- positive z
+      , lookAt ligPos (ligPos & _z -~ 1) (-yAxis) -- Entity ligPos (axisAngle (V3 1 1 0) pi) noScale -- negative z
       ]
     ligPos = lent^.entityPosition
 
