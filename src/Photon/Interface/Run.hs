@@ -410,11 +410,11 @@ generateLightDepthmap shadowing meshes lig lent = do
     modelU = sunis^.shadowModelU
     lightProjViews = map ((proj !*!) . completeM33RotMat . fromQuaternion)
       [
-        axisAngle yAxis (-pi/2) -- positive x
-      , axisAngle yAxis (pi/2) -- negative x
-      , axisAngle xAxis (pi/2) -- positive y
+        axisAngle yAxis (-pi/2) * axisAngle zAxis pi -- positive x
+      , axisAngle yAxis (pi/2) * axisAngle zAxis pi -- negative x
+      , axisAngle xAxis (-pi/2) -- positive y
       , axisAngle xAxis (pi/2) -- negative y
-      , axisAngle yAxis pi -- positive z
+      , axisAngle yAxis pi * axisAngle zAxis pi -- positive z
       , axisAngle zAxis (pi) -- negative z
       ]
     ligPos = lent^.entityPosition

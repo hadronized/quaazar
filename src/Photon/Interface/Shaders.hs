@@ -85,7 +85,7 @@ lightFS = unlines
   , "  float ligDistance = texture(ligDepthmap, depthDir).r * ligRad;"
   , "  float shadow = 1.;"
 
-  , "  if (ligDistance < dist) {"
+  , "  if (ligDistance <= dist) {"
   , "    shadow = 0.1;"
   , "  }"
 
