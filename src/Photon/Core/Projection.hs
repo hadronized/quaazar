@@ -33,8 +33,8 @@ data Projection
 
 -- |Turn a `Projection` into a projection 4x4 matrix.
 projectionMatrix :: Projection -> M44 Float
-projectionMatrix (Perspective ratio fovy znear zfar) =
-    perspectiveMatrix ratio fovy znear zfar
+projectionMatrix (Perspective fovy ratio znear zfar) =
+    perspectiveMatrix fovy ratio znear zfar
 
 -- |Perspective matrix.
 perspectiveMatrix :: Float -> Float -> Float -> Float  -> M44 Float

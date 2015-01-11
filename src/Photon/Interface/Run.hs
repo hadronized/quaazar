@@ -219,6 +219,7 @@ runWithWindow w h fullscreen window pollUserEvents eventHandler logSink initiali
 initGL :: IO ()
 initGL = do
   glEnable gl_DEPTH_TEST
+  glEnable gl_TEXTURE_CUBE_MAP_SEAMLESS
   glClearColor 0 0 0 0
 
 -------------------------------------------------------------------------------
@@ -286,7 +287,7 @@ getShadowing w h znear zfar = do
     colormap <- genObject
     bindTexture colormap
     setTextureWrap colormap ClampToEdge
-    setTextureFilters colormap Nearest
+    setTextureFilters colormap Linear
     setTextureNoImage colormap R32F 1024 1024 Tex.R
     unbindTexture colormap
 
@@ -294,7 +295,7 @@ getShadowing w h znear zfar = do
     depthmap <- genObject
     bindTexture depthmap
     setTextureWrap depthmap ClampToEdge
-    setTextureFilters depthmap Nearest
+    setTextureFilters depthmap Linear
     setTextureNoImage depthmap Depth32F 1024 1024 Depth
     --setTextureCompareFunc depthmap (Just LessOrEqual)
     unbindTexture depthmap
@@ -307,7 +308,7 @@ getShadowing w h znear zfar = do
   fb <- hoistEither fb'
   return (Shadowing fb colormap depthmap program uniforms proj)
   where
-    proj = projectionMatrix $ Perspective 1 (pi/2) znear zfar
+    proj = projectionMatrix $ Perspective (pi/2) 1 znear zfar
 
 getShadowingUniforms :: GPUProgram -> IO ShadowingUniforms
 getShadowingUniforms program = do
@@ -407,16 +408,24 @@ generateLightDepthmap shadowing meshes lig lent = do
     ligPosU = sunis^.shadowLigPosU
     ligIRadU = sunis^.shadowLigIRadU
     modelU = sunis^.shadowModelU
-    lightProjViews = map ((proj !*!) . entityTransform)
+    lightProjViews = map ((proj !*!) . completeM33RotMat . fromQuaternion)
       [
-        Entity ligPos (axisAngle yAxis (-pi/2)) noScale -- positive x
-      , Entity ligPos (axisAngle yAxis (pi/2)) noScale -- negative x
-      , Entity ligPos (axisAngle xAxis (pi/2)) noScale -- positive y
-      , Entity ligPos (axisAngle xAxis (-pi/2)) noScale -- negative y
-      , Entity ligPos (axisAngle yAxis pi) noScale -- positive z
-      , Entity ligPos (axisAngle xAxis pi) noScale -- negative z
+        axisAngle yAxis (-pi/2) -- positive x
+      , axisAngle yAxis (pi/2) -- negative x
+      , axisAngle xAxis (pi/2) -- positive y
+      , axisAngle xAxis (pi/2) -- negative y
+      , axisAngle yAxis pi -- positive z
+      , axisAngle zAxis (pi) -- negative z
       ]
-    ligPos = origin3 -- lent^.entityPosition
+    ligPos = lent^.entityPosition
+
+completeM33RotMat :: M33 Float -> M44 Float
+completeM33RotMat (V3 (V3 a b c) (V3 d e f) (V3 g h i)) =
+  V4
+    (V4 a b c 0)
+    (V4 d e f 0)
+    (V4 g h i 0)
+    (V4 0 0 0 1)
 
 renderWithLight :: Lighting
                 -> Shadowing
