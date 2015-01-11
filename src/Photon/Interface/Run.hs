@@ -238,7 +238,7 @@ photonDriver :: Natural
 photonDriver w h _ logHandler = do
   gdrv <- runEitherT $ do
     lighting <- getLighting w h
-    shadowing <- getShadowing w h 0.1 40
+    shadowing <- getShadowing w h 0.01 100
     accumulation <- getAccumulation w h
     -- post-process IORef to track the post image
     postImage <- liftIO $ newIORef (accumulation^.accumOff.offscreenTex)
@@ -407,16 +407,16 @@ generateLightDepthmap shadowing meshes lig lent = do
     ligPosU = sunis^.shadowLigPosU
     ligIRadU = sunis^.shadowLigIRadU
     modelU = sunis^.shadowModelU
-    lightProjViews = map (proj !*!)
+    lightProjViews = map ((proj !*!) . entityTransform)
       [
-        lookAt ligPos (ligPos & _x +~ 1) (-yAxis) -- Entity ligPos (axisAngle yAxis (-pi/2)) noScale -- positive x
-      , lookAt ligPos (ligPos & _x -~ 1) (-yAxis) -- Entity ligPos (axisAngle yAxis (pi/2)) noScale -- negative x
-      , lookAt ligPos (ligPos & _y +~ 1) zAxis -- Entity ligPos (axisAngle xAxis (pi/2)) noScale -- positive y
-      , lookAt ligPos (ligPos & _y -~ 1) (-zAxis) -- Entity ligPos (axisAngle xAxis (-pi/2)) noScale -- negative y
-      , lookAt ligPos (ligPos & _z +~ 1) (-yAxis) -- Entity ligPos (axisAngle yAxis pi) noScale -- positive z
-      , lookAt ligPos (ligPos & _z -~ 1) (-yAxis) -- Entity ligPos (axisAngle (V3 1 1 0) pi) noScale -- negative z
+        Entity ligPos (axisAngle yAxis (-pi/2)) noScale -- positive x
+      , Entity ligPos (axisAngle yAxis (pi/2)) noScale -- negative x
+      , Entity ligPos (axisAngle xAxis (pi/2)) noScale -- positive y
+      , Entity ligPos (axisAngle xAxis (-pi/2)) noScale -- negative y
+      , Entity ligPos (axisAngle yAxis pi) noScale -- positive z
+      , Entity ligPos (axisAngle xAxis pi) noScale -- negative z
       ]
-    ligPos = lent^.entityPosition
+    ligPos = origin3 -- lent^.entityPosition
 
 renderWithLight :: Lighting
                 -> Shadowing

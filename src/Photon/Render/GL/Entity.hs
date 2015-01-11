@@ -21,10 +21,11 @@ import Photon.Core.Entity
 
 -- TODO: support scale matrix
 entityTransform :: Entity -> M44 Float
-entityTransform e = mkTransformation o p
+entityTransform e = mkTransformation o p !*! scaled (V4 sx sy sz 1)
   where
     p = e^.entityPosition
     o = e^.entityOrientation
+    Scale sx sy sz = e^.entityScale
 
 -- FIXME: cameraTransform is also used with lights; bad name!
 cameraTransform :: Entity -> M44 Float

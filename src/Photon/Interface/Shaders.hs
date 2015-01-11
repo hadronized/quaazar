@@ -79,13 +79,13 @@ lightFS = unlines
   , "  vec3 illum = atten * (diff + spec);"
 
     -- shadows
-  , "  vec3 depthDir = -(vco - ligPos);"
+  , "  vec3 depthDir = vco - ligPos;"
   , "  float dist = length(depthDir);"
   , "  float ligDistance = texture(ligDepthmap, depthDir).r * ligRad;"
   , "  float shadow = 1.;"
 
   , "  if (ligDistance < dist) {"
-  , "    shadow = 0.;"
+  , "    shadow = 0.1;"
   , "  }"
 
     -- final color
