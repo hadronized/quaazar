@@ -39,6 +39,7 @@ library
                      , Photon.Interface.PostFX
                      , Photon.Render.Camera
                      , Photon.Render.Forward.Rendered
+                     , Photon.Render.Forward.Shaded
                      , Photon.Render.Light
                      , Photon.Render.Material
                      , Photon.Render.Mesh
