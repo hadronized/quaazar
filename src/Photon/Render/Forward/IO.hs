@@ -27,6 +27,8 @@ import Photon.Render.GL.VertexArray ( bindVertexArray )
 
 swapBuffers :: Lighting -> Shadowing -> Accumulation -> GPUFrame -> Viewport -> IO ()
 swapBuffers lighting shadowing accumulation gpuframe (Viewport w h x y pst) = do
+  glDisable gl_BLEND
+  bindVertexArray (accumulation^.accumVA)
   (finalOff,_) <- unPost pst lighting shadowing accumulation
   useProgram (accumulation^.accumProgram)
   useFrame gpuframe
