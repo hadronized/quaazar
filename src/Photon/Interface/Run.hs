@@ -85,47 +85,8 @@ data PhotonDriver = PhotonDriver {
   , drvLog              :: Log -> IO ()
   }
 
--- |'Lighting' gathers information about lighting in the scene.
-data Lighting = Lighting {
-    _omniLightProgram :: GPUProgram
-  , _lightOff         :: Offscreen
-  , _lightUniforms    :: LightingUniforms
-  }
 
-data LightingUniforms = LightingUniforms {
-    _lightCamProjViewU :: Uniform (M44 Float)
-  , _lightModelU       :: Uniform (M44 Float)
-  , _lightEyeU         :: Uniform (V3 Float)
-  , _lightMatDiffAlbU  :: Uniform Albedo
-  , _lightMatSpecAlbU  :: Uniform Albedo
-  , _lightMatShnU      :: Uniform Float
-  , _lightPosU         :: Uniform (V3 Float) -- FIXME: github issue #22
-  , _lightColU         :: Uniform Color
-  , _lightPowU         :: Uniform Float
-  , _lightRadU         :: Uniform Float
-  }
 
-data Shadowing = Shadowing {
-    _shadowCubeDepthFB :: Framebuffer
-  , _shadowCubeRender          :: Cubemap
-  , _shadowCubeDepthmap        :: Cubemap
-  , _shadowCubeDepthmapProgram :: GPUProgram
-  , _shadowUniforms            :: ShadowingUniforms
-  , _shadowProjection          :: M44 Float
-  }
-
-data ShadowingUniforms = ShadowingUniforms {
-    _shadowLigProjViewsU :: Uniform [M44 Float]
-  , _shadowModelU        :: Uniform (M44 Float)
-  , _shadowLigPosU       :: Uniform (V3 Float)
-  , _shadowLigIRadU      :: Uniform Float
-  }
-
-data Accumulation = Accumulation {
-    _accumProgram :: GPUProgram
-  , _accumOff     :: Offscreen
-  , _accumVA      :: VertexArray
-  }
 
 makeLenses ''Lighting
 makeLenses ''LightingUniforms
@@ -249,77 +210,7 @@ photonDriver w h _ logHandler = do
       (display_ accumulation postImage) logHandler
   either (\e -> print e >> return Nothing) (return . Just) gdrv
 
-getLighting :: Natural -> Natural -> EitherT Log IO Lighting
-getLighting w h = do
-  program <- evalJournalT $ buildProgram lightVS Nothing lightFS <* sinkLogs
-  liftIO . print $ Log InfoLog CoreLog "generating light offscreen"
-  off <- liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
-  uniforms <- liftIO (getLightingUniforms program)
-  return (Lighting program off uniforms)
 
-getLightingUniforms :: GPUProgram -> IO LightingUniforms
-getLightingUniforms program = do
-    useProgram program
-    sem "ligDepthmap" >>= (@= (0 :: Int))
-    LightingUniforms
-      <$> sem "projView"
-      <*> sem "model"
-      <*> sem "eye"
-      <*> sem "matDiffAlb"
-      <*> sem "matSpecAlb"
-      <*> sem "matShn"
-      <*> sem "ligPos"
-      <*> sem "ligCol"
-      <*> sem "ligPow"
-      <*> sem "ligRad"
-  where
-    sem :: (Uniformable a) => String -> IO (Uniform a)
-    sem = getUniform program
-
-getShadowing :: Natural -> Natural -> Float -> Float -> EitherT Log IO Shadowing
-getShadowing w h znear zfar = do
-  liftIO . print $ Log InfoLog CoreLog "generating light cube depthmap offscreen"
-  program <- evalJournalT $
-    buildProgram lightCubeDepthmapVS (Just lightCubeDepthmapGS) lightCubeDepthmapFS <* sinkLogs
-  uniforms <- liftIO (getShadowingUniforms program)
-  (colormap,depthmap) <- liftIO $ do
-    -- TODO: refactoring
-    colormap <- genObject
-    bindTexture colormap
-    setTextureWrap colormap ClampToEdge
-    setTextureFilters colormap Linear
-    setTextureNoImage colormap R32F 1024 1024 Tex.R
-    unbindTexture colormap
-
-    -- TODO: refactoring
-    depthmap <- genObject
-    bindTexture depthmap
-    setTextureWrap depthmap ClampToEdge
-    setTextureFilters depthmap Linear
-    setTextureNoImage depthmap Depth32F 1024 1024 Depth
-    --setTextureCompareFunc depthmap (Just LessOrEqual)
-    unbindTexture depthmap
-
-    return (colormap,depthmap)
-
-  fb' <- liftIO $ buildFramebuffer ReadWrite $ \_ -> do
-    attachTexture ReadWrite colormap (ColorAttachment 0)
-    attachTexture ReadWrite depthmap DepthAttachment
-  fb <- hoistEither fb'
-  return (Shadowing fb colormap depthmap program uniforms proj)
-  where
-    proj = projectionMatrix $ Perspective (pi/2) 1 znear zfar
-
-getShadowingUniforms :: GPUProgram -> IO ShadowingUniforms
-getShadowingUniforms program = do
-    ShadowingUniforms
-      <$> sem "ligProjViews"
-      <*> sem "model"
-      <*> sem "ligPos"
-      <*> sem "ligIRad"
-  where
-    sem :: (Uniformable a) => String -> IO (Uniform a)
-    sem = getUniform program
 
 getAccumulation :: Natural -> Natural -> EitherT Log IO Accumulation
 getAccumulation w h = do
