@@ -38,6 +38,7 @@ library
                      , Photon.Interface.Event
                      , Photon.Interface.PostFX
                      , Photon.Render.Camera
+                     , Photon.Render.Forward.Rendered
                      , Photon.Render.Light
                      , Photon.Render.Material
                      , Photon.Render.Mesh
