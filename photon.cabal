@@ -40,6 +40,7 @@ library
                      , Photon.Render.Camera
                      , Photon.Render.Forward.Lit
                      , Photon.Render.Forward.Looked
+                     , Photon.Render.Forward.Post
                      , Photon.Render.Forward.Rendered
                      , Photon.Render.Forward.Shaded
                      , Photon.Render.Light
