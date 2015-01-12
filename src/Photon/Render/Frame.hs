@@ -9,20 +9,28 @@
 --
 ----------------------------------------------------------------------------
 
-module Photon.Render.Frame (
-    -- *
-  ) where
+module Photon.Render.Frame where
 
 import Control.Lens
 import Numeric.Natural ( Natural )
-import Photon.Render.GL.Offscreen ( Offscreen, genOffscreen )
+import Photon.Render.GL.Framebuffer ( AttachmentPoint(..), Target(..)
+                                    , bindFramebuffer )
+import Photon.Render.GL.Offscreen
+import Photon.Render.GL.Texture ( Format(..), InternalFormat(..)
+                                , bindTextureAt )
+import Photon.Utils.Log
 
-newtype GPUFrame = GPUFrame { 
+data GPUFrame = GPUFrame {
     useFrame :: IO ()
   , bindFrameAt :: Natural -> IO ()
-  } deriving (Eq)
+  }
 
-gpuFrame :: (MonadIO m) => m GPUFrame
-gpuFrame = do
-  off <- genOffscreen
-  return $ GPUFrame (bindFramebuffer $ off^.offscreenFB) (bindTextureAt $ off^.offscreenTex)
+gpuFrame :: Natural -> Natural -> IO (Either Log GPUFrame)
+gpuFrame w h = do
+    off <- genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F
+             DepthAttachment
+    return $ either Left gpuFrame_ off
+  where
+    gpuFrame_ off =
+      Right $ GPUFrame (bindFramebuffer (off^.offscreenFB) ReadWrite)
+        (bindTextureAt $ off^.offscreenTex)

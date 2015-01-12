@@ -12,13 +12,14 @@
 module Photon.Render.Forward.Viewport where
 
 import Control.Lens ( makeLenses )
+import Numeric.Natural ( Natural )
 import Photon.Render.Forward.Post ( Post )
 
 data Viewport = Viewport {
-    _viewportWidth  :: Float
-  , _viewportHeight :: Float
-  , _viewportX      :: Float
-  , _viewportY      :: Float
+    _viewportWidth  :: Natural
+  , _viewportHeight :: Natural
+  , _viewportX      :: Int
+  , _viewportY      :: Int
   , _viewportPost   :: Post
   }
 
