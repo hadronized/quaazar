@@ -12,13 +12,16 @@
 module Photon.Render.Forward.Accumulation where
 
 import Control.Applicative
-import Control.Lens ( makeLenses )
+import Control.Lens
 import Control.Monad.Trans ( MonadIO(..) )
 import Control.Monad.Trans.Either ( EitherT, hoistEither )
 import Control.Monad.Trans.Journal ( evalJournalT )
+import Data.Bits ( (.|.) )
+import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
-import Photon.Render.GL.Framebuffer ( AttachmentPoint(..) )
-import Photon.Render.GL.Offscreen ( Offscreen, genOffscreen )
+import Photon.Render.GL.Framebuffer ( AttachmentPoint(..), Target(..)
+                                    , bindFramebuffer )
+import Photon.Render.GL.Offscreen
 import Photon.Render.GL.Shader ( (@=), buildProgram
                                , getUniform, useProgram )
 import Photon.Render.GL.Texture as Tex ( Format(..), InternalFormat(..) )
@@ -44,6 +47,12 @@ getAccumulation w h = do
     useProgram program
     getUniform program "source" >>= (@= (0 :: Int))
   return (Accumulation program off va)
+
+purgeAccumulationFramebuffer :: Accumulation -> IO ()
+purgeAccumulationFramebuffer accumulation = do
+  bindFramebuffer (accumulation^.accumOff.offscreenFB) ReadWrite
+  glClearColor 0 0 0 0
+  glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
 
 accumVS :: String
 accumVS = unlines

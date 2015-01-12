@@ -12,16 +12,20 @@
 module Photon.Render.Forward.Lighting where
 
 import Control.Applicative
-import Control.Lens ( makeLenses )
+import Control.Lens
 import Control.Monad.Trans ( MonadIO(..) )
 import Control.Monad.Trans.Either ( EitherT, hoistEither )
 import Control.Monad.Trans.Journal ( evalJournalT )
+import Data.Bits ( (.|.) )
+import Graphics.Rendering.OpenGL.Raw
 import Linear
 import Numeric.Natural ( Natural )
 import Photon.Core.Color ( Color )
 import Photon.Core.Material ( Albedo )
-import Photon.Render.GL.Framebuffer ( AttachmentPoint(..) )
-import Photon.Render.GL.Offscreen ( Offscreen, genOffscreen )
+import Photon.Render.Camera ( GPUCamera(..) )
+import Photon.Render.GL.Framebuffer ( AttachmentPoint(..), Target(..)
+                                    , bindFramebuffer )
+import Photon.Render.GL.Offscreen
 import Photon.Render.GL.Shader ( Uniform, Uniformable, (@=), buildProgram
                                , getUniform, useProgram )
 import Photon.Render.GL.Texture ( Format(..), InternalFormat(..)  )
@@ -77,6 +81,21 @@ getLightingUniforms program = do
   where
     sem :: (Uniformable a) => String -> IO (Uniform a)
     sem = getUniform program
+
+purgeLightingFramebuffer :: Lighting -> IO ()
+purgeLightingFramebuffer lighting = do
+  bindFramebuffer (lighting^.lightOff.offscreenFB) ReadWrite
+  glClearColor 0 0 0 0
+  glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
+
+pushCameraToLighting :: Lighting -> GPUCamera -> IO ()
+pushCameraToLighting lighting gcam = do
+  useProgram (lighting^.omniLightProgram)
+  runCamera gcam projViewU eyeU
+  where
+    projViewU = unis^.lightCamProjViewU
+    eyeU = unis^.lightEyeU
+    unis = lighting^.lightUniforms
 
 lightVS :: String
 lightVS = unlines

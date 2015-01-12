@@ -12,16 +12,18 @@
 module Photon.Render.Forward.Shadowing where
 
 import Control.Applicative
-import Control.Lens ( makeLenses )
+import Control.Lens
 import Control.Monad.Trans ( MonadIO(..) )
 import Control.Monad.Trans.Either ( EitherT, hoistEither )
 import Control.Monad.Trans.Journal ( evalJournalT )
+import Data.Bits ( (.|.) )
+import Graphics.Rendering.OpenGL.Raw
 import Linear
 import Numeric.Natural ( Natural )
 import Photon.Core.Projection ( Projection(..), projectionMatrix )
 import Photon.Render.GL.GLObject
 import Photon.Render.GL.Framebuffer ( AttachmentPoint(..), Framebuffer
-                                    , Target(..), attachTexture
+                                    , Target(..), attachTexture, bindFramebuffer
                                     , buildFramebuffer )
 import Photon.Render.GL.Shader ( Uniform, Uniformable, buildProgram
                                , getUniform )
@@ -94,6 +96,12 @@ getShadowingUniforms program = do
   where
     sem :: (Uniformable a) => String -> IO (Uniform a)
     sem = getUniform program
+
+purgeShadowingFramebuffer :: Shadowing -> IO ()
+purgeShadowingFramebuffer shadowing = do
+  bindFramebuffer (shadowing^.shadowCubeDepthFB) ReadWrite
+  glClearColor 1 1 1 1
+  glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
 
 lightCubeDepthmapVS :: String
 lightCubeDepthmapVS = unlines

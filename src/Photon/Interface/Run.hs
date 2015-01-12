@@ -212,16 +212,6 @@ photonDriver w h _ logHandler = do
 
 
 
-getAccumulation :: Natural -> Natural -> EitherT Log IO Accumulation
-getAccumulation w h = do
-  program <- evalJournalT $ buildProgram accumVS Nothing accumFS <* sinkLogs
-  liftIO . print $ Log InfoLog CoreLog "generating accumulation offscreen"
-  off <- liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
-  va <- liftIO genAttributelessVertexArray
-  liftIO $ do
-    useProgram program
-    getUniform program "source" >>= (@= (0 :: Int))
-  return (Accumulation program off va)
 
 registerPostFX :: PostFX -> IO (Maybe GPUPostFX)
 registerPostFX pfx = evalJournalT $ do
@@ -251,32 +241,9 @@ render_ lighting shadowing accumulation gcam gpuligs meshes = do
     renderWithLight lighting shadowing meshes lig lent
     accumulateRender lighting accumulation
 
-purgeAccumulationFramebuffer :: Accumulation -> IO ()
-purgeAccumulationFramebuffer accumulation = do
-  bindFramebuffer (accumulation^.accumOff.offscreenFB) ReadWrite
-  glClearColor 0 0 0 0
-  glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
 
-pushCameraToLighting :: Lighting -> GPUCamera -> IO ()
-pushCameraToLighting lighting gcam = do
-  useProgram (lighting^.omniLightProgram)
-  runCamera gcam projViewU eyeU
-  where
-    projViewU = unis^.lightCamProjViewU
-    eyeU = unis^.lightEyeU
-    unis = lighting^.lightUniforms
 
-purgeShadowingFramebuffer :: Shadowing -> IO ()
-purgeShadowingFramebuffer shadowing = do
-  bindFramebuffer (shadowing^.shadowCubeDepthFB) ReadWrite
-  glClearColor 1 1 1 1
-  glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
 
-purgeLightingFramebuffer :: Lighting -> IO ()
-purgeLightingFramebuffer lighting = do
-  bindFramebuffer (lighting^.lightOff.offscreenFB) ReadWrite
-  glClearColor 0 0 0 0
-  glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
 
 generateLightDepthmap :: Shadowing
                       -> [(GPUMesh,Entity)]
