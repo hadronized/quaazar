@@ -12,11 +12,16 @@
 module Photon.Render.Forward.Rendered where
 
 import Control.Lens
+import Data.Monoid ( Monoid(..) )
 import Photon.Core.Entity ( Entity )
 import Photon.Render.Forward.Lighting
 import Photon.Render.Mesh ( GPUMesh(..) )
 
 newtype Rendered = Rendered { unRendered :: Lighting -> IO () }
+
+instance Monoid Rendered where
+  mempty = Rendered . const $ return ()
+  Rendered f `mappend` Rendered g = Rendered $ \l -> f l >> g l
 
 render :: GPUMesh -> Entity -> Rendered
 render gmsh ent = Rendered $ render_
