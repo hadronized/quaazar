@@ -37,7 +37,7 @@ lighten gpulig ent shd = Lit lighten_
   where
     lighten_ lighting shadowing accumulation = do
       purgeShadowingFramebuffer shadowing
-      --generateLightDepthmap shadowing
+      --generateLightDepthmap shadowing -- TODO: reinsert shadow mapping
       --  (concatMap snd meshes) lig lent
       purgeLightingFramebuffer lighting
       withLight lighting shadowing shd gpulig ent

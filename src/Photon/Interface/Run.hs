@@ -285,36 +285,6 @@ completeM33RotMat (V3 (V3 a b c) (V3 d e f) (V3 g h i)) =
     (V4 g h i 0)
     (V4 0 0 0 1)
 
-renderWithLight :: Lighting
-                -> Shadowing
-                -> [(GPUMaterial,[(GPUMesh,Entity)])]
-                -> GPULight
-                -> Entity
-                -> IO ()
-renderWithLight lighting shadowing meshes lig lent = do
-    useProgram (lighting^.omniLightProgram)
-    glDisable gl_BLEND
-    glEnable gl_DEPTH_TEST
-    shadeWithLight lig (lunis^.lightColU) (lunis^.lightPowU) (lunis^.lightRadU)
-      (lunis^.lightPosU) unused lent
-    bindTextureAt (shadowing^.shadowCubeRender) 0
-    forM_ meshes $ \(gmat,msh) -> do
-      runMaterial gmat (lunis^.lightMatDiffAlbU) (lunis^.lightMatSpecAlbU)
-        (lunis^.lightMatShnU)
-      forM_ msh $ \(gmsh,ment) -> renderMesh gmsh (lunis^.lightModelU) ment
-  where
-    lunis = lighting^.lightUniforms
-
-accumulateRender :: Lighting -> Accumulation -> IO ()
-accumulateRender lighting accumulation = do
-  useProgram (accumulation^.accumProgram)
-  bindFramebuffer (accumulation^.accumOff.offscreenFB) ReadWrite
-  glClear gl_DEPTH_BUFFER_BIT -- FIXME: glDisable gl_DEPTH_TEST ?
-  glEnable gl_BLEND
-  glBlendFunc gl_ONE gl_ONE
-  bindTextureAt (lighting^.lightOff.offscreenTex) 0
-  bindVertexArray (accumulation^.accumVA)
-  glDrawArrays gl_TRIANGLE_STRIP 0 4
 
 applyPostFXChain :: Lighting
                  -> Accumulation
@@ -344,26 +314,6 @@ display_ accumulation postImage = do
   bindTextureAt post 0
   bindVertexArray (accumulation^.accumVA)
   glDrawArrays gl_TRIANGLE_STRIP 0 4
-
--- |Photon interpreter. This function turns the pure 'Photon a' structure into
--- 'IO a'.
-interpretPhoton :: PhotonDriver -> Photon a -> IO (Maybe a)
-interpretPhoton drv = interpret_
-  where
-    interpret_ g = case g of
-      Pure x -> return (Just x)
-      Free g' -> case g' of
-        PC.RegisterMesh m f -> drvRegisterMesh drv m >>= interpret_ . f
-        PC.LoadObject name f -> drvLoadObject drv name >>= interpret_ . f
-        PC.RegisterMaterial m f -> drvRegisterMaterial drv m >>= interpret_ . f
-        PC.RegisterLight l f -> drvRegisterLight drv l >>= interpret_ . f
-        PC.RegisterCamera proj ent f -> drvRegisterCamera drv proj ent >>= interpret_ . f
-        PC.RegisterPostFX pfx f -> drvRegisterPostFX drv pfx >>= interpret_ . f
-        PC.Render gcam gpulig meshes nxt -> drvRender drv gcam gpulig meshes >> interpret_ nxt
-        PC.PostProcess pfxs nxt -> drvPostProcess drv pfxs >> interpret_ nxt
-        PC.Display nxt -> drvDisplay drv >> interpret_ nxt
-        PC.Log lt msg nxt -> drvLog drv (Log lt UserLog msg) >> interpret_ nxt
-        PC.Destroy -> return Nothing
 
 -------------------------------------------------------------------------------
 -- Callbacks
