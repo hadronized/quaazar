@@ -27,11 +27,11 @@ import Photon.Render.GL.VertexArray ( bindVertexArray )
 
 swapBuffers :: Lighting -> Shadowing -> Accumulation -> GPUFrame -> Viewport -> IO ()
 swapBuffers lighting shadowing accumulation gpuframe (Viewport w h x y pst) = do
+  (finalOff,_) <- unPost pst lighting shadowing accumulation
   useProgram (accumulation^.accumProgram)
   useFrame gpuframe
   glViewport (fromIntegral w) (fromIntegral h) (fromIntegral x) (fromIntegral y)
   glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
-  (finalOff,_) <- unPost pst lighting shadowing accumulation
   bindTextureAt (finalOff^.offscreenTex) 0
   bindVertexArray (accumulation^.accumVA)
   glDrawArrays gl_TRIANGLE_STRIP 0 4

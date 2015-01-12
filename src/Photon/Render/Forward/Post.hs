@@ -19,6 +19,7 @@ import Photon.Render.Forward.Looked ( Looked(..) )
 import Photon.Render.Forward.Shadowing
 import Photon.Render.GL.Framebuffer ( Target(..), bindFramebuffer )
 import Photon.Render.GL.Offscreen
+import Photon.Render.GL.VertexArray ( bindVertexArray )
 import Photon.Render.PostFX ( GPUPostFX(..) )
 
 newtype Post = Post { unPost :: Lighting -> Shadowing -> Accumulation -> IO PingPong }
@@ -40,5 +41,7 @@ post gpupfx prev = Post post_
       usePostFX gpupfx (sourceOff^.offscreenTex)
       bindFramebuffer (targetOff^.offscreenFB) ReadWrite
       glClear gl_DEPTH_BUFFER_BIT
+      glDisable gl_BLEND
+      bindVertexArray (accumulation^.accumVA)
       glDrawArrays gl_TRIANGLE_STRIP 0 4
       return (targetOff,sourceOff) -- pingpong ! \o/
