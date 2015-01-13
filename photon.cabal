@@ -50,6 +50,7 @@ library
                      , Photon.Render.Forward.Shaded
                      , Photon.Render.Forward.Viewport
                      , Photon.Render.Frame
+                     , Photon.Render.GPU
                      , Photon.Render.Light
                      , Photon.Render.Material
                      , Photon.Render.Mesh
