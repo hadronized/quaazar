@@ -35,6 +35,7 @@ import Control.Applicative
 import Control.Lens
 import Data.Aeson
 import Photon.Core.Color ( Color )
+import Photon.Core.Loader ( Load(..) )
 
 data LightType
   = Omni
@@ -70,3 +71,7 @@ instance FromJSON Light where
       <*> o .:? "cast_shadows" .!= False
 
 makeLenses ''Light
+
+instance Load Light where
+  loadRoot = const "lights"
+  loadExt = const "ylig"

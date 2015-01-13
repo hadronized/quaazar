@@ -33,6 +33,7 @@ import Data.Aeson.Types ( typeMismatch )
 import Data.List.NonEmpty ( toList )
 import Data.Semigroup ( Semigroup(..) )
 import Linear.V3
+import Photon.Core.Loader ( Load(..) )
 
 newtype Albedo = Albedo { unAlbedo :: V3 Float } deriving (Eq,Ord,Show)
 
@@ -79,3 +80,7 @@ albedo :: Float -> Float -> Float -> Albedo
 albedo r g b = Albedo (V3 r g b)
 
 makeLenses ''MaterialLayer
+
+instance Load Material where
+  loadRoot = const "materials"
+  loadExt = const "ymat"

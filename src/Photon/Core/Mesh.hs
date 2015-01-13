@@ -26,6 +26,7 @@ module Photon.Core.Mesh (
 import Control.Applicative
 import Control.Lens
 import Data.Aeson
+import Photon.Core.Loader ( Load(..) )
 import Photon.Core.Vertex
 import Photon.Core.VGroup
 
@@ -36,7 +37,11 @@ data Mesh = Mesh {
   , _meshVGroup   :: VGroup
   } deriving (Eq,Show)
 
+makeLenses ''Mesh
+
 instance FromJSON Mesh where
   parseJSON = withObject "mesh" $ \o -> Mesh <$> o .: "vertices" <*> o .: "vgroup"
 
-makeLenses ''Mesh
+instance Load Mesh where
+  loadRoot = const "meshes"
+  loadExt = const "ymsh"

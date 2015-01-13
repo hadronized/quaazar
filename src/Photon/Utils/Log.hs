@@ -51,10 +51,12 @@ module Photon.Utils.Log (
   , info
   , warn
   , err
+  , throwLog
     -- * Sinking
   , sinkLogs
   ) where
 
+import Control.Monad.Error.Class ( MonadError(..) )
 import Control.Monad.Trans ( MonadIO )
 import Control.Monad.Trans.Journal
 import Data.Foldable ( traverse_ )
@@ -120,6 +122,10 @@ warn = log_ WarningLog
 -- |Create an error log.
 err :: (MonadLogger m) => LogCommitter -> String -> m ()
 err = log_ ErrorLog
+
+-- |Alternative way of outputting logs, through 'MonadError'.
+throwLog :: (MonadError Log m) => LogCommitter -> String -> m ()
+throwLog lc msg = throwError (Log ErrorLog lc msg)
 
 journal_ :: (MonadLogger m) => Log -> m ()
 journal_ = journal . fromList . discardNewlines

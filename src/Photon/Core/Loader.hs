@@ -12,22 +12,18 @@
 
 module Photon.Core.Loader (
     -- * Loading resources
-    loadJSON
-  , Load
+    Load(..)
   , load
-    -- * Loaders
-  , loadMesh
-  , loadMaterial
-  , loadLight
+  , loadJSON
+  , rootPath
   ) where
 
 import Control.Exception ( IOException, catch )
+import Control.Monad.Error.Class ( MonadError(..) )
 import Control.Monad.Trans ( MonadIO, liftIO )
-import Data.ByteString.Lazy as B ( readFile )
 import Data.Aeson
-import Photon.Core.Light ( Light )
-import Photon.Core.Material ( Material )
-import Photon.Core.Mesh ( Mesh )
+import Data.ByteString.Lazy as B ( readFile )
+import Data.Either.Combinators ( mapLeft )
 import Photon.Utils.Log
 import Photon.Utils.TimePoint
 import System.FilePath
@@ -36,20 +32,20 @@ rootPath :: FilePath
 rootPath = "data"
 
 class (FromJSON a) => Load a where
-  load :: (MonadIO m,MonadLogger m)
-       => String
-       -> m (Maybe a)
+  loadRoot :: a -> String
+  loadExt :: a -> String
 
-instance Load Mesh where
-  load = loadMesh
+load :: forall m a. (MonadIO m,MonadLogger m,MonadError Log m,FromJSON a,Load a)
+     => FilePath
+     -> m a
+load n = loadJSON $ root </> n <.> ext
+  where
+    root = loadRoot (undefined :: a) -- TODO: use Proxy instead?
+    ext = loadExt (undefined :: a) -- TODO: use Proxy instead?
 
-instance Load Material where
-  load = loadMaterial
-
-instance Load Light where
-  load = loadLight
-
-loadJSON :: (MonadIO m,MonadLogger m,FromJSON a) => FilePath -> m (Either String a)
+loadJSON :: (MonadIO m,MonadLogger m,MonadError Log m,FromJSON a)
+         => FilePath
+         -> m a
 loadJSON path = do
     deb CoreLog $ "parsing '" ++ path ++ "'"
     (st,r,et) <- liftIO $ do
@@ -58,39 +54,11 @@ loadJSON path = do
       et <- timePoint
       return (st,r,et)
     deb CoreLog $ "parsing time: " ++ show (et - st)
-    return r
+    generalizeEither $ mapLeft (Log ErrorLog CoreLog) r
   where
-    onError ioe = return . Left $ "unable to open file: " ++ show (ioe :: IOException)
+    onError ioe =
+      return . Left $ "unable to open file: " ++ show (ioe :: IOException)
 
-loadMesh :: (MonadIO m,MonadLogger m) => String -> m (Maybe Mesh)
-loadMesh n = loadJSON path >>= either loadError ok
-  where
-    path = "meshes" </> n <.> "ymsh"
-    loadError e = do
-      err CoreLog $ "failed to load mesh '" ++ path ++ "': " ++ e
-      return Nothing
-    ok msh = do
-      info CoreLog $ "loaded mesh '" ++ n ++ "'"
-      return (Just msh)
-
-loadMaterial :: (MonadIO m,MonadLogger m) => String -> m (Maybe Material)
-loadMaterial n = loadJSON path >>= either loadError ok
-  where
-    path = "materials" </> n <.> "ymat"
-    loadError e = do
-      err CoreLog $ "failed to load material '" ++ path ++ "': " ++ e
-      return Nothing
-    ok mat = do
-      info CoreLog $ "loaded material '" ++ n ++ "'"
-      return (Just mat)
-
-loadLight :: (MonadIO m,MonadLogger m) => String -> m (Maybe Light)
-loadLight n = loadJSON path >>= either loadError ok
-  where
-    path = "lights" </> n <.> "ylig"
-    loadError e = do
-      err CoreLog $ "failed to load light '" ++ path ++ "': " ++ e
-      return Nothing
-    ok lig = do
-      info CoreLog $ "loaded light '" ++ n ++ "'"
-      return (Just lig)
+-- FIXME: change that when my pull request on either has merged
+generalizeEither :: (MonadError e m) => Either e a -> m a
+generalizeEither = either throwError return
