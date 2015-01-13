@@ -38,7 +38,9 @@ library
                      , Photon.Core.Vertex
                      , Photon.Core.UV
                      , Photon.Event
+                     , Photon.Render
                      , Photon.Render.Camera
+                     , Photon.Render.Forward
                      , Photon.Render.Forward.IO
                      , Photon.Render.Forward.Lit
                      , Photon.Render.Forward.Looked

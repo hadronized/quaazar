@@ -12,6 +12,7 @@
 module Photon.Render.Forward.Renderer where
 
 import Control.Applicative
+import Control.Lens ( makeLenses )
 import Control.Monad.Trans.Either ( runEitherT )
 import Graphics.UI.GLFW ( Window )
 import Numeric.Natural ( Natural )
@@ -26,6 +27,8 @@ data ForwardRenderer = ForwardRenderer {
   , _frAccumulation :: Accumulation
   , _frWindow :: Window
   }
+
+makeLenses ''ForwardRenderer
 
 getForwardRenderer :: Natural -> Natural -> Window -> IO (Either Log ForwardRenderer)
 getForwardRenderer w h window = runEitherT $
