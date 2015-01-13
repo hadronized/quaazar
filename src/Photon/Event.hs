@@ -12,7 +12,6 @@
 module Photon.Event (
     -- * Events
     Event(..)
-  , EventHandler
     -- * Key
   , Key(..)
   , KeyState(..)
@@ -213,5 +212,3 @@ data Event
   | WindowEvent WindowState
   | SystemEvent SystemState
     deriving (Eq,Read,Show)
-
-type EventHandler = Event -> IO ()

@@ -10,12 +10,11 @@
 ----------------------------------------------------------------------------
 
 module Photon (
-  -- * Starting photon
-  runPhoton
+  -- *
+  withPhoton
   ) where
 
 import Control.Applicative
-import Control.Monad ( void )
 import Control.Concurrent.STM ( TVar, atomically, modifyTVar, newTVarIO
                               , readTVar, writeTVar )
 import Data.List ( intercalate )
@@ -25,14 +24,13 @@ import Numeric.Natural ( Natural )
 import Photon.Event as E
 import Photon.Utils.Log
 
-runPhoton :: Natural -- ^ Width of the window
-          -> Natural -- ^ Height of the window
-          -> Bool -- ^ Should the window be fullscreen?
-          -> String -- ^ Title of the window
-          -> EventHandler -- ^ Event handler
-          -> IO a
-          -> IO ()
-runPhoton w h full title eventHandler app = do
+withPhoton :: Natural -- ^ Width of the window
+           -> Natural -- ^ Height of the window
+           -> Bool -- ^ Should the window be fullscreen?
+           -> String -- ^ Title of the window
+           -> (IO [Event] -> IO ()) -- ^ Application
+           -> IO ()
+withPhoton w h full title app = do
     initiated <- GLFW.init
     if initiated then do
       glfwVersion <- fmap showGLFWVersion getVersion
@@ -41,7 +39,7 @@ runPhoton w h full title eventHandler app = do
       windowHint (WindowHint'ContextVersionMajor 3)
       windowHint (WindowHint'ContextVersionMinor 3)
       createWindow (fromIntegral w) (fromIntegral h) title monitor Nothing >>= \win -> case win of
-        Just window -> makeContextCurrent win >> runWithWindow window eventHandler app
+        Just window -> makeContextCurrent win >> withWindow window app
         -- TODO: display OpenGL information
         Nothing -> print (Log ErrorLog CoreLog "unable to create window :(")
       print (Log InfoLog CoreLog "bye!")
@@ -49,35 +47,24 @@ runPhoton w h full title eventHandler app = do
       else do
         print (Log ErrorLog CoreLog "unable to init :(")
 
-runWithWindow :: Window -> EventHandler -> IO a -> IO ()
-runWithWindow window eventHandler app = do
+withWindow :: Window -> (IO [Event] -> IO ()) -> IO ()
+withWindow window app = do
     -- transaction variables
     events <- newTVarIO []
     mouseXY <- newTVarIO (0,0)
-
     -- callbacks
     setKeyCallback window (Just $ handleKey events)
     setMouseButtonCallback window (Just $ handleMouseButton events)
     setCursorPosCallback window (Just $ handleMouseMotion mouseXY events)
     setWindowCloseCallback window (Just $ handleWindowClose events)
     setWindowFocusCallback window (Just $ handleWindowFocus events)
-
     -- pre-process
     getCursorPos window >>= atomically . writeTVar mouseXY
     initGL
-
-    startFrame events
-  where
-    startFrame events = go
-      where
-        go = do
-          -- poll user events then GLFW ones and sink shared events
-          GLFW.pollEvents
-          evs <- atomically $ readTVar events <* writeTVar events []
-          mapM_ eventHandler evs
-          void app
-          swapBuffers window
-          go
+    -- user app
+    app $ do
+      GLFW.pollEvents
+      atomically $ readTVar events <* writeTVar events []
 
 initGL :: IO ()
 initGL = do
