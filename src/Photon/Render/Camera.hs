@@ -27,7 +27,7 @@ data GPUCamera = GPUCamera {
   }
 
 instance GPU (Projection,Entity) GPUCamera where
-  gpu = fmap Right . uncurry gpuCamera
+  gpu = uncurry gpuCamera
 
 gpuCamera :: (Monad m) => Projection -> Entity -> m GPUCamera
 gpuCamera proj ent = return (GPUCamera sendCamera proj')

@@ -12,6 +12,7 @@
 module Photon.Render.Mesh where
 
 import Control.Lens
+import Control.Monad.Trans ( liftIO )
 import Data.Word ( Word32 )
 import Foreign.Ptr ( nullPtr )
 import Foreign.Storable ( sizeOf )
@@ -42,8 +43,8 @@ data GPUMesh = GPUMesh {
 makeLenses ''GPUMesh
 
 instance GPU Mesh GPUMesh where
-  gpu = fmap Right . gpuMesh
-  
+  gpu = liftIO . gpuMesh
+
 -- |OpenGL 'Mesh' representation.
 gpuMesh :: Mesh -> IO GPUMesh
 gpuMesh msh = case msh^.meshVertices of

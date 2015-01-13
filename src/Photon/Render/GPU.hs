@@ -1,7 +1,5 @@
 -----------------------------------------------------------------------------
 -- |
--- Copyright   : (C) 2014 Dimitri Sabadie
--- License     : BSD3
 --
 -- Maintainer  : Dimitri Sabadie <dimitri.sabadie@gmail.com>
 -- Stability   : experimental
@@ -14,10 +12,12 @@ module Photon.Render.GPU (
     GPU(..)
   ) where
 
+import Control.Monad.Error.Class ( MonadError )
+import Control.Monad.Trans ( MonadIO )
 import Photon.Utils.Log ( Log )
 
 -- |GPU-representable class.
 class GPU a g | g -> a where
   -- |'gpu x' represents 'x' on the /GPU/.
-  gpu :: a -> IO (Either Log g)
+  gpu :: (MonadIO m,MonadError Log m) => a -> m g
   {-# MINIMAL gpu #-}

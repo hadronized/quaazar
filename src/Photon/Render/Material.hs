@@ -27,7 +27,7 @@ newtype GPUMaterial = GPUMaterial {
   }
 
 instance GPU Material GPUMaterial where
-  gpu = fmap Right . gpuMaterial
+  gpu = gpuMaterial
 
 -- TODO: implement multilayered material
 gpuMaterial :: (Monad m) => Material -> m GPUMaterial

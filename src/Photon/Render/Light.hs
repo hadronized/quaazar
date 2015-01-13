@@ -34,7 +34,7 @@ data GPULight = GPULight {
   }
 
 instance GPU Light GPULight where
-  gpu = fmap Right . gpuLight
+  gpu = gpuLight
 
 gpuLight :: (Monad m) => Light -> m GPULight
 gpuLight (Light _ col power radius castShadows) =
