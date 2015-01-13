@@ -9,10 +9,9 @@
 --
 ----------------------------------------------------------------------------
 
-module Photon.Interface.Event (
+module Photon.Event (
     -- * Events
     Event(..)
-  , CoreEvent(..)
   , EventHandler
     -- * Key
   , Key(..)
@@ -26,8 +25,6 @@ module Photon.Interface.Event (
     -- * System
   , SystemState(..)
   ) where
-
-import Photon.Interface.Command ( Photon )
 
 -- |Keyboard key. The keys are not documented because they’re self-explanatory.
 data Key
@@ -209,7 +206,7 @@ data SystemState
     deriving (Eq,Read,Show)
 
 -- |Gather all core events.
-data CoreEvent
+data Event
   = KeyEvent KeyState
   | MouseButtonEvent MouseButtonState
   | MouseMotionEvent MouseMotion
@@ -217,8 +214,4 @@ data CoreEvent
   | SystemEvent SystemState
     deriving (Eq,Read,Show)
 
-data Event u = CoreEvent CoreEvent | UserEvent u deriving (Eq,Read,Show)
-
--- |An 'EventHandler u a' handles core event 'Event' and user event 'u' in
--- an application 'a'.
-type EventHandler u a = Event u -> a -> Photon a
+type EventHandler = Event -> IO ()

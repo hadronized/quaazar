@@ -9,7 +9,7 @@
 --
 ----------------------------------------------------------------------------
 
-module Photon.Interface.PostFX (
+module Photon.Technics.PostFX (
     -- * Gamma correction
     gammaCorrection
   ) where

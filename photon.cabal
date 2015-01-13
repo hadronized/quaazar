@@ -18,7 +18,8 @@ library
 
   hs-source-dirs:      src
 
-  exposed-modules:     Photon.Control.Monad
+  exposed-modules:     Photon
+                     , Photon.Control.Monad
                      , Photon.Core.BoundingVolume
                      , Photon.Core.Color
                      , Photon.Core.Entity
@@ -34,9 +35,7 @@ library
                      , Photon.Core.VGroup
                      , Photon.Core.Vertex
                      , Photon.Core.UV
-                     , Photon.Interface.Command
-                     , Photon.Interface.Event
-                     , Photon.Interface.PostFX
+                     , Photon.Event
                      , Photon.Render.Camera
                      , Photon.Render.Forward.IO
                      , Photon.Render.Forward.Lit
@@ -52,6 +51,7 @@ library
                      , Photon.Render.PostFX
                      , Photon.Render.Shader
                      , Photon.Render.Texture
+                     , Photon.Technics.PostFX
                      , Photon.Utils.Directory
                      , Photon.Utils.FreeList
                      , Photon.Utils.Log
