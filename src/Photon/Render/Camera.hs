@@ -17,6 +17,7 @@ import Photon.Core.Entity ( Entity, entityPosition )
 import Photon.Core.Projection ( Projection, projectionMatrix )
 import Photon.Render.GL.Entity ( cameraTransform )
 import Photon.Render.GL.Shader ( Uniform, (@=) )
+import Photon.Render.GPU
 
 data GPUCamera = GPUCamera {
     runCamera :: Uniform (M44 Float) -- ^ projection * view
@@ -24,6 +25,9 @@ data GPUCamera = GPUCamera {
               -> IO ()
   , cameraProjection :: M44 Float
   }
+
+instance GPU (Projection,Entity) GPUCamera where
+  gpu = fmap Right . uncurry gpuCamera
 
 gpuCamera :: (Monad m) => Projection -> Entity -> m GPUCamera
 gpuCamera proj ent = return (GPUCamera sendCamera proj')

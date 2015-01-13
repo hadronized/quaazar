@@ -17,6 +17,7 @@ module Photon.Render.Material (
 
 import Photon.Core.Material ( Albedo, Material(..), MaterialLayer(..) )
 import Photon.Render.GL.Shader ( Uniform, (@=) )
+import Photon.Render.GPU
 
 newtype GPUMaterial = GPUMaterial {
     runMaterial :: Uniform Albedo -- ^ diffuse albedo
@@ -24,6 +25,9 @@ newtype GPUMaterial = GPUMaterial {
                 -> Uniform Float -- ^ shininess
                 -> IO ()
   }
+
+instance GPU Material GPUMaterial where
+  gpu = fmap Right . gpuMaterial
 
 -- TODO: implement multilayered material
 gpuMaterial :: (Monad m) => Material -> m GPUMaterial

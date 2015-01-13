@@ -11,15 +11,23 @@
 
 module Photon.Render.PostFX where
 
+import Control.Applicative
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
+import Control.Monad.Trans.Journal ( evalJournalT )
+import Control.Monad.Trans.Either ( runEitherT )
 import Photon.Core.PostFX
 import Photon.Render.GL.GLObject
 import Photon.Render.GL.Shader
 import Photon.Render.GL.Texture
+import Photon.Render.GPU
 import Photon.Utils.Log ( Log, MonadLogger, sinkLogs )
 
 newtype GPUPostFX = GPUPostFX { usePostFX :: Texture2D -> IO () }
+
+instance GPU PostFX GPUPostFX where
+  gpu pfx = do
+    runEitherT . evalJournalT $ gpuPostFX pfx <* sinkLogs
 
 gpuPostFX :: (MonadIO m,MonadLogger m,MonadError Log m) => PostFX -> m GPUPostFX
 gpuPostFX (PostFX src) = do

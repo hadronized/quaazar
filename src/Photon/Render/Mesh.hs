@@ -29,6 +29,7 @@ import Photon.Render.GL.Entity ( entityTransform )
 import Photon.Render.GL.Primitive
 import Photon.Render.GL.Shader ( Uniform, (@=) )
 import Photon.Render.GL.VertexArray
+import Photon.Render.GPU
 
 data GPUMesh = GPUMesh {
     vertexBuffer :: Buffer
@@ -40,6 +41,9 @@ data GPUMesh = GPUMesh {
 
 makeLenses ''GPUMesh
 
+instance GPU Mesh GPUMesh where
+  gpu = fmap Right . gpuMesh
+  
 -- |OpenGL 'Mesh' representation.
 gpuMesh :: Mesh -> IO GPUMesh
 gpuMesh msh = case msh^.meshVertices of

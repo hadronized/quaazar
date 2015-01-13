@@ -14,7 +14,10 @@ module Photon.Render.GPU (
     GPU(..)
   ) where
 
+import Photon.Utils.Log ( Log )
+
 -- |GPU-representable class.
 class GPU a g | g -> a where
   -- |'gpu x' represents 'x' on the /GPU/.
-  gpu :: a -> IO g
+  gpu :: a -> IO (Either Log g)
+  {-# MINIMAL gpu #-}

@@ -19,6 +19,7 @@ import Photon.Core.Entity ( Entity, entityPosition )
 import Photon.Core.Light ( Light(..) )
 import Photon.Render.GL.Entity ( cameraTransform )
 import Photon.Render.GL.Shader ( Uniform, (@=) )
+import Photon.Render.GPU
 
 data GPULight = GPULight {
     shadeWithLight :: Uniform Color -- ^ color
@@ -31,6 +32,9 @@ data GPULight = GPULight {
   , genDepthmap :: IO () -> IO ()
   , lightRadius :: Float -- TODO: c’est le bordel ça !
   }
+
+instance GPU Light GPULight where
+  gpu = fmap Right . gpuLight
 
 gpuLight :: (Monad m) => Light -> m GPULight
 gpuLight (Light _ col power radius castShadows) =
