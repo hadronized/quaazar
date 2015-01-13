@@ -42,6 +42,7 @@ library
                      , Photon.Render.Forward.Looked
                      , Photon.Render.Forward.Post
                      , Photon.Render.Forward.Rendered
+                     , Photon.Render.Forward.Renderer
                      , Photon.Render.Forward.Shaded
                      , Photon.Render.Forward.Viewport
                      , Photon.Render.Frame
