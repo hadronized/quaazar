@@ -10,8 +10,14 @@
 ----------------------------------------------------------------------------
 
 module Photon (
-  -- *
-  withPhoton
+    -- *
+    withPhoton
+    -- * Re-exported
+  , module Photon.Control
+  , module Photon.Core
+  , module Photon.Render
+  , module Photon.Technics
+  , module Photon.Utils
   ) where
 
 import Control.Applicative
@@ -21,8 +27,12 @@ import Data.List ( intercalate )
 import Graphics.Rendering.OpenGL.Raw
 import Graphics.UI.GLFW as GLFW
 import Numeric.Natural ( Natural )
+import Photon.Control
+import Photon.Core
 import Photon.Event as E
-import Photon.Utils.Log
+import Photon.Render
+import Photon.Technics
+import Photon.Utils
 
 withPhoton :: Natural -- ^ Width of the window
            -> Natural -- ^ Height of the window

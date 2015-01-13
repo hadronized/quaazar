@@ -56,7 +56,9 @@ library
                      , Photon.Render.PostFX
                      , Photon.Render.Shader
                      , Photon.Render.Texture
+                     , Photon.Technics
                      , Photon.Technics.PostFX
+                     , Photon.Utils
                      , Photon.Utils.Directory
                      , Photon.Utils.FreeList
                      , Photon.Utils.Log
