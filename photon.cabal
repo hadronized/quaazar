@@ -19,7 +19,9 @@ library
   hs-source-dirs:      src
 
   exposed-modules:     Photon
+                     , Photon.Control
                      , Photon.Control.Monad
+                     , Photon.Core
                      , Photon.Core.BoundingVolume
                      , Photon.Core.Color
                      , Photon.Core.Entity

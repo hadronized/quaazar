@@ -24,7 +24,6 @@ module Photon.Core.Entity (
   , entityOrientation
   , entityScale
     -- * Space information
-  , Position
   , Dir
   , Axis
   , Orientation
