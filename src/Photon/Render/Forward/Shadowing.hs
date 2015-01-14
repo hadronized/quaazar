@@ -13,9 +13,8 @@ module Photon.Render.Forward.Shadowing where
 
 import Control.Applicative
 import Control.Lens
+import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
-import Control.Monad.Trans.Either ( EitherT, hoistEither )
-import Control.Monad.Trans.Journal ( evalJournalT )
 import Data.Bits ( (.|.) )
 import Graphics.Rendering.OpenGL.Raw
 import Linear
@@ -31,6 +30,7 @@ import Photon.Render.GL.Texture as Tex ( Cubemap, Filter(..), Format(..)
                                        , InternalFormat(..), TextureLike(..)
                                        , Wrap(..) )
 import Photon.Render.Shader ( GPUProgram )
+import Photon.Utils.Either ( generalizeEither )
 import Photon.Utils.Log
 
 data Shadowing = Shadowing {
@@ -52,11 +52,15 @@ data ShadowingUniforms = ShadowingUniforms {
 makeLenses ''Shadowing
 makeLenses ''ShadowingUniforms
 
-getShadowing :: Natural -> Float -> Float -> EitherT Log IO Shadowing
+getShadowing :: (MonadIO m,MonadLogger m,MonadError Log m)
+            => Natural
+            -> Float
+            -> Float
+            -> m Shadowing
 getShadowing cubeSize znear zfar = do
-  liftIO . print $ Log InfoLog CoreLog "generating light cube depthmap offscreen"
-  program <- evalJournalT $
-    buildProgram lightCubeDepthmapVS (Just lightCubeDepthmapGS) lightCubeDepthmapFS <* sinkLogs
+  info CoreLog "generating light cube depthmap offscreen"
+  program <-
+    buildProgram lightCubeDepthmapVS (Just lightCubeDepthmapGS) lightCubeDepthmapFS
   uniforms <- liftIO (getShadowingUniforms program)
   (colormap,depthmap) <- liftIO $ do
     -- TODO: refactoring
@@ -81,7 +85,7 @@ getShadowing cubeSize znear zfar = do
   fb' <- liftIO $ buildFramebuffer ReadWrite $ \_ -> do
     attachTexture ReadWrite colormap (ColorAttachment 0)
     attachTexture ReadWrite depthmap DepthAttachment
-  fb <- hoistEither fb'
+  fb <- generalizeEither fb'
   return (Shadowing fb colormap depthmap program uniforms proj)
   where
     proj = projectionMatrix $ Perspective (pi/2) 1 znear zfar

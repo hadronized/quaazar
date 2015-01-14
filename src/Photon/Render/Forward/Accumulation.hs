@@ -13,9 +13,8 @@ module Photon.Render.Forward.Accumulation where
 
 import Control.Applicative
 import Control.Lens
+import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
-import Control.Monad.Trans.Either ( EitherT, hoistEither )
-import Control.Monad.Trans.Journal ( evalJournalT )
 import Data.Bits ( (.|.) )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
@@ -27,6 +26,7 @@ import Photon.Render.GL.Shader ( (@=), buildProgram
 import Photon.Render.GL.Texture as Tex ( Format(..), InternalFormat(..) )
 import Photon.Render.GL.VertexArray ( VertexArray, genAttributelessVertexArray )
 import Photon.Render.Shader ( GPUProgram )
+import Photon.Utils.Either ( generalizeEither )
 import Photon.Utils.Log
 
 data Accumulation = Accumulation {
@@ -37,11 +37,14 @@ data Accumulation = Accumulation {
 
 makeLenses ''Accumulation
 
-getAccumulation :: Natural -> Natural -> EitherT Log IO Accumulation
+getAccumulation :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
+                => Natural
+                -> Natural
+                -> m Accumulation
 getAccumulation w h = do
-  program <- evalJournalT $ buildProgram accumVS Nothing accumFS <* sinkLogs
-  liftIO . print $ Log InfoLog CoreLog "generating accumulation offscreen"
-  off <- liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
+  program <- buildProgram accumVS Nothing accumFS <* sinkLogs
+  info CoreLog "generating accumulation offscreen"
+  off <- liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= generalizeEither
   va <- liftIO genAttributelessVertexArray
   liftIO $ do
     useProgram program

@@ -13,9 +13,8 @@ module Photon.Render.Forward.Lighting where
 
 import Control.Applicative
 import Control.Lens
+import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
-import Control.Monad.Trans.Either ( EitherT, hoistEither )
-import Control.Monad.Trans.Journal ( evalJournalT )
 import Data.Bits ( (.|.) )
 import Graphics.Rendering.OpenGL.Raw
 import Linear
@@ -30,6 +29,7 @@ import Photon.Render.GL.Shader ( Uniform, Uniformable, (@=), buildProgram
                                , getUniform, useProgram )
 import Photon.Render.GL.Texture ( Format(..), InternalFormat(..)  )
 import Photon.Render.Shader ( GPUProgram )
+import Photon.Utils.Either ( generalizeEither )
 import Photon.Utils.Log
 
 -- |'Lighting' gathers information about lighting in the scene.
@@ -55,11 +55,14 @@ data LightingUniforms = LightingUniforms {
 makeLenses ''Lighting
 makeLenses ''LightingUniforms
 
-getLighting :: Natural -> Natural -> EitherT Log IO Lighting
+getLighting :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
+            => Natural
+            -> Natural
+            -> m Lighting
 getLighting w h = do
-  program <- evalJournalT $ buildProgram lightVS Nothing lightFS <* sinkLogs
-  liftIO . print $ Log InfoLog CoreLog "generating light offscreen"
-  off <- liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= hoistEither
+  program <- buildProgram lightVS Nothing lightFS <* sinkLogs
+  info CoreLog "generating light offscreen"
+  off <- liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= generalizeEither
   uniforms <- liftIO (getLightingUniforms program)
   return (Lighting program off uniforms)
 

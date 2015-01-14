@@ -121,7 +121,7 @@ link (Program pid) = do
     clog l s     = allocaArray l $
         liftA2 (*>) (glGetProgramInfoLog s (fromIntegral l) nullPtr) (peekCString . castPtr)
 
-buildProgram :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
+buildProgram :: (MonadIO m,MonadLogger m,MonadError Log m)
              => String
              -> Maybe String
              -> String

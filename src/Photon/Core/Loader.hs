@@ -24,6 +24,7 @@ import Control.Monad.Trans ( MonadIO, liftIO )
 import Data.Aeson
 import Data.ByteString.Lazy as B ( readFile )
 import Data.Either.Combinators ( mapLeft )
+import Photon.Utils.Either ( generalizeEither )
 import Photon.Utils.Log
 import Photon.Utils.TimePoint
 import System.FilePath
@@ -58,7 +59,3 @@ loadJSON path = do
   where
     onError ioe =
       return . Left $ "unable to open file: " ++ show (ioe :: IOException)
-
--- FIXME: change that when my pull request on either has merged
-generalizeEither :: (MonadError e m) => Either e a -> m a
-generalizeEither = either throwError return

@@ -13,13 +13,14 @@ module Photon.Render.Forward.Renderer where
 
 import Control.Applicative
 import Control.Lens ( makeLenses )
-import Control.Monad.Trans.Either ( runEitherT )
+import Control.Monad.Error.Class ( MonadError )
+import Control.Monad.Trans ( MonadIO )
 import Graphics.UI.GLFW ( Window )
 import Numeric.Natural ( Natural )
 import Photon.Render.Forward.Accumulation ( Accumulation, getAccumulation )
 import Photon.Render.Forward.Lighting ( Lighting, getLighting )
 import Photon.Render.Forward.Shadowing ( Shadowing, getShadowing )
-import Photon.Utils.Log ( Log )
+import Photon.Utils.Log
 
 data ForwardRenderer = ForwardRenderer {
     _frLighting :: Lighting
@@ -30,8 +31,12 @@ data ForwardRenderer = ForwardRenderer {
 
 makeLenses ''ForwardRenderer
 
-getForwardRenderer :: Natural -> Natural -> Window -> IO (Either Log ForwardRenderer)
-getForwardRenderer w h window = runEitherT $
+getForwardRenderer :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
+                   => Natural
+                   -> Natural
+                   -> Window
+                   -> m ForwardRenderer
+getForwardRenderer w h window =
   ForwardRenderer
     <$> getLighting w h
     <*> getShadowing 1024 0.1 100

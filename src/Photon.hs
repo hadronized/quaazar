@@ -38,7 +38,7 @@ withPhoton :: Natural -- ^ Width of the window
            -> Natural -- ^ Height of the window
            -> Bool -- ^ Should the window be fullscreen?
            -> String -- ^ Title of the window
-           -> (IO [Event] -> IO ()) -- ^ Application
+           -> (Window -> IO [Event] -> IO ()) -- ^ Application
            -> IO ()
 withPhoton w h full title app = do
     initiated <- GLFW.init
@@ -57,7 +57,7 @@ withPhoton w h full title app = do
       else do
         print (Log ErrorLog CoreLog "unable to init :(")
 
-withWindow :: Window -> (IO [Event] -> IO ()) -> IO ()
+withWindow :: Window -> (Window -> IO [Event] -> IO ()) -> IO ()
 withWindow window app = do
     -- transaction variables
     events <- newTVarIO []
@@ -72,7 +72,7 @@ withWindow window app = do
     getCursorPos window >>= atomically . writeTVar mouseXY
     initGL
     -- user app
-    app $ do
+    app window $ do
       GLFW.pollEvents
       atomically $ readTVar events <* writeTVar events []
 
