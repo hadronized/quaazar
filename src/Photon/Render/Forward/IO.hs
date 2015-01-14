@@ -31,7 +31,8 @@ swapBuffers (ForwardRenderer lighting shadowing accumulation window) gpuframe (V
   (finalOff,_) <- unPost pst lighting shadowing accumulation
   useProgram (accumulation^.accumProgram)
   useFrame gpuframe
-  glViewport (fromIntegral w) (fromIntegral h) (fromIntegral x) (fromIntegral y)
+  -- TODO
+  --glViewport (fromIntegral w) (fromIntegral h) (fromIntegral x) (fromIntegral y)
   glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
   bindTextureAt (finalOff^.offscreenTex) 0
   bindVertexArray (accumulation^.accumVA)
