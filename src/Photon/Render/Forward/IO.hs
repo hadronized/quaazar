@@ -12,6 +12,7 @@
 module Photon.Render.Forward.IO where
 
 import Control.Lens
+import Control.Monad.Trans ( MonadIO(..) )
 import Data.Bits ( (.|.) )
 import Graphics.Rendering.OpenGL.Raw
 import qualified Graphics.UI.GLFW as GLFW ( swapBuffers )
@@ -25,8 +26,8 @@ import Photon.Render.GL.Shader ( useProgram )
 import Photon.Render.GL.Texture ( bindTextureAt )
 import Photon.Render.GL.VertexArray ( bindVertexArray )
 
-swapBuffers :: ForwardRenderer -> GPUFrame -> Viewport -> IO ()
-swapBuffers (ForwardRenderer lighting shadowing accumulation window) gpuframe (Viewport w h x y pst) = do
+swapBuffers :: (MonadIO m) => ForwardRenderer -> GPUFrame -> Viewport -> m ()
+swapBuffers (ForwardRenderer lighting shadowing accumulation window) gpuframe (Viewport w h x y pst) = liftIO $ do
   glDisable gl_BLEND
   bindVertexArray (accumulation^.accumVA)
   (finalOff,_) <- unPost pst lighting shadowing accumulation
