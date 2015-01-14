@@ -19,6 +19,7 @@ import Photon.Render.Forward.Looked ( Looked(..) )
 import Photon.Render.Forward.Shadowing
 import Photon.Render.GL.Framebuffer ( Target(..), bindFramebuffer )
 import Photon.Render.GL.Offscreen
+import Photon.Render.GL.VertexArray ( bindVertexArray )
 import Photon.Render.PostFX ( GPUPostFX(..) )
 
 newtype Post = Post { unPost :: Lighting -> Shadowing -> Accumulation -> IO PingPong }
@@ -30,6 +31,8 @@ fromLooked lk = Post fromLooked_
   where
     fromLooked_ lighting shadowing accumulation = do
       unLooked lk lighting shadowing accumulation
+      glDisable gl_BLEND
+      bindVertexArray (accumulation^.accumVA)
       return (accumulation^.accumOff,lighting^.lightOff)
 
 post :: GPUPostFX -> Post -> Post
