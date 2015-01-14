@@ -61,6 +61,7 @@ library
                      , Photon.Technics.PostFX
                      , Photon.Utils
                      , Photon.Utils.Directory
+                     , Photon.Utils.Either
                      , Photon.Utils.FreeList
                      , Photon.Utils.Log
                      , Photon.Utils.TimePoint
