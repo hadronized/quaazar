@@ -13,6 +13,7 @@ module Photon (
     -- *
     withPhoton
     -- * Re-exported
+  , Window
   , module Photon.Control
   , module Photon.Core
   , module Photon.Render
