@@ -21,6 +21,7 @@ module Photon (
   ) where
 
 import Control.Applicative
+import Control.Monad.Trans ( MonadIO(..) )
 import Control.Concurrent.STM ( TVar, atomically, modifyTVar, newTVarIO
                               , readTVar, writeTVar )
 import Data.List ( intercalate )
@@ -34,11 +35,12 @@ import Photon.Render
 import Photon.Technics
 import Photon.Utils
 
-withPhoton :: Natural -- ^ Width of the window
+withPhoton :: (MonadIO m)
+           => Natural -- ^ Width of the window
            -> Natural -- ^ Height of the window
            -> Bool -- ^ Should the window be fullscreen?
            -> String -- ^ Title of the window
-           -> (Window -> IO [Event] -> IO ()) -- ^ Application
+           -> (Window -> m [Event] -> IO ()) -- ^ Application
            -> IO ()
 withPhoton w h full title app = do
     initiated <- GLFW.init
@@ -57,7 +59,7 @@ withPhoton w h full title app = do
       else do
         print (Log ErrorLog CoreLog "unable to init :(")
 
-withWindow :: Window -> (Window -> IO [Event] -> IO ()) -> IO ()
+withWindow :: (MonadIO m) => Window -> (Window -> m [Event] -> IO ()) -> IO ()
 withWindow window app = do
     -- transaction variables
     events <- newTVarIO []
@@ -72,7 +74,7 @@ withWindow window app = do
     getCursorPos window >>= atomically . writeTVar mouseXY
     initGL
     -- user app
-    app window $ do
+    app window . liftIO $ do
       GLFW.pollEvents
       atomically $ readTVar events <* writeTVar events []
 
