@@ -12,12 +12,16 @@
 module Photon.Render.Frame where
 
 import Control.Lens
+import Control.Monad.Trans ( MonadIO(..) )
+import Control.Monad.Error.Class ( MonadError )
+import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Photon.Render.GL.Framebuffer ( AttachmentPoint(..), Target(..)
                                     , bindFramebuffer )
 import Photon.Render.GL.Offscreen
 import Photon.Render.GL.Texture ( Format(..), InternalFormat(..)
                                 , bindTextureAt )
+import Photon.Utils.Either ( generalizeEither )
 import Photon.Utils.Log
 
 data GPUFrame = GPUFrame {
@@ -25,12 +29,13 @@ data GPUFrame = GPUFrame {
   , bindFrameAt :: Natural -> IO ()
   }
 
-gpuFrame :: Natural -> Natural -> IO (Either Log GPUFrame)
-gpuFrame w h = do
-    off <- genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F
-             DepthAttachment
-    return $ either Left gpuFrame_ off
+getScreenFrame :: (Monad m) => m GPUFrame
+getScreenFrame =
+  return $ GPUFrame (glBindFramebuffer gl_FRAMEBUFFER 0) undefined
+
+gpuFrame :: (MonadIO m,MonadError Log m) => Natural -> Natural -> m GPUFrame
+gpuFrame w h =
+    liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= generalizeEither . fmap gpuFrame_
   where
-    gpuFrame_ off =
-      Right $ GPUFrame (bindFramebuffer (off^.offscreenFB) ReadWrite)
-        (bindTextureAt $ off^.offscreenTex)
+    gpuFrame_ off = GPUFrame (bindFramebuffer (off^.offscreenFB) ReadWrite)
+      (bindTextureAt $ off^.offscreenTex)
