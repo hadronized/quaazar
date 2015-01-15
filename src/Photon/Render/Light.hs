@@ -26,10 +26,9 @@ data GPULight = GPULight {
                    -> Uniform Float -- ^ power
                    -> Uniform Float -- ^ radius
                    -> Uniform (V3 Float) -- ^ position -- TODO: no sense
-                   -> Uniform (M44 Float) -- projection * view
                    -> Entity
                    -> IO ()
-  , genDepthmap :: IO () -> IO ()
+  , genDepthmap :: IO () -> IO () -- TODO: ultra naze
   , lightRadius :: Float -- TODO: c’est le bordel ça !
   }
 
@@ -40,12 +39,11 @@ gpuLight :: (Monad m) => Light -> m GPULight
 gpuLight (Light _ col power radius castShadows) =
     return (GPULight sendProperties sendDepthmap radius)
   where
-    sendProperties colorU powerU radiusU posU projViewU ent = do
+    sendProperties colorU powerU radiusU posU ent = do
       colorU @= col
       powerU @= power
       radiusU @= radius
       posU @= (ent^.entityPosition)
-      projViewU @= cameraTransform ent
     sendDepthmap
       | castShadows = id
       | otherwise = const (return ())

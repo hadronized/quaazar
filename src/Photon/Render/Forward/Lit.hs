@@ -50,7 +50,7 @@ withLight lighting shadowing shd gpulig ent = do
     glDisable gl_BLEND
     glEnable gl_DEPTH_TEST
     shadeWithLight gpulig (lunis^.lightColU) (lunis^.lightPowU) (lunis^.lightRadU)
-      (lunis^.lightPosU) unused ent
+      (lunis^.lightPosU) ent
     bindTextureAt (shadowing^.shadowCubeRender) 0
     unShaded shd lighting
   where
