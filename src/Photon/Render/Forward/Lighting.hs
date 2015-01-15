@@ -60,8 +60,8 @@ getLighting :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
             -> Natural
             -> m Lighting
 getLighting w h = do
-  program <- buildProgram lightVS Nothing lightFS <* sinkLogs
   info CoreLog "generating light offscreen"
+  program <- buildProgram lightVS Nothing lightFS <* sinkLogs
   off <- liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= generalizeEither
   uniforms <- liftIO (getLightingUniforms program)
   return (Lighting program off uniforms)
