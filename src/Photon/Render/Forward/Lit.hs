@@ -23,7 +23,7 @@ import Photon.Render.Forward.Shaded ( Shaded(..) )
 import Photon.Render.Forward.Shadowing
 import Photon.Render.GL.Framebuffer ( Target(..), bindFramebuffer )
 import Photon.Render.GL.Offscreen
-import Photon.Render.GL.Shader ( (@=), unused, useProgram )
+import Photon.Render.GL.Shader ( (@=), useProgram )
 import Photon.Render.GL.Texture ( bindTextureAt )
 import Photon.Render.GL.VertexArray ( bindVertexArray )
 import Photon.Render.Light ( GPULight(..) )

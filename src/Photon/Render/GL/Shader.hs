@@ -173,9 +173,6 @@ getUniform prog name = do
 (@?=) :: Maybe (Uniform a) -> a -> IO ()
 u @?= a = traverse_ (@= a) u
 
-unused :: Uniform a
-unused = Uniform (-1) (const $ return ())
-
 class Uniformable a where
   sendUniform :: GLint -> a -> IO ()
 
