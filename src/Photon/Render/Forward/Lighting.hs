@@ -156,7 +156,7 @@ lightFS = unlines
 
     -- shadows
   , "  float bias = 0.005;"
-  , "  vec3 depthDir = vco - ligPos;"
+  , "  vec3 depthDir = -ligToVertex;"
   , "  float dist = length(depthDir) - bias;"
   , "  float ligDistance = texture(ligDepthmap, depthDir).r;"
   , "  float shadow = 1.;"
