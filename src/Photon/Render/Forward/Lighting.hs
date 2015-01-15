@@ -166,6 +166,6 @@ lightFS = unlines
   , "  }"
 
     -- final color
-  , "  frag = texture(ligDepthmap, depthDir);//vec4(illum,1.) * shadow;"
+  , "  frag = vec4(illum,1.) * shadow;"
   , "}"
   ]
