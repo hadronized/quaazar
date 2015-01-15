@@ -162,6 +162,6 @@ lightCubeDepthmapFS = unlines
   , "uniform float ligIRad;"
 
   , "void main() {"
-  , "  outDistance = length(gco) * ligIRad;"
+  , "  outDistance = distance(ligPos,gco) * ligIRad;"
   , "}"
   ]

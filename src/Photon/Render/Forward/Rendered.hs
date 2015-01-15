@@ -13,11 +13,13 @@ module Photon.Render.Forward.Rendered where
 
 import Control.Lens
 import Data.Monoid ( Monoid(..) )
+import Linear ( M44 )
 import Photon.Core.Entity ( Entity )
 import Photon.Render.Forward.Lighting
+import Photon.Render.GL.Shader ( Uniform )
 import Photon.Render.Mesh ( GPUMesh(..) )
 
-newtype Rendered = Rendered { unRendered :: Lighting -> IO () }
+newtype Rendered = Rendered { unRendered :: Uniform (M44 Float) -> IO () }
 
 instance Monoid Rendered where
   mempty = Rendered . const $ return ()
@@ -26,6 +28,4 @@ instance Monoid Rendered where
 render :: GPUMesh -> Entity -> Rendered
 render gmsh ent = Rendered $ render_
   where
-    render_ lighting = renderMesh gmsh (lunis^.lightModelU) ent
-      where
-        lunis = lighting^.lightUniforms
+    render_ modulU = renderMesh gmsh modulU ent

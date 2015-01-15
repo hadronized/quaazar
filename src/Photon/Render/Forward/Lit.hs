@@ -69,7 +69,7 @@ generateLightDepthmap lighting shadowing shd lig lent = do
       ligIRadU @= 1 / lightRadius lig
       glDisable gl_BLEND
       glEnable gl_DEPTH_TEST
-      unShadedNoMaterial shd lighting
+      unShadedNoMaterial shd shadowing
   where
     proj = shadowing^.shadowProjection
     sunis = shadowing^.shadowUniforms
