@@ -155,7 +155,7 @@ lightFS = unlines
   , "  vec3 illum = atten * (diff + spec);"
 
     -- shadows
- , "  float bias = 0.005;"
+  , "  float bias = 0.005;"
   , "  vec3 depthDir = vco - ligPos;"
   , "  float dist = length(depthDir) - bias;"
   , "  float ligDistance = texture(ligDepthmap, depthDir).r;"
