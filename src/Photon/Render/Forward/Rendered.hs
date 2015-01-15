@@ -28,4 +28,4 @@ instance Monoid Rendered where
 render :: GPUMesh -> Entity -> Rendered
 render gmsh ent = Rendered $ render_
   where
-    render_ modulU = renderMesh gmsh modulU ent
+    render_ modelU = renderMesh gmsh modelU ent
