@@ -131,13 +131,14 @@ lightCubeDepthmapGS = unlines
   , "out vec3 gco;"
 
   , "uniform mat4 ligProjViews[6];" -- 6 views
+  , "uniform vec3 ligPos;"
 
   , "void main() {"
   , "  for (int i = 0; i < 6; ++i) {"
   , "    for (int j = 0; j < 3; ++j) {"
   , "      gl_Layer = i;"
   , "      gco = gl_in[j].gl_Position.xyz;"
-  , "      gl_Position = ligProjViews[i] * gl_in[j].gl_Position;"
+  , "      gl_Position = ligProjViews[i] * (gl_in[j].gl_Position - ligPos);"
   , "      EmitVertex();"
   , "    }"
   , "    EndPrimitive();"
