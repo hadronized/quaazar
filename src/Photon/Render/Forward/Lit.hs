@@ -16,6 +16,7 @@ import Data.Monoid
 import Graphics.Rendering.OpenGL.Raw
 import Linear
 import Photon.Core.Entity
+import Photon.Core.Projection ( Projection(..), projectionMatrix )
 import Photon.Render.Forward.Accumulation
 import Photon.Render.Forward.Lighting
 import Photon.Render.Forward.Shaded ( Shaded(..) )
@@ -38,7 +39,7 @@ lighten gpulig ent shd = Lit lighten_
   where
     lighten_ lighting shadowing accumulation = do
       purgeShadowingFramebuffer shadowing
-      generateLightDepthmap lighting shadowing shd gpulig ent
+      generateLightDepthmap lighting shadowing shd gpulig ent 0.1 -- FIXME: per-light
       purgeLightingFramebuffer lighting
       withLight lighting shadowing shd gpulig ent
       accumulate lighting accumulation
@@ -60,18 +61,19 @@ generateLightDepthmap :: Lighting
                       -> Shaded
                       -> GPULight
                       -> Entity
+                      -> Float
                       -> IO ()
-generateLightDepthmap lighting shadowing shd lig lent = do
+generateLightDepthmap lighting shadowing shd lig lent znear = do
     genDepthmap lig $ do
       useProgram (shadowing^.shadowCubeDepthmapProgram)
       ligProjViewsU @= lightProjViews
       ligPosU @= ligPos
-      ligIRadU @= 1 / lightRadius lig
+      ligIRadU @= 1 / ligRad
       glDisable gl_BLEND
       glEnable gl_DEPTH_TEST
       unShadedNoMaterial shd shadowing
   where
-    proj = shadowing^.shadowProjection
+    proj = projectionMatrix $ Perspective (pi/2) 1 znear ligRad
     sunis = shadowing^.shadowUniforms
     ligProjViewsU = sunis^.shadowLigProjViewsU
     ligPosU = sunis^.shadowLigPosU
@@ -87,6 +89,7 @@ generateLightDepthmap lighting shadowing shd lig lent = do
       , axisAngle zAxis (pi) -- negative z
       ]
     ligPos = lent^.entityPosition
+    ligRad = lightRadius lig
 
 completeM33RotMat :: M33 Float -> M44 Float
 completeM33RotMat (V3 (V3 a b c) (V3 d e f) (V3 g h i)) =

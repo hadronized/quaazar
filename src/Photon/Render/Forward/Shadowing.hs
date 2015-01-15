@@ -39,7 +39,6 @@ data Shadowing = Shadowing {
   , _shadowCubeDepthmap        :: Cubemap
   , _shadowCubeDepthmapProgram :: GPUProgram
   , _shadowUniforms            :: ShadowingUniforms
-  , _shadowProjection          :: M44 Float
   }
 
 data ShadowingUniforms = ShadowingUniforms {
@@ -54,10 +53,8 @@ makeLenses ''ShadowingUniforms
 
 getShadowing :: (MonadIO m,MonadLogger m,MonadError Log m)
             => Natural
-            -> Float
-            -> Float
             -> m Shadowing
-getShadowing cubeSize znear zfar = do
+getShadowing cubeSize = do
   info CoreLog "generating light cube depthmap offscreen"
   program <-
     buildProgram lightCubeDepthmapVS (Just lightCubeDepthmapGS) lightCubeDepthmapFS
@@ -86,9 +83,7 @@ getShadowing cubeSize znear zfar = do
     attachTexture ReadWrite colormap (ColorAttachment 0)
     attachTexture ReadWrite depthmap DepthAttachment
   fb <- generalizeEither fb'
-  return (Shadowing fb colormap depthmap program uniforms proj)
-  where
-    proj = projectionMatrix $ Perspective (pi/2) 1 znear zfar
+  return (Shadowing fb colormap depthmap program uniforms)
 
 getShadowingUniforms :: GPUProgram -> IO ShadowingUniforms
 getShadowingUniforms program = do
