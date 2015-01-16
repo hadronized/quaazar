@@ -39,6 +39,6 @@ getForwardRenderer :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
 getForwardRenderer w h window =
   ForwardRenderer
     <$> getLighting w h
-    <*> getShadowing 1024
+    <*> getShadowing w h 1024
     <*> getAccumulation w h
     <*> pure window

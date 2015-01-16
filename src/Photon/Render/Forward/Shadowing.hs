@@ -30,6 +30,7 @@ import Photon.Utils.Log
 
 data Shadowing = Shadowing {
     _shadowDepthCubeOff        :: CubeOffscreen
+  , _shadowShadowOff           :: DepthOffscreen
   , _shadowCubeDepthmapProgram :: GPUProgram
   , _shadowUniforms            :: ShadowingUniforms
   }
@@ -46,15 +47,19 @@ makeLenses ''ShadowingUniforms
 
 getShadowing :: (MonadIO m,MonadLogger m,MonadError Log m)
             => Natural
+            -> Natural
+            -> Natural
             -> m Shadowing
-getShadowing cubeSize = do
+getShadowing w h cubeSize = do
   info CoreLog "generating light cube depthmap offscreen"
   program <-
     buildProgram lightCubeDepthmapVS (Just lightCubeDepthmapGS) lightCubeDepthmapFS
   uniforms <- liftIO (getShadowingUniforms program)
   cubeOff <- genCubeOffscreen cubeSize R32F Tex.R (ColorAttachment 0) Depth32F
     Depth DepthAttachment
-  return (Shadowing cubeOff program uniforms)
+  shadowOff <- genDepthOffscreen w h
+  --shadowOff <- genDepthOffscreen w h
+  return (Shadowing cubeOff shadowOff program uniforms)
 
 getShadowingUniforms :: GPUProgram -> IO ShadowingUniforms
 getShadowingUniforms program = do
