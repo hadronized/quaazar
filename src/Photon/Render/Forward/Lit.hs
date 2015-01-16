@@ -51,7 +51,7 @@ withLight lighting shadowing shd gpulig ent = do
     glEnable gl_DEPTH_TEST
     shadeWithLight gpulig (lunis^.lightColU) (lunis^.lightPowU) (lunis^.lightRadU)
       (lunis^.lightPosU) ent
-    bindTextureAt (shadowing^.shadowCubeOff.cubeOffscreenColorTex) 0
+    bindTextureAt (shadowing^.shadowDepthCubeOff.cubeOffscreenColorTex) 0
     unShaded shd lighting
   where
     lunis = lighting^.lightUniforms

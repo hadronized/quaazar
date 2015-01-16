@@ -29,7 +29,7 @@ import Photon.Render.Shader ( GPUProgram )
 import Photon.Utils.Log
 
 data Shadowing = Shadowing {
-    _shadowCubeOff             :: CubeOffscreen
+    _shadowDepthCubeOff        :: CubeOffscreen
   , _shadowCubeDepthmapProgram :: GPUProgram
   , _shadowUniforms            :: ShadowingUniforms
   }
@@ -69,7 +69,7 @@ getShadowingUniforms program = do
 
 purgeShadowingFramebuffer :: Shadowing -> IO ()
 purgeShadowingFramebuffer shadowing = do
-  bindFramebuffer (shadowing^.shadowCubeOff.cubeOffscreenFB) ReadWrite
+  bindFramebuffer (shadowing^.shadowDepthCubeOff.cubeOffscreenFB) ReadWrite
   glClearColor 1 1 1 1
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
 
