@@ -58,7 +58,6 @@ getShadowing w h cubeSize = do
   cubeOff <- genCubeOffscreen cubeSize R32F Tex.R (ColorAttachment 0) Depth32F
     Depth DepthAttachment
   shadowOff <- genDepthOffscreen w h
-  --shadowOff <- genDepthOffscreen w h
   return (Shadowing cubeOff shadowOff program uniforms)
 
 getShadowingUniforms :: GPUProgram -> IO ShadowingUniforms
