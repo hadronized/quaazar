@@ -86,6 +86,9 @@ getShadowingUniforms depthProgram shadowProgram = do
 
 purgeShadowingFramebuffer :: Shadowing -> IO ()
 purgeShadowingFramebuffer shadowing = do
+  bindFramebuffer (shadowing^.shadowShadowOff.offscreenFB) ReadWrite
+  glClearColor 0 0 0 0
+  glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
   bindFramebuffer (shadowing^.shadowDepthCubeOff.cubeOffscreenFB) ReadWrite
   glClearColor 1 1 1 1
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
