@@ -51,7 +51,7 @@ withLight lighting shadowing shd gpulig ent = do
     glEnable gl_DEPTH_TEST
     shadeWithLight gpulig (lunis^.lightColU) (lunis^.lightPowU) (lunis^.lightRadU)
       (lunis^.lightPosU) ent
-    bindTextureAt (shadowing^.shadowCubeRender) 0
+    bindTextureAt (shadowing^.shadowCubeOff.cubeOffscreenColorTex) 0
     unShaded shd lighting
   where
     lunis = lighting^.lightUniforms
@@ -77,7 +77,6 @@ generateLightDepthmap shadowing shd lig lent znear = do
     ligProjViewsU = sunis^.shadowLigProjViewsU
     ligPosU = sunis^.shadowLigPosU
     ligIRadU = sunis^.shadowLigIRadU
-    modelU = sunis^.shadowModelU
     lightProjViews = map ((proj !*!) . completeM33RotMat . fromQuaternion)
       [
         axisAngle yAxis (-pi/2) * axisAngle zAxis pi -- positive x

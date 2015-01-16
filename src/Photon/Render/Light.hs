@@ -12,12 +12,10 @@
 module Photon.Render.Light where
 
 import Control.Lens
-import Linear.Matrix ( M44 )
 import Linear.V3 ( V3 )
 import Photon.Core.Color ( Color )
 import Photon.Core.Entity ( Entity, entityPosition )
 import Photon.Core.Light ( Light(..) )
-import Photon.Render.GL.Entity ( cameraTransform )
 import Photon.Render.GL.Shader ( Uniform, (@=) )
 import Photon.Render.GPU
 
@@ -43,7 +41,7 @@ gpuLight (Light _ col power radius castShadows) =
       colorU @= col
       powerU @= power
       radiusU @= radius
-      posU @= (ent^.entityPosition)
+      posU @= ent^.entityPosition
     sendDepthmap
       | castShadows = id
       | otherwise = const (return ())

@@ -12,22 +12,17 @@
 module Photon.Render.GL.Offscreen where
 
 import Control.Lens ( makeLenses )
+import Control.Monad.Error.Class ( MonadError )
+import Control.Monad.Trans ( MonadIO(..) )
 import Numeric.Natural ( Natural )
 import Photon.Render.GL.Framebuffer
 import Photon.Render.GL.Log ( gllog )
 import Photon.Render.GL.GLObject
 import Photon.Render.GL.Renderbuffer
 import Photon.Render.GL.Texture
+import Photon.Utils.Either ( generalizeEither )
 import Photon.Utils.Log
 
--- |OpenGL requires three objects to perform an offscreen render:
---
---   - a texture to capture the offscreen render ;
---   - a framebuffer to support the render ;
---   - a renderbuffer for… I have no fucking idea.
---
--- The 'Offscreen' type gathers those three objects and expose a simple
--- interface to deal with offscreen renders.
 data Offscreen = Offscreen {
     _offscreenTex :: Texture2D
   , _offscreenFB  :: Framebuffer
@@ -66,3 +61,45 @@ genOffscreen w h texift texft texap rbift rbap = do
   unbindFramebuffer Write
 
   maybe (return . Right $ Offscreen tex fb rb) (return . Left . Log ErrorLog gllog) status
+
+data CubeOffscreen = CubeOffscreen {
+    _cubeOffscreenColorTex :: Cubemap
+  , _cubeOffscreenDepthTex :: Cubemap
+  , _cubeOffscreenFB  :: Framebuffer
+  }
+
+makeLenses ''CubeOffscreen
+
+genCubeOffscreen :: (MonadIO m,MonadError Log m)
+                 => Natural
+                 -> InternalFormat
+                 -> Format
+                 -> AttachmentPoint
+                 -> InternalFormat
+                 -> Format
+                 -> AttachmentPoint
+                 -> m CubeOffscreen
+genCubeOffscreen cubeSize colift colft colap depthift depthft depthap = do
+  (colormap,depthmap,fb') <- liftIO $ do
+    -- color cubemap
+    colormap <- genObject
+    bindTexture colormap
+    setTextureWrap colormap ClampToEdge
+    setTextureFilters colormap Linear
+    setTextureNoImage colormap colift cubeSize cubeSize colft
+    unbindTexture colormap
+    -- depth cubemap
+    depthmap <- genObject
+    bindTexture depthmap
+    setTextureWrap depthmap ClampToEdge
+    setTextureFilters depthmap Linear
+    setTextureNoImage depthmap depthift cubeSize cubeSize depthft
+    --setTextureCompareFunc depthmap (Just LessOrEqual)
+    unbindTexture depthmap
+    -- framebuffer
+    fb <- buildFramebuffer ReadWrite $ \_ -> do
+      attachTexture ReadWrite colormap colap
+      attachTexture ReadWrite depthmap depthap
+    return (colormap,depthmap,fb)
+  fb <- generalizeEither fb'
+  return $ CubeOffscreen colormap depthmap fb

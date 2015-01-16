@@ -11,11 +11,9 @@
 
 module Photon.Render.Forward.Rendered where
 
-import Control.Lens
 import Data.Monoid ( Monoid(..) )
 import Linear ( M44 )
 import Photon.Core.Entity ( Entity )
-import Photon.Render.Forward.Lighting
 import Photon.Render.GL.Shader ( Uniform )
 import Photon.Render.Mesh ( GPUMesh(..) )
 
