@@ -14,16 +14,14 @@ module Photon.Render.Forward.Lit where
 import Control.Lens
 import Data.Monoid
 import Graphics.Rendering.OpenGL.Raw
-import Linear
 import Photon.Core.Entity
-import Photon.Core.Projection ( Projection(..), projectionMatrix )
 import Photon.Render.Forward.Accumulation
 import Photon.Render.Forward.Lighting
 import Photon.Render.Forward.Shaded ( Shaded(..) )
 import Photon.Render.Forward.Shadowing
 import Photon.Render.GL.Framebuffer ( Target(..), bindFramebuffer )
 import Photon.Render.GL.Offscreen
-import Photon.Render.GL.Shader ( (@=), useProgram )
+import Photon.Render.GL.Shader ( useProgram )
 import Photon.Render.GL.Texture ( bindTextureAt )
 import Photon.Render.GL.VertexArray ( bindVertexArray )
 import Photon.Render.Light ( GPULight(..) )
@@ -62,39 +60,17 @@ generateLightDepthmap :: Shadowing
                       -> Entity
                       -> Float
                       -> IO ()
-generateLightDepthmap shadowing shd lig lent znear = do
-    genDepthmap lig $ do
-      useProgram (shadowing^.shadowCubeDepthmapProgram)
-      ligProjViewsU @= lightProjViews
-      ligPosU @= (lent^.entityPosition)
-      ligIRadU @= 1 / ligRad
-      glDisable gl_BLEND
-      glEnable gl_DEPTH_TEST
-      unShadedNoMaterial shd shadowing
+generateLightDepthmap shadowing shd lig ent znear = do
+    useProgram (shadowing^.shadowCubeDepthmapProgram)
+    genDepthmap lig ligProjViewsU ligPosU ligIRadU ent znear
+    glDisable gl_BLEND
+    glEnable gl_DEPTH_TEST
+    unShadedNoMaterial shd shadowing
   where
-    proj = projectionMatrix $ Perspective (pi/2) 1 znear ligRad
     sunis = shadowing^.shadowUniforms
     ligProjViewsU = sunis^.shadowDepthLigProjViewsU
     ligPosU = sunis^.shadowDepthLigPosU
     ligIRadU = sunis^.shadowDepthLigIRadU
-    lightProjViews = map ((proj !*!) . completeM33RotMat . fromQuaternion)
-      [
-        axisAngle yAxis (-pi/2) * axisAngle zAxis pi -- positive x
-      , axisAngle yAxis (pi/2) * axisAngle zAxis pi -- negative x
-      , axisAngle xAxis (-pi/2) -- positive y
-      , axisAngle xAxis (pi/2) -- negative y
-      , axisAngle yAxis pi * axisAngle zAxis pi -- positive z
-      , axisAngle zAxis (pi) -- negative z
-      ]
-    ligRad = lightRadius lig
-
-completeM33RotMat :: M33 Float -> M44 Float
-completeM33RotMat (V3 (V3 a b c) (V3 d e f) (V3 g h i)) =
-  V4
-    (V4 a b c 0)
-    (V4 d e f 0)
-    (V4 g h i 0)
-    (V4 0 0 0 1)
 
 accumulate :: Lighting -> Accumulation -> IO ()
 accumulate lighting accumulation = do
