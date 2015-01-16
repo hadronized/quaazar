@@ -14,6 +14,7 @@ module Photon.Render.GL.Offscreen where
 import Control.Lens ( makeLenses )
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
+import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Photon.Render.GL.Framebuffer
 import Photon.Render.GL.Log ( gllog )
@@ -62,10 +63,36 @@ genOffscreen w h texift texft texap rbift rbap = do
 
   maybe (return . Right $ Offscreen tex fb rb) (return . Left . Log ErrorLog gllog) status
 
+data DepthOffscreen = DepthOffscreen {
+    _depthOffscreenTex :: Texture2D
+  , _depthOffscreenFB  :: Framebuffer
+  }
+
+genDepthOffscreen :: (MonadIO m,MonadError Log m)
+                  => Natural
+                  -> Natural
+                  -> m DepthOffscreen
+genDepthOffscreen w h = do
+  (tex,fb') <- liftIO $ do
+    tex <- genObject
+    bindTexture tex
+    setTextureWrap tex ClampToEdge
+    setTextureFilters tex Nearest
+    setTextureNoImage tex Depth32F w h Depth
+    unbindTexture tex
+
+    fb <- buildFramebuffer ReadWrite . const $ do
+      attachTexture ReadWrite tex DepthAttachment
+      glDrawBuffer gl_NONE
+
+    return (tex,fb)
+  fb <- generalizeEither fb'
+  return (DepthOffscreen tex fb)
+
 data CubeOffscreen = CubeOffscreen {
     _cubeOffscreenColorTex :: Cubemap
   , _cubeOffscreenDepthTex :: Cubemap
-  , _cubeOffscreenFB  :: Framebuffer
+  , _cubeOffscreenFB       :: Framebuffer
   }
 
 makeLenses ''CubeOffscreen
@@ -97,9 +124,9 @@ genCubeOffscreen cubeSize colift colft colap depthift depthft depthap = do
     --setTextureCompareFunc depthmap (Just LessOrEqual)
     unbindTexture depthmap
     -- framebuffer
-    fb <- buildFramebuffer ReadWrite $ \_ -> do
+    fb <- buildFramebuffer ReadWrite . const $ do
       attachTexture ReadWrite colormap colap
       attachTexture ReadWrite depthmap depthap
     return (colormap,depthmap,fb)
   fb <- generalizeEither fb'
-  return $ CubeOffscreen colormap depthmap fb
+  return (CubeOffscreen colormap depthmap fb)
