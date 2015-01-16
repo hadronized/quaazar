@@ -44,7 +44,8 @@ getAccumulation :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
 getAccumulation w h = do
   program <- buildProgram accumVS Nothing accumFS <* sinkLogs
   info CoreLog "generating accumulation offscreen"
-  off <- liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= generalizeEither
+  off <- genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F
+    DepthAttachment
   va <- liftIO genAttributelessVertexArray
   liftIO $ do
     useProgram program
@@ -61,12 +62,14 @@ accumVS :: String
 accumVS = unlines
   [
     "#version 330 core"
+
   , "vec2[4] v = vec2[]("
   , "    vec2(-1,  1)"
   , "  , vec2( 1,  1)"
   , "  , vec2(-1, -1)"
   , "  , vec2( 1, -1)"
   , "  );"
+
   , "void main() {"
   , "  gl_Position = vec4(v[gl_VertexID], 0., 1.);"
   , "}"
@@ -76,8 +79,11 @@ accumFS :: String
 accumFS = unlines
   [
     "#version 330 core"
+
   , "out vec4 frag;"
+
   , "uniform sampler2D source;"
+
   , "void main() {"
   , "  frag = texelFetch(source, ivec2(gl_FragCoord.xy), 0);"
   , "}"

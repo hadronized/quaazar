@@ -22,24 +22,28 @@ import Numeric.Natural ( Natural )
 import Photon.Render.GL.Framebuffer ( AttachmentPoint(..), Target(..)
                                     , bindFramebuffer )
 import Photon.Render.GL.Offscreen
-import Photon.Render.GL.Shader ( Uniform, Uniformable, buildProgram
-                               , getUniform )
+import Photon.Render.GL.Shader ( Uniform, Uniformable, (@=), buildProgram
+                               , getUniform, useProgram )
 import Photon.Render.GL.Texture as Tex ( Format(..), InternalFormat(..) )
 import Photon.Render.Shader ( GPUProgram )
 import Photon.Utils.Log
 
 data Shadowing = Shadowing {
     _shadowDepthCubeOff        :: CubeOffscreen
-  , _shadowShadowOff           :: DepthOffscreen
+  , _shadowShadowOff           :: Offscreen
   , _shadowCubeDepthmapProgram :: GPUProgram
+  , _shadowShadowProgram       :: GPUProgram
   , _shadowUniforms            :: ShadowingUniforms
   }
 
 data ShadowingUniforms = ShadowingUniforms {
-    _shadowLigProjViewsU :: Uniform [M44 Float]
-  , _shadowModelU        :: Uniform (M44 Float)
-  , _shadowLigPosU       :: Uniform (V3 Float)
-  , _shadowLigIRadU      :: Uniform Float
+    _shadowDepthLigProjViewsU :: Uniform [M44 Float]
+  , _shadowDepthModelU        :: Uniform (M44 Float)
+  , _shadowDepthLigPosU       :: Uniform (V3 Float)
+  , _shadowDepthLigIRadU      :: Uniform Float
+  , _shadowShadowLigPosU      :: Uniform (V3 Float)
+  , _shadowShadowLigRadU      :: Uniform Float
+  , _shadowShadowIProjViewU   :: Uniform (M44 Float)
   }
 
 makeLenses ''Shadowing
@@ -52,24 +56,33 @@ getShadowing :: (MonadIO m,MonadLogger m,MonadError Log m)
             -> m Shadowing
 getShadowing w h cubeSize = do
   info CoreLog "generating light cube depthmap offscreen"
-  program <-
-    buildProgram lightCubeDepthmapVS (Just lightCubeDepthmapGS) lightCubeDepthmapFS
-  uniforms <- liftIO (getShadowingUniforms program)
   cubeOff <- genCubeOffscreen cubeSize R32F Tex.R (ColorAttachment 0) Depth32F
     Depth DepthAttachment
-  shadowOff <- genDepthOffscreen w h
-  return (Shadowing cubeOff shadowOff program uniforms)
+  shadowOff <- genOffscreen w h R32F Tex.R (ColorAttachment 0) Depth32F DepthAttachment
+  depthProgram <- buildProgram shadowDepthCubemapVS (Just shadowDepthCubemapGS)
+    shadowDepthCubemapFS
+  shadowProgram <- buildProgram shadowShadowVS Nothing shadowShadowFS
+  uniforms <- liftIO (getShadowingUniforms depthProgram shadowProgram)
+  return (Shadowing cubeOff shadowOff depthProgram shadowProgram uniforms)
 
-getShadowingUniforms :: GPUProgram -> IO ShadowingUniforms
-getShadowingUniforms program = do
+getShadowingUniforms :: GPUProgram -> GPUProgram -> IO ShadowingUniforms
+getShadowingUniforms depthProgram shadowProgram = do
+    useProgram shadowProgram
+    shadowSem "depthmap" >>= (@= (0 :: Int))
+    shadowSem "ligDepthmap" >>= (@= (1 :: Int))
     ShadowingUniforms
-      <$> sem "ligProjViews"
-      <*> sem "model"
-      <*> sem "ligPos"
-      <*> sem "ligIRad"
+      <$> depthSem "ligProjViews"
+      <*> depthSem "model"
+      <*> depthSem "ligPos"
+      <*> depthSem "ligIRad"
+      <*> shadowSem "ligPos"
+      <*> shadowSem "ligRad"
+      <*> shadowSem "iProjView"
   where
-    sem :: (Uniformable a) => String -> IO (Uniform a)
-    sem = getUniform program
+    depthSem :: (Uniformable a) => String -> IO (Uniform a)
+    depthSem = getUniform depthProgram
+    shadowSem :: (Uniformable a) => String -> IO (Uniform a)
+    shadowSem = getUniform shadowProgram
 
 purgeShadowingFramebuffer :: Shadowing -> IO ()
 purgeShadowingFramebuffer shadowing = do
@@ -77,8 +90,8 @@ purgeShadowingFramebuffer shadowing = do
   glClearColor 1 1 1 1
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
 
-lightCubeDepthmapVS :: String
-lightCubeDepthmapVS = unlines
+shadowDepthCubemapVS :: String
+shadowDepthCubemapVS = unlines
   [
     "#version 330 core"
 
@@ -95,8 +108,8 @@ lightCubeDepthmapVS = unlines
 -- The geometry shader is used because we’re doing a layered rendering in order
 -- to generate the whole cube depthmap in one pass. Each primitive (i.e.
 -- triangle) gets duplicate 6 times; one time per cubemap face.
-lightCubeDepthmapGS :: String
-lightCubeDepthmapGS = unlines
+shadowDepthCubemapGS :: String
+shadowDepthCubemapGS = unlines
   [
     "#version 330 core"
 
@@ -121,8 +134,8 @@ lightCubeDepthmapGS = unlines
   , "}"
   ]
 
-lightCubeDepthmapFS :: String
-lightCubeDepthmapFS = unlines
+shadowDepthCubemapFS :: String
+shadowDepthCubemapFS = unlines
   [
     "#version 330 core"
 
@@ -134,5 +147,55 @@ lightCubeDepthmapFS = unlines
 
   , "void main() {"
   , "  outDistance = distance(ligPos,gco) * ligIRad;"
+  , "}"
+  ]
+
+shadowShadowVS :: String
+shadowShadowVS = unlines
+  [
+    "#version 330 core"
+
+  , "out vec2 vv;"
+
+  , "vec2[4] v = vec2[]("
+  , "    vec2(-1,  1)"
+  , "  , vec2( 1,  1)"
+  , "  , vec2(-1, -1)"
+  , "  , vec2( 1, -1)"
+  , "  );"
+
+  , "void main() {"
+  , "  vv = v[gl_VertexID];"
+  , "  gl_Position = vec4(vv, 0., 1.);"
+  , "}"
+  ]
+
+shadowShadowFS :: String
+shadowShadowFS = unlines
+  [
+    "#version 330 core"
+
+  , "in vec2 vv;"
+
+  , "out float shadow;"
+
+  , "uniform vec3 ligPos;"
+  , "uniform float ligRad;"
+  , "uniform mat4 iProjView;"
+  , "uniform sampler2D depthmap;"
+  , "uniform samplerCube ligDepthmap;"
+
+  , "void main() {"
+  , "  vec4 deproj = iProjView * vec4(vv, 0., 1.);"
+  , "  deproj /= deproj.w;"
+
+  , "  float bias = 0.005;"
+  , "  vec3 depthDir = deproj.xyz - ligPos;"
+  , "  float distReceiver = length(depthDir) - bias;"
+  , "  float distBlocker = texture(ligDepthmap, depthDir).r;"
+
+  , "  shadow = 0.;"
+  , "  if (distBlocker*ligRad < distReceiver)"
+  , "    shadow = 1.;"
   , "}"
   ]

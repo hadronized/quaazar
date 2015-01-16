@@ -74,9 +74,9 @@ generateLightDepthmap shadowing shd lig lent znear = do
   where
     proj = projectionMatrix $ Perspective (pi/2) 1 znear ligRad
     sunis = shadowing^.shadowUniforms
-    ligProjViewsU = sunis^.shadowLigProjViewsU
-    ligPosU = sunis^.shadowLigPosU
-    ligIRadU = sunis^.shadowLigIRadU
+    ligProjViewsU = sunis^.shadowDepthLigProjViewsU
+    ligPosU = sunis^.shadowDepthLigPosU
+    ligIRadU = sunis^.shadowDepthLigIRadU
     lightProjViews = map ((proj !*!) . completeM33RotMat . fromQuaternion)
       [
         axisAngle yAxis (-pi/2) * axisAngle zAxis pi -- positive x

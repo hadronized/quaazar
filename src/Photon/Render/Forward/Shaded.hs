@@ -37,4 +37,4 @@ shade gmat rdrd = Shaded shade_ shadeNoMaterial
       where
         lunis = lighting^.lightUniforms
     shadeNoMaterial shadowing =
-      unRendered rdrd (shadowing^.shadowUniforms.shadowModelU)
+      unRendered rdrd (shadowing^.shadowUniforms.shadowDepthModelU)

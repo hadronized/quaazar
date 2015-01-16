@@ -32,41 +32,40 @@ data Offscreen = Offscreen {
 
 makeLenses ''Offscreen
 
-genOffscreen :: Natural
+genOffscreen :: (MonadIO m,MonadError Log m)
+             => Natural
              -> Natural
              -> InternalFormat
              -> Format
              -> AttachmentPoint
              -> InternalFormat
              -> AttachmentPoint
-             -> IO (Either Log Offscreen)
+             -> m Offscreen
 genOffscreen w h texift texft texap rbift rbap = do
-  tex <- genObject
-  bindTexture tex
-  setTextureWrap tex ClampToEdge
-  setTextureFilters tex Nearest
-  setTextureNoImage tex texift w h texft
-  unbindTexture tex
-
-  rb <- genObject
-  bindRenderbuffer rb
-  renderbufferStorage rbift w h
-  unbindRenderbuffer
-
-  fb <- genObject
-  bindFramebuffer fb Write
-  attachTexture Write tex texap
-  attachRenderbuffer Write rb rbap
-
-  status <- checkFramebufferStatus
-  unbindFramebuffer Write
-
-  maybe (return . Right $ Offscreen tex fb rb) (return . Left . Log ErrorLog gllog) status
+  (tex,rb,fb') <- liftIO $ do
+    tex <- genObject
+    bindTexture tex
+    setTextureWrap tex ClampToEdge
+    setTextureFilters tex Nearest
+    setTextureNoImage tex texift w h texft
+    unbindTexture tex
+    rb <- genObject
+    bindRenderbuffer rb
+    renderbufferStorage rbift w h
+    unbindRenderbuffer
+    fb <- buildFramebuffer ReadWrite . const $ do
+      attachTexture ReadWrite tex texap
+      attachRenderbuffer ReadWrite rb rbap
+    return (tex,rb,fb)
+  fb <- generalizeEither fb'
+  return (Offscreen tex fb rb)
 
 data DepthOffscreen = DepthOffscreen {
     _depthOffscreenTex :: Texture2D
   , _depthOffscreenFB  :: Framebuffer
   }
+
+makeLenses ''DepthOffscreen
 
 genDepthOffscreen :: (MonadIO m,MonadError Log m)
                   => Natural
@@ -80,11 +79,9 @@ genDepthOffscreen w h = do
     setTextureFilters tex Nearest
     setTextureNoImage tex Depth32F w h Depth
     unbindTexture tex
-
     fb <- buildFramebuffer ReadWrite . const $ do
       attachTexture ReadWrite tex DepthAttachment
       glDrawBuffer gl_NONE
-
     return (tex,fb)
   fb <- generalizeEither fb'
   return (DepthOffscreen tex fb)

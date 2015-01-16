@@ -34,8 +34,8 @@ getScreenFrame =
   return $ GPUFrame (glBindFramebuffer gl_FRAMEBUFFER 0) undefined
 
 gpuFrame :: (MonadIO m,MonadError Log m) => Natural -> Natural -> m GPUFrame
-gpuFrame w h =
-    liftIO (genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F DepthAttachment) >>= generalizeEither . fmap gpuFrame_
-  where
-    gpuFrame_ off = GPUFrame (bindFramebuffer (off^.offscreenFB) ReadWrite)
+gpuFrame w h = do
+    off <- genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F
+      DepthAttachment
+    return $ GPUFrame (bindFramebuffer (off^.offscreenFB) ReadWrite)
       (bindTextureAt $ off^.offscreenTex)
