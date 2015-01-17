@@ -21,40 +21,32 @@ import Photon.Render.GL.Shader ( Uniform, (@=) )
 import Photon.Render.GPU
 
 data GPULight = GPULight {
-    shadeWithLight :: Uniform Color -- ^ color
-                   -> Uniform Float -- ^ power
-                   -> Uniform Float -- ^ radius
-                   -> Uniform (V3 Float) -- ^ position -- TODO: no sense
-                   -> Entity
-                   -> IO ()
-  , genDepthmap    :: Uniform [M44 Float] -- ^ light proj*views
-                   -> Uniform (V3 Float) -- ^ position
-                   -> Uniform Float -- ^ 1 / radius
-                   -> Entity
-                   -> Float -- znear
-                   -> IO ()
+    runLight :: Uniform Color -- ^ color
+             -> Uniform Float -- ^ power
+             -> Uniform Float -- ^ radius
+             -> Uniform (V3 Float) -- ^ position -- TODO: no sense
+             -> Uniform [M44 Float] -- ^ proj*views (depth cubemap)
+             -> Uniform Float --  1 / radius
+             -> Entity
+             -> IO ()
+  , onlyIfCastShadows :: IO () -> IO ()
   }
 
 instance GPU Light GPULight where
   gpu = gpuLight
 
 gpuLight :: (Monad m) => Light -> m GPULight
-gpuLight (Light _ col power radius castShadows) =
-    return $ GPULight shading depthmap'
+gpuLight (Light _ col power radius castShadows)
+    | castShadows = return $ GPULight run id
+    | otherwise = return $ GPULight run (const $ return ())
   where
-    shading colorU powerU radiusU posU ent = do
+    run colorU powerU radiusU posU projViewsU iRadius ent = do
       colorU @= col
       powerU @= power
       radiusU @= radius
       posU @= ent^.entityPosition
-    depthmap ligProjViewsU ligPosU ligIRadU ent znear = do
-      ligProjViewsU @= lightProjViews znear
-      ligPosU @= (ent^.entityPosition)
-      ligIRadU @= 1 / radius
-    noDepthmap _ _ _ _ _ = return ()
-    depthmap'
-      | castShadows = depthmap
-      | otherwise = noDepthmap
+      projViewsU @= lightProjViews 0.1 -- TODO: znear should be put in Light
+      iRadius @= 1 / radius
     proj znear = projectionMatrix $ Perspective (pi/2) 1 znear radius
     lightProjViews znear = map ((proj znear !*!) . completeM33RotMat . fromQuaternion)
       [

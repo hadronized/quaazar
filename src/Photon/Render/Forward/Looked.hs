@@ -25,4 +25,4 @@ look gpucam lit = Looked look_
     look_ lighting shadowing accumulation = do
       purgeAccumulationFramebuffer accumulation
       pushCameraToLighting lighting gpucam
-      unLit lit lighting shadowing accumulation
+      unLit lit lighting shadowing accumulation gpucam

@@ -189,7 +189,7 @@ shadowShadowFS = unlines
   , "uniform samplerCube ligDepthmap;"
 
   , "void main() {"
-  , "  vec4 deproj = iProjView * vec4(vv, 0., 1.);"
+  , "  vec4 deproj = iProjView * vec4(vv, texelFetch(depthmap, ivec2(vv), 0).r, 1.);"
   , "  deproj /= deproj.w;"
 
   , "  float bias = 0.005;"

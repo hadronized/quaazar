@@ -68,7 +68,6 @@ getLighting w h = do
 getLightingUniforms :: GPUProgram -> IO LightingUniforms
 getLightingUniforms program = do
     useProgram program
-    sem "ligDepthmap" >>= (@= (0 :: Int))
     LightingUniforms
       <$> sem "projView"
       <*> sem "model"
@@ -153,6 +152,7 @@ lightFS = unlines
   , "  float atten = ligPow / (pow(1. + length(ligToVertex)/ligRad,2.));"
   , "  vec3 illum = atten * (diff + spec);"
 
+    {-
     -- shadows
   , "  float bias = 0.005;"
   , "  vec3 depthDir = -ligToVertex;"
@@ -163,8 +163,8 @@ lightFS = unlines
   , "  if (ligDistance*ligRad < dist) {"
   , "    shadow = sqrt(ligDistance);"
   , "  }"
+    -}
 
-    -- final color
-  , "  frag = vec4(illum,1.) * shadow;"
+  , "  frag = vec4(illum,1.);"
   , "}"
   ]
