@@ -15,7 +15,7 @@ import Control.Lens
 import Data.Monoid
 import Graphics.Rendering.OpenGL.Raw
 import Photon.Core.Entity
-import Photon.Render.Camera ( GPUCamera )
+import Photon.Render.Camera ( GPUCamera(..) )
 import Photon.Render.Forward.Accumulation
 import Photon.Render.Forward.Lighting
 import Photon.Render.Forward.Shaded ( Shaded(..) )
@@ -41,7 +41,7 @@ lighten gpulig ent shd = Lit lighten_
       generateLightDepthmap shadowing shd gpulig ent -- FIXME: per-light
       purgeLightingFramebuffer lighting
       applyLighting lighting shd gpulig ent
-      --generateShadowmap lighting shadowing accumulation gpulig ent gpucam
+      generateShadowmap lighting shadowing accumulation gpulig ent gpucam
       accumulate lighting shadowing accumulation
 
 applyLighting :: Lighting -> Shaded -> GPULight -> Entity -> IO ()
@@ -72,7 +72,6 @@ generateLightDepthmap shadowing shd gpulig ent = do
     ligPosU = sunis^.shadowDepthLigPosU
     ligIRadU = sunis^.shadowDepthLigIRadU
 
-{-
 generateShadowmap :: Lighting
                   -> Shadowing
                   -> Accumulation
@@ -80,17 +79,20 @@ generateShadowmap :: Lighting
                   -> Entity
                   -> GPUCamera
                   -> IO ()
-generateShadowmap lighting shadowing accumulation gpulig gpucam = do
+generateShadowmap lighting shadowing accumulation gpulig lent gpucam = do
     useProgram (shadowing^.shadowShadowProgram)
     bindFramebuffer (shadowing^.shadowShadowOff.offscreenFB) ReadWrite
-    bindTextureAt (lighting^.lightOff.offscreenTex) 0
+    bindTextureAt (lighting^.lightOff.offscreenDepthmap) 0
     bindTextureAt (shadowing^.shadowDepthCubeOff.cubeOffscreenColorTex) 1
     bindVertexArray (accumulation^.accumVA)
-    runCamera (sunis^.shadowShadowIProjU) unused
-    genShadow gpulig (sunis^.shadowShadowLigPosU) (sunis^.shadowShadowLigRadU)
-      ent
+    runCamera gpucam iProjViewU unused unused
+    runLight gpulig unused unused ligRadU ligPosU unused unused lent
     glDrawArrays gl_TRIANGLE_STRIP 0 4
--}
+  where
+    sunis = shadowing^.shadowUniforms
+    ligRadU = sunis^.shadowShadowLigRadU
+    ligPosU = sunis^.shadowShadowLigPosU
+    iProjViewU = sunis^.shadowShadowIProjViewU
 
 accumulate :: Lighting -> Shadowing -> Accumulation -> IO ()
 accumulate lighting shadowing accumulation = do
@@ -99,7 +101,7 @@ accumulate lighting shadowing accumulation = do
   glClear gl_DEPTH_BUFFER_BIT -- FIXME: glDisable gl_DEPTH_TEST ?
   glEnable gl_BLEND
   glBlendFunc gl_ONE gl_ONE
-  bindTextureAt (lighting^.lightOff.offscreenTex) 0
-  --bindTextureAt (shadowing^.shadowShadowOff.offscreenTex) 0
+  bindTextureAt (lighting^.lightOff.offscreenRender) 0
+  --bindTextureAt (shadowing^.shadowShadowOff.offscreenRender) 0
   bindVertexArray (accumulation^.accumVA)
   glDrawArrays gl_TRIANGLE_STRIP 0 4

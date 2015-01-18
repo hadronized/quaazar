@@ -25,9 +25,9 @@ import Photon.Utils.Either ( generalizeEither )
 import Photon.Utils.Log
 
 data Offscreen = Offscreen {
-    _offscreenTex :: Texture2D
-  , _offscreenFB  :: Framebuffer
-  , _offscreenRB  :: Renderbuffer
+    _offscreenRender   :: Texture2D
+  , _offscreenDepthmap :: Texture2D
+  , _offscreenFB       :: Framebuffer
   } deriving (Eq)
 
 makeLenses ''Offscreen
@@ -37,28 +37,27 @@ genOffscreen :: (MonadIO m,MonadError Log m)
              -> Natural
              -> InternalFormat
              -> Format
-             -> AttachmentPoint
-             -> InternalFormat
-             -> AttachmentPoint
              -> m Offscreen
-genOffscreen w h texift texft texap rbift rbap = do
-  (tex,rb,fb') <- liftIO $ do
-    tex <- genObject
-    bindTexture tex
-    setTextureWrap tex ClampToEdge
-    setTextureFilters tex Nearest
-    setTextureNoImage tex texift w h texft
-    unbindTexture tex
-    rb <- genObject
-    bindRenderbuffer rb
-    renderbufferStorage rbift w h
-    unbindRenderbuffer
+genOffscreen w h texift texft = do
+  (colormap,depthmap,fb') <- liftIO $ do
+    colormap <- genObject
+    bindTexture colormap
+    setTextureWrap colormap ClampToEdge
+    setTextureFilters colormap Nearest
+    setTextureNoImage colormap texift w h texft
+    unbindTexture colormap
+    depthmap <- genObject
+    bindTexture depthmap
+    setTextureWrap depthmap ClampToEdge
+    setTextureFilters depthmap Nearest
+    setTextureNoImage depthmap Depth32F w h Depth
+    unbindTexture depthmap
     fb <- buildFramebuffer ReadWrite . const $ do
-      attachTexture ReadWrite tex texap
-      attachRenderbuffer ReadWrite rb rbap
-    return (tex,rb,fb)
+      attachTexture ReadWrite colormap (ColorAttachment 0)
+      attachTexture ReadWrite depthmap DepthAttachment
+    return (colormap,depthmap,fb)
   fb <- generalizeEither fb'
-  return (Offscreen tex fb rb)
+  return (Offscreen colormap depthmap fb)
 
 data DepthOffscreen = DepthOffscreen {
     _depthOffscreenTex :: Texture2D

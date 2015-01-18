@@ -44,8 +44,7 @@ getAccumulation :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
 getAccumulation w h = do
   program <- buildProgram accumVS Nothing accumFS <* sinkLogs
   info CoreLog "generating accumulation offscreen"
-  off <- genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F
-    DepthAttachment
+  off <- genOffscreen w h RGB32F RGB -- TODO: color offscreen
   va <- liftIO genAttributelessVertexArray
   liftIO $ do
     useProgram program

@@ -21,6 +21,7 @@ import Photon.Render.GPU
 
 data GPUCamera = GPUCamera {
     runCamera :: Uniform (M44 Float) -- ^ projection * view
+              -> Uniform (M44 Float) -- ^ (projection * view)-1
               -> Uniform (V3 Float) -- ^ eye
               -> IO ()
   , cameraProjection :: M44 Float
@@ -32,7 +33,9 @@ instance GPU (Projection,Entity) GPUCamera where
 gpuCamera :: (Monad m) => Projection -> Entity -> m GPUCamera
 gpuCamera proj ent = return (GPUCamera sendCamera proj')
   where
-    sendCamera projViewU eyeU = do
-      projViewU @= proj' !*! cameraTransform ent
-      eyeU @= ent^.entityPosition
+    sendCamera projViewU iProjViewU eyeU = do
+        projViewU @= projView
+        iProjViewU @= 1 / projView
+        eyeU @= ent^.entityPosition
+    projView = proj' !*! cameraTransform ent
     proj' = projectionMatrix proj

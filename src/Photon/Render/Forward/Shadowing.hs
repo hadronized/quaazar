@@ -58,7 +58,7 @@ getShadowing w h cubeSize = do
   info CoreLog "generating light cube depthmap offscreen"
   cubeOff <- genCubeOffscreen cubeSize R32F Tex.R (ColorAttachment 0) Depth32F
     Depth DepthAttachment
-  shadowOff <- genOffscreen w h R32F Tex.R (ColorAttachment 0) Depth32F DepthAttachment
+  shadowOff <- genOffscreen w h R32F Tex.R
   depthProgram <- buildProgram shadowDepthCubemapVS (Just shadowDepthCubemapGS)
     shadowDepthCubemapFS
   shadowProgram <- buildProgram shadowShadowVS Nothing shadowShadowFS
@@ -143,6 +143,7 @@ shadowDepthCubemapFS = unlines
     "#version 330 core"
 
   , "in vec3 gco;"
+
   , "out float outDistance;"
 
   , "uniform vec3 ligPos;"
@@ -189,7 +190,7 @@ shadowShadowFS = unlines
   , "uniform samplerCube ligDepthmap;"
 
   , "void main() {"
-  , "  vec4 deproj = iProjView * vec4(vv, texelFetch(depthmap, ivec2(vv), 0).r, 1.);"
+  , "  vec4 deproj = iProjView * vec4(vv, texelFetch(depthmap, ivec2(gl_FragCoord.xy), 0).r, 1.);"
   , "  deproj /= deproj.w;"
 
   , "  float bias = 0.005;"
@@ -197,8 +198,10 @@ shadowShadowFS = unlines
   , "  float distReceiver = length(depthDir) - bias;"
   , "  float distBlocker = texture(ligDepthmap, depthDir).r;"
 
-  , "  shadow = 0.;"
+  , "  shadow = texelFetch(depthmap, ivec2(gl_FragCoord.xy), 0).r;"
+  {-
   , "  if (distBlocker*ligRad < distReceiver)"
   , "    shadow = 1.;"
+  -}
   , "}"
   ]

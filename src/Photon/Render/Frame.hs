@@ -35,7 +35,6 @@ getScreenFrame =
 
 gpuFrame :: (MonadIO m,MonadError Log m) => Natural -> Natural -> m GPUFrame
 gpuFrame w h = do
-    off <- genOffscreen w h RGB32F RGB (ColorAttachment 0) Depth32F
-      DepthAttachment
+    off <- genOffscreen w h RGB32F RGB
     return $ GPUFrame (bindFramebuffer (off^.offscreenFB) ReadWrite)
-      (bindTextureAt $ off^.offscreenTex)
+      (bindTextureAt $ off^.offscreenRender)

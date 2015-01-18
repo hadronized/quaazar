@@ -33,7 +33,7 @@ swapBuffers (ForwardRenderer lighting shadowing accumulation window) gpuframe (V
   useProgram (accumulation^.accumProgram)
   useFrame gpuframe
   glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
-  bindTextureAt (finalOff^.offscreenTex) 0
+  bindTextureAt (finalOff^.offscreenRender) 0
   bindVertexArray (accumulation^.accumVA)
   glDrawArrays gl_TRIANGLE_STRIP 0 4
   GLFW.swapBuffers window

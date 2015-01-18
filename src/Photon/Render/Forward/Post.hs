@@ -40,7 +40,7 @@ post gpupfx prev = Post post_
   where
     post_ lighting shadowing accumulation = do
       (sourceOff,targetOff) <- unPost prev lighting shadowing accumulation
-      usePostFX gpupfx (sourceOff^.offscreenTex)
+      usePostFX gpupfx (sourceOff^.offscreenRender)
       bindFramebuffer (targetOff^.offscreenFB) ReadWrite
       glClear gl_DEPTH_BUFFER_BIT
       glDrawArrays gl_TRIANGLE_STRIP 0 4
