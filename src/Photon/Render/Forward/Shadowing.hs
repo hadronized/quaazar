@@ -143,7 +143,6 @@ shadowDepthCubemapFS = unlines
     "#version 330 core"
 
   , "in vec3 gco;"
-
   , "out float outDistance;"
 
   , "uniform vec3 ligPos;"
@@ -189,19 +188,25 @@ shadowShadowFS = unlines
   , "uniform sampler2D depthmap;"
   , "uniform samplerCube ligDepthmap;"
 
+  , "vec3 deproject() {"
+  , "  float depth = 2. * texelFetch(depthmap, ivec2(gl_FragCoord.xy), 0).r - 1.;"
+  , "  vec4 position = vec4(vv, depth, 1.);"
+  , "  position = iProjView * position;"
+  , "  position.xyz /= position.w;"
+  , "  return position.xyz;"
+  , "}"
+
   , "void main() {"
-  , "  vec4 deproj = iProjView * vec4(vv, texelFetch(depthmap, ivec2(gl_FragCoord.xy), 0).r, 1.);"
-  , "  deproj /= deproj.w;"
+  , "  vec3 co = deproject();"
 
   , "  float bias = 0.005;"
-  , "  vec3 depthDir = deproj.xyz - ligPos;"
+  , "  vec3 depthDir = co - ligPos;"
   , "  float distReceiver = length(depthDir) - bias;"
   , "  float distBlocker = texture(ligDepthmap, depthDir).r;"
 
-  , "  shadow = texelFetch(depthmap, ivec2(gl_FragCoord.xy), 0).r;"
-  {-
-  , "  if (distBlocker*ligRad < distReceiver)"
+  , "  shadow = 0.;"
+  , "  if (distBlocker*ligRad < distReceiver) {"
   , "    shadow = 1.;"
-  -}
+  , "  }"
   , "}"
   ]

@@ -101,7 +101,6 @@ accumulate lighting shadowing accumulation = do
   glClear gl_DEPTH_BUFFER_BIT -- FIXME: glDisable gl_DEPTH_TEST ?
   glEnable gl_BLEND
   glBlendFunc gl_ONE gl_ONE
-  bindTextureAt (lighting^.lightOff.offscreenRender) 0
-  --bindTextureAt (shadowing^.shadowShadowOff.offscreenRender) 0
+  bindTextureAt (shadowing^.shadowShadowOff.offscreenRender) 0
   bindVertexArray (accumulation^.accumVA)
   glDrawArrays gl_TRIANGLE_STRIP 0 4
