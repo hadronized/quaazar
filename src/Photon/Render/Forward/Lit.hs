@@ -12,6 +12,7 @@
 module Photon.Render.Forward.Lit where
 
 import Control.Lens
+import Data.Bits ( (.|.) )
 import Data.Monoid
 import Graphics.Rendering.OpenGL.Raw
 import Photon.Core.Entity
@@ -38,10 +39,12 @@ lighten gpulig ent shd = Lit lighten_
   where
     lighten_ lighting shadowing accumulation gpucam = do
       purgeShadowingFramebuffer shadowing
-      generateLightDepthmap shadowing shd gpulig ent -- FIXME: per-light
+      onlyIfCastShadows gpulig $ generateLightDepthmap shadowing shd gpulig ent -- FIXME: per-light
       purgeLightingFramebuffer lighting
       applyLighting lighting shd gpulig ent
       generateShadowmap lighting shadowing accumulation gpulig ent gpucam
+      purgeAccumulationFramebuffer2 accumulation
+      combineShadows lighting shadowing accumulation
       accumulate lighting shadowing accumulation
 
 applyLighting :: Lighting -> Shaded -> GPULight -> Entity -> IO ()
@@ -94,13 +97,33 @@ generateShadowmap lighting shadowing accumulation gpulig lent gpucam = do
     ligPosU = sunis^.shadowShadowLigPosU
     iProjViewU = sunis^.shadowShadowIProjViewU
 
+-- The idea is to copy the lighting render into the second accum buffer. We
+-- then copy the shadowmap and blend the two images with a smart blending
+-- function.
+combineShadows :: Lighting -> Shadowing -> Accumulation -> IO ()
+combineShadows lighting shadowing accumulation = do
+  useProgram (accumulation^.accumProgram)
+  bindFramebuffer (accumulation^.accumOff2.offscreenFB) ReadWrite
+  glDisable gl_DEPTH_TEST
+  glClear (gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT)
+  glDisable gl_BLEND
+  -- copy the lighting render
+  bindTextureAt (lighting^.lightOff.offscreenRender) 0
+  bindVertexArray (accumulation^.accumVA)
+  glDrawArrays gl_TRIANGLE_STRIP 0 4
+  -- copy the shadowmap
+  glEnable gl_BLEND
+  glBlendFunc gl_DST_COLOR gl_ZERO
+  bindTextureAt (shadowing^.shadowShadowOff.offscreenRender) 0
+  glDrawArrays gl_TRIANGLE_STRIP 0 4
+
 accumulate :: Lighting -> Shadowing -> Accumulation -> IO ()
 accumulate lighting shadowing accumulation = do
   useProgram (accumulation^.accumProgram)
   bindFramebuffer (accumulation^.accumOff.offscreenFB) ReadWrite
-  glClear gl_DEPTH_BUFFER_BIT -- FIXME: glDisable gl_DEPTH_TEST ?
+  glDisable gl_DEPTH_TEST
   glEnable gl_BLEND
   glBlendFunc gl_ONE gl_ONE
-  bindTextureAt (shadowing^.shadowShadowOff.offscreenRender) 0
+  bindTextureAt (accumulation^.accumOff2.offscreenRender) 0
   bindVertexArray (accumulation^.accumVA)
   glDrawArrays gl_TRIANGLE_STRIP 0 4

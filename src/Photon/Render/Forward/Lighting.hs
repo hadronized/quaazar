@@ -152,19 +152,6 @@ lightFS = unlines
   , "  float atten = ligPow / (pow(1. + length(ligToVertex)/ligRad,2.));"
   , "  vec3 illum = atten * (diff + spec);"
 
-    {-
-    -- shadows
-  , "  float bias = 0.005;"
-  , "  vec3 depthDir = -ligToVertex;"
-  , "  float dist = length(depthDir) - bias;"
-  , "  float ligDistance = texture(ligDepthmap, depthDir).r;"
-  , "  float shadow = 1.;"
-
-  , "  if (ligDistance*ligRad < dist) {"
-  , "    shadow = sqrt(ligDistance);"
-  , "  }"
-    -}
-
   , "  frag = vec4(illum,1.);"
   , "}"
   ]

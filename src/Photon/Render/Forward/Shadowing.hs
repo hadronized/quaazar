@@ -58,7 +58,7 @@ getShadowing w h cubeSize = do
   info CoreLog "generating light cube depthmap offscreen"
   cubeOff <- genCubeOffscreen cubeSize R32F Tex.R (ColorAttachment 0) Depth32F
     Depth DepthAttachment
-  shadowOff <- genOffscreen w h R32F Tex.R
+  shadowOff <- genOffscreen w h RGB32F Tex.RGB
   depthProgram <- buildProgram shadowDepthCubemapVS (Just shadowDepthCubemapGS)
     shadowDepthCubemapFS
   shadowProgram <- buildProgram shadowShadowVS Nothing shadowShadowFS
@@ -180,7 +180,7 @@ shadowShadowFS = unlines
 
   , "in vec2 vv;"
 
-  , "out float shadow;"
+  , "out vec3 shadow;"
 
   , "uniform vec3 ligPos;"
   , "uniform float ligRad;"
@@ -201,12 +201,14 @@ shadowShadowFS = unlines
 
   , "  float bias = 0.005;"
   , "  vec3 depthDir = co - ligPos;"
-  , "  float distReceiver = length(depthDir) - bias;"
+    -- the min ensures we don’t exceed the light radius
+    -- TODO: this might generate artifacts near the light zfar
+  , "  float distReceiver = min(ligRad,length(depthDir) - bias);"
   , "  float distBlocker = texture(ligDepthmap, depthDir).r;"
 
-  , "  shadow = 0.;"
+  , "  shadow = vec3(1.,1.,1.);"
   , "  if (distBlocker*ligRad < distReceiver) {"
-  , "    shadow = 1.;"
+  , "    shadow = vec3(0.,0.,0.);"
   , "  }"
   , "}"
   ]

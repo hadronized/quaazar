@@ -32,6 +32,7 @@ import Photon.Utils.Log
 data Accumulation = Accumulation {
     _accumProgram :: GPUProgram
   , _accumOff     :: Offscreen
+  , _accumOff2    :: Offscreen
   , _accumVA      :: VertexArray
   }
 
@@ -45,15 +46,22 @@ getAccumulation w h = do
   program <- buildProgram accumVS Nothing accumFS <* sinkLogs
   info CoreLog "generating accumulation offscreen"
   off <- genOffscreen w h RGB32F RGB -- TODO: color offscreen
+  off2 <- genOffscreen w h RGB32F RGB -- TODO: color offscreen
   va <- liftIO genAttributelessVertexArray
   liftIO $ do
     useProgram program
     getUniform program "source" >>= (@= (0 :: Int))
-  return (Accumulation program off va)
+  return (Accumulation program off off2 va)
 
 purgeAccumulationFramebuffer :: Accumulation -> IO ()
 purgeAccumulationFramebuffer accumulation = do
   bindFramebuffer (accumulation^.accumOff.offscreenFB) ReadWrite
+  glClearColor 0 0 0 0
+  glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
+
+purgeAccumulationFramebuffer2 :: Accumulation -> IO ()
+purgeAccumulationFramebuffer2 accumulation = do
+  bindFramebuffer (accumulation^.accumOff2.offscreenFB) ReadWrite
   glClearColor 0 0 0 0
   glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
 
