@@ -85,7 +85,7 @@ generateShadowmap lighting shadowing accumulation gpulig lent gpucam = do
     bindTextureAt (lighting^.lightOff.offscreenDepthmap) 0
     bindTextureAt (shadowing^.shadowDepthCubeOff.cubeOffscreenColorTex) 1
     bindVertexArray (accumulation^.accumVA)
-    runCamera gpucam iProjViewU unused unused
+    runCamera gpucam unused iProjViewU unused
     runLight gpulig unused unused ligRadU ligPosU unused unused lent
     glDrawArrays gl_TRIANGLE_STRIP 0 4
   where
