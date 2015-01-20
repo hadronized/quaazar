@@ -16,13 +16,14 @@ import Photon.Render.Forward.Accumulation
 import Photon.Render.Forward.Lighting
 import Photon.Render.Forward.Lit ( Lit(..) )
 import Photon.Render.Forward.Shadowing
+import Photon.Render.Forward.Viewport ( Viewport )
 
-newtype Looked = Looked { unLooked :: Lighting -> Shadowing -> Accumulation -> IO () }
+newtype Looked = Looked { unLooked :: Viewport -> Lighting -> Shadowing -> Accumulation -> IO () }
 
 look :: GPUCamera -> Lit -> Looked
 look gpucam lit = Looked look_
   where
-    look_ lighting shadowing accumulation = do
+    look_ screenViewport lighting shadowing accumulation = do
       purgeAccumulationFramebuffer accumulation
       pushCameraToLighting lighting gpucam
-      unLit lit lighting shadowing accumulation gpucam
+      unLit lit screenViewport lighting shadowing accumulation gpucam

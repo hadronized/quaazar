@@ -19,6 +19,7 @@ import Data.Bits ( (.|.) )
 import Graphics.Rendering.OpenGL.Raw
 import Linear
 import Numeric.Natural ( Natural )
+import Photon.Render.Forward.Viewport ( Viewport(..) )
 import Photon.Render.GL.Framebuffer ( AttachmentPoint(..), Target(..)
                                     , bindFramebuffer )
 import Photon.Render.GL.Offscreen
@@ -34,6 +35,7 @@ data Shadowing = Shadowing {
   , _shadowCubeDepthmapProgram :: GPUProgram
   , _shadowShadowProgram       :: GPUProgram
   , _shadowUniforms            :: ShadowingUniforms
+  , _shadowViewport            :: Viewport
   }
 
 data ShadowingUniforms = ShadowingUniforms {
@@ -63,7 +65,8 @@ getShadowing w h cubeSize = do
     shadowDepthCubemapFS
   shadowProgram <- buildProgram shadowShadowVS Nothing shadowShadowFS
   uniforms <- liftIO (getShadowingUniforms depthProgram shadowProgram)
-  return (Shadowing cubeOff shadowOff depthProgram shadowProgram uniforms)
+  return $ Shadowing cubeOff shadowOff depthProgram shadowProgram uniforms
+    (Viewport cubeSize cubeSize 0 0)
 
 getShadowingUniforms :: GPUProgram -> GPUProgram -> IO ShadowingUniforms
 getShadowingUniforms depthProgram shadowProgram = do

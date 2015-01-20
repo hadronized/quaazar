@@ -12,15 +12,18 @@
 module Photon.Render.Forward.Viewport where
 
 import Control.Lens ( makeLenses )
+import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
-import Photon.Render.Forward.Post ( Post )
 
 data Viewport = Viewport {
     _viewportWidth  :: Natural
   , _viewportHeight :: Natural
   , _viewportX      :: Int
   , _viewportY      :: Int
-  , _viewportPost   :: Post
   }
 
 makeLenses ''Viewport
+
+setViewport :: Viewport -> IO ()
+setViewport (Viewport w h x y) = glViewport (fromIntegral x) (fromIntegral y)
+  (fromIntegral w) (fromIntegral h)
