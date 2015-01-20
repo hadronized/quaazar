@@ -71,7 +71,6 @@ generateLightDepthmap screenViewport shadowing shd gpulig ent = do
     runLight gpulig unused unused unused ligPosU ligProjViewsU ligIRadU ent
     glDisable gl_BLEND
     glEnable gl_DEPTH_TEST
-    glViewport 0 0 1024 1024
     setViewport shdwViewport
     unShadedNoMaterial shd shadowing
     setViewport screenViewport
