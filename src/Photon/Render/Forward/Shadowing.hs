@@ -25,7 +25,8 @@ import Photon.Render.GL.Framebuffer ( AttachmentPoint(..), Target(..)
 import Photon.Render.GL.Offscreen
 import Photon.Render.GL.Shader ( Uniform, Uniformable, (@=), buildProgram
                                , getUniform, useProgram )
-import Photon.Render.GL.Texture as Tex ( Format(..), InternalFormat(..) )
+import Photon.Render.GL.Texture as Tex ( Filter(..), Format(..)
+                                       , InternalFormat(..) )
 import Photon.Render.Shader ( GPUProgram )
 import Photon.Utils.Log
 
@@ -58,9 +59,9 @@ getShadowing :: (MonadIO m,MonadLogger m,MonadError Log m)
             -> m Shadowing
 getShadowing w h cubeSize = do
   info CoreLog "generating light cube depthmap offscreen"
-  cubeOff <- genCubeOffscreen cubeSize R32F Tex.R (ColorAttachment 0) Depth32F
+  cubeOff <- genCubeOffscreen cubeSize Linear R32F Tex.R (ColorAttachment 0) Depth32F
     Depth DepthAttachment
-  shadowOff <- genOffscreen w h RGB32F Tex.RGB
+  shadowOff <- genOffscreen w h Nearest RGB32F Tex.RGB
   depthProgram <- buildProgram shadowDepthCubemapVS (Just shadowDepthCubemapGS)
     shadowDepthCubemapFS
   shadowProgram <- buildProgram shadowShadowVS Nothing shadowShadowFS
