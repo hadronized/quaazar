@@ -26,8 +26,8 @@ import Photon.Render.GL.Shader ( useProgram )
 import Photon.Render.GL.Texture ( bindTextureAt )
 import Photon.Render.GL.VertexArray ( bindVertexArray )
 
-swapBuffers :: (MonadIO m) => ForwardRenderer -> GPUFrame -> Viewport -> m ()
-swapBuffers (ForwardRenderer lighting shadowing accumulation window) gpuframe (Viewport w h x y pst) = liftIO $ do
+swapBuffers :: (MonadIO m) => ForwardRenderer -> GPUFrame -> Viewport -> Post -> m ()
+swapBuffers (ForwardRenderer lighting shadowing accumulation window) gpuframe (Viewport w h x y) pst = liftIO $ do
   glViewport (fromIntegral x) (fromIntegral y) (fromIntegral w) (fromIntegral h)
   (finalOff,_) <- unPost pst lighting shadowing accumulation
   useProgram (accumulation^.accumProgram)
