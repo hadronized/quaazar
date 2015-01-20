@@ -211,11 +211,7 @@ shadowShadowFS = unlines
     -- TODO: this might generate artifacts near the light zfar
   , "  float distReceiver = min(ligRad,length(depthDir) - bias);"
   , "  float distBlocker = texture(ligDepthmap, depthDir).r;"
-  , "  return ligRad * (distReceiver - distBlocker*ligRad) / (distBlocker*ligRad);"
-  , "}"
-
-  , "vec3 computeShadow(vec3 co) {"
-  , "  return (penumbra(co) > 0 ? 0. : 1.);"
+  , "  return float(distBlocker*ligRad >= distReceiver);"
   , "}"
 
   , "vec3 jitter(vec3 co, float seed, float j) {"
@@ -226,29 +222,29 @@ shadowShadowFS = unlines
   , "  return co + j*normalize(o);"
   , "}"
 
-  , "vec3 pcss(vec3 co, int iter, float p) {"
-  , "  vec3 r = vec3(0.,0.,0.);"
-    -- stochastic blur
-  , "  for (int i = 0; i < iter*int(p); ++i) {"
-  , "    r += computeShadow(jitter(co, float(i), p));"
-  , "  }"
-  , "  return r / float(iter*int(p));"
-    -- box blur
-    {-
-  , "  for (float a = -p; a <= p; a += p) {"
-  , "    for (float b = -p; b <= p; b += p) {"
-  , "      for (float c = -p; c <= p; c += p) {"
-  , "        r += computeShadow(co+vec3(a,b,c));"
+    -- TODO: broken
+  , "float pcf(vec3 co) {"
+  , "  float r = 0.;"
+  , "  float bias = 0.05;"
+  , "  vec3 depthDir = co - ligPos;"
+    -- the min ensures we don’t exceed the light radius
+    -- TODO: this might generate artifacts near the light zfar
+  , "  float distReceiver = min(ligRad,length(depthDir) - bias);"
+  , "  float distBlocker = texture(ligDepthmap, depthDir).r;"
+  , "  float i =  0.1;"
+  , "  for (int a = -1; a <= 1; ++a) {"
+  , "    for (int b = -1; b <= 1; ++b) {"
+  , "      for (int c = -1; c <= 1; ++c) {"
+  , "        r += penumbra(co+vec3(float(a)*i,float(b)*i,float(c)*i));"
   , "      }"
   , "    }"
   , "  }"
-  , "  return vec3(1.,1.,1.) - r / 27;"
-    -}
+
+  , "  return r / 27.;"
   , "}"
 
   , "void main() {"
   , "  vec3 co = deproject();"
-  , "  float p = penumbra(co);"
-  , "  shadow = pcss(co, 16, p/10.);"
+  , "  shadow = vec3(penumbra(co)); // vec3(pcf(co));"
   , "}"
   ]
