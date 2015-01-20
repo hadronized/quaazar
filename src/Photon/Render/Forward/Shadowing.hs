@@ -188,6 +188,10 @@ shadowShadowFS = unlines
   , "uniform sampler2D depthmap;"
   , "uniform samplerCube ligDepthmap;"
 
+  , "float rand3(vec3 co) {"
+  , "  return fract(sin(dot(co, vec3(12.9898,78.233,34.3372))) * 43758.5453);"
+  , "}"
+
   , "vec3 deproject() {"
   , "  float depth = 2. * texelFetch(depthmap, ivec2(gl_FragCoord.xy), 0).r - 1.;"
   , "  vec4 position = vec4(vv, depth, 1.);"
@@ -196,19 +200,31 @@ shadowShadowFS = unlines
   , "  return position.xyz;"
   , "}"
 
-  , "void main() {"
-  , "  vec3 co = deproject();"
-
+  , "float penumbra(vec3 co) {"
   , "  float bias = 0.005;"
   , "  vec3 depthDir = co - ligPos;"
     -- the min ensures we don’t exceed the light radius
     -- TODO: this might generate artifacts near the light zfar
   , "  float distReceiver = min(ligRad,length(depthDir) - bias);"
   , "  float distBlocker = texture(ligDepthmap, depthDir).r;"
+  , "  return distBlocker*ligRad - distReceiver;"
+  , "}"
 
-  , "  shadow = vec3(1.,1.,1.);"
-  , "  if (distBlocker*ligRad < distReceiver) {"
-  , "    shadow = vec3(0.,0.,0.);"
-  , "  }"
+  , "vec3 computeShadow(vec3 co) {"
+  , "  return (penumbra(co) < 0 ? 0. : 1.);"
+  , "}"
+
+  , "vec3 jitter(vec3 co, float j) {"
+  , "  vec3 v = vec3( rand3(co+vec3(j,-j,j*0.5))"
+  , "               , rand3(vec3(2*j,1.-j,j) - co)"
+  , "               , rand3(2.*co * vec3(j,j,-j))"
+  , "               );"
+  , "  return 0.01*normalize(v);"
+  , "}"
+
+  , "void main() {"
+  , "  vec3 co = deproject();"
+
+  , "  shadow = computeShadow(co);"
   , "}"
   ]
