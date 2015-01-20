@@ -189,7 +189,7 @@ shadowShadowFS = unlines
   , "uniform samplerCube ligDepthmap;"
 
   , "float rand3(vec3 co) {"
-  , "  return fract(sin(dot(co, vec3(12.9898,78.233,34.3372))) * 43758.5453);"
+  , "  return 2. * fract(sin(dot(co, vec3(12.9898,78.233,34.3372))) * 43758.5453) - 1.;"
   , "}"
 
   , "vec3 deproject() {"
@@ -207,24 +207,44 @@ shadowShadowFS = unlines
     -- TODO: this might generate artifacts near the light zfar
   , "  float distReceiver = min(ligRad,length(depthDir) - bias);"
   , "  float distBlocker = texture(ligDepthmap, depthDir).r;"
-  , "  return distBlocker*ligRad - distReceiver;"
+  , "  return ligRad * (distReceiver - distBlocker*ligRad) / (distBlocker*ligRad);"
   , "}"
 
   , "vec3 computeShadow(vec3 co) {"
-  , "  return (penumbra(co) < 0 ? 0. : 1.);"
+  , "  return (penumbra(co) > 0 ? 0. : 1.);"
   , "}"
 
-  , "vec3 jitter(vec3 co, float j) {"
-  , "  vec3 v = vec3( rand3(co+vec3(j,-j,j*0.5))"
-  , "               , rand3(vec3(2*j,1.-j,j) - co)"
-  , "               , rand3(2.*co * vec3(j,j,-j))"
+  , "vec3 jitter(vec3 co, float seed, float j) {"
+  , "  vec3 o = vec3( rand3(vec3(cos(seed),sin(1.+seed),sin(seed)))"
+  , "               , rand3(vec3(sin(2*seed),sin(1.+seed),tan(seed)))"
+  , "               , rand3(vec3(sin(356*seed),cos(-seed),sin(-seed)))"
   , "               );"
-  , "  return 0.01*normalize(v);"
+  , "  return co + j*normalize(o);"
+  , "}"
+
+  , "vec3 pcss(vec3 co, int iter, float p) {"
+  , "  vec3 r = vec3(0.,0.,0.);"
+    -- stochastic blur
+  , "  for (int i = 0; i < iter*int(p); ++i) {"
+  , "    r += computeShadow(jitter(co, float(i), p));"
+  , "  }"
+  , "  return r / float(iter*int(p));"
+    -- box blur
+    {-
+  , "  for (float a = -p; a <= p; a += p) {"
+  , "    for (float b = -p; b <= p; b += p) {"
+  , "      for (float c = -p; c <= p; c += p) {"
+  , "        r += computeShadow(co+vec3(a,b,c));"
+  , "      }"
+  , "    }"
+  , "  }"
+  , "  return vec3(1.,1.,1.) - r / 27;"
+    -}
   , "}"
 
   , "void main() {"
   , "  vec3 co = deproject();"
-
-  , "  shadow = computeShadow(co);"
+  , "  float p = penumbra(co);"
+  , "  shadow = pcss(co, 16, p/10.);"
   , "}"
   ]
