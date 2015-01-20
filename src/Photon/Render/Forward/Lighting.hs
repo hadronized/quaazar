@@ -22,12 +22,11 @@ import Numeric.Natural ( Natural )
 import Photon.Core.Color ( Color )
 import Photon.Core.Material ( Albedo )
 import Photon.Render.Camera ( GPUCamera(..) )
-import Photon.Render.GL.Framebuffer ( AttachmentPoint(..), Target(..)
-                                    , bindFramebuffer )
+import Photon.Render.GL.Framebuffer ( Target(..), bindFramebuffer )
 import Photon.Render.GL.Offscreen
 import Photon.Render.GL.Shader ( Uniform, Uniformable, buildProgram
                                , getUniform, unused, useProgram )
-import Photon.Render.GL.Texture ( Format(..), InternalFormat(..)  )
+import Photon.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)  )
 import Photon.Render.Shader ( GPUProgram )
 import Photon.Utils.Log
 
@@ -61,7 +60,7 @@ getLighting :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
 getLighting w h = do
   info CoreLog "generating light offscreen"
   program <- buildProgram lightVS Nothing lightFS <* sinkLogs
-  off <- genOffscreen w h RGB32F RGB
+  off <- genOffscreen w h Nearest RGB32F RGB
   uniforms <- liftIO (getLightingUniforms program)
   return (Lighting program off uniforms)
 

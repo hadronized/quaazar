@@ -35,21 +35,22 @@ makeLenses ''Offscreen
 genOffscreen :: (MonadIO m,MonadError Log m)
              => Natural
              -> Natural
+             -> Filter
              -> InternalFormat
              -> Format
              -> m Offscreen
-genOffscreen w h texift texft = do
+genOffscreen w h flt texift texft = do
   (colormap,depthmap,fb') <- liftIO $ do
     colormap <- genObject
     bindTexture colormap
     setTextureWrap colormap ClampToEdge
-    setTextureFilters colormap Nearest
+    setTextureFilters colormap flt
     setTextureNoImage colormap texift w h texft
     unbindTexture colormap
     depthmap <- genObject
     bindTexture depthmap
     setTextureWrap depthmap ClampToEdge
-    setTextureFilters depthmap Nearest
+    setTextureFilters depthmap flt
     setTextureNoImage depthmap Depth32F w h Depth
     unbindTexture depthmap
     fb <- buildFramebuffer ReadWrite . const $ do
@@ -69,13 +70,14 @@ makeLenses ''DepthOffscreen
 genDepthOffscreen :: (MonadIO m,MonadError Log m)
                   => Natural
                   -> Natural
+                  -> Filter
                   -> m DepthOffscreen
-genDepthOffscreen w h = do
+genDepthOffscreen w h flt = do
   (tex,fb') <- liftIO $ do
     tex <- genObject
     bindTexture tex
     setTextureWrap tex ClampToEdge
-    setTextureFilters tex Nearest
+    setTextureFilters tex flt
     setTextureNoImage tex Depth32F w h Depth
     unbindTexture tex
     fb <- buildFramebuffer ReadWrite . const $ do
@@ -95,6 +97,7 @@ makeLenses ''CubeOffscreen
 
 genCubeOffscreen :: (MonadIO m,MonadError Log m)
                  => Natural
+                 -> Filter
                  -> InternalFormat
                  -> Format
                  -> AttachmentPoint
@@ -102,20 +105,20 @@ genCubeOffscreen :: (MonadIO m,MonadError Log m)
                  -> Format
                  -> AttachmentPoint
                  -> m CubeOffscreen
-genCubeOffscreen cubeSize colift colft colap depthift depthft depthap = do
+genCubeOffscreen cubeSize flt colift colft colap depthift depthft depthap = do
   (colormap,depthmap,fb') <- liftIO $ do
     -- color cubemap
     colormap <- genObject
     bindTexture colormap
     setTextureWrap colormap ClampToEdge
-    setTextureFilters colormap Linear
+    setTextureFilters colormap flt
     setTextureNoImage colormap colift cubeSize cubeSize colft
     unbindTexture colormap
     -- depth cubemap
     depthmap <- genObject
     bindTexture depthmap
     setTextureWrap depthmap ClampToEdge
-    setTextureFilters depthmap Linear
+    setTextureFilters depthmap flt
     setTextureNoImage depthmap depthift cubeSize cubeSize depthft
     --setTextureCompareFunc depthmap (Just LessOrEqual)
     unbindTexture depthmap

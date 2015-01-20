@@ -19,12 +19,14 @@ import Data.Bits ( (.|.) )
 import Graphics.Rendering.OpenGL.Raw
 import Linear
 import Numeric.Natural ( Natural )
+import Photon.Render.Forward.Viewport ( Viewport(..) )
 import Photon.Render.GL.Framebuffer ( AttachmentPoint(..), Target(..)
                                     , bindFramebuffer )
 import Photon.Render.GL.Offscreen
 import Photon.Render.GL.Shader ( Uniform, Uniformable, (@=), buildProgram
                                , getUniform, useProgram )
-import Photon.Render.GL.Texture as Tex ( Format(..), InternalFormat(..) )
+import Photon.Render.GL.Texture as Tex ( Filter(..), Format(..)
+                                       , InternalFormat(..) )
 import Photon.Render.Shader ( GPUProgram )
 import Photon.Utils.Log
 
@@ -34,6 +36,7 @@ data Shadowing = Shadowing {
   , _shadowCubeDepthmapProgram :: GPUProgram
   , _shadowShadowProgram       :: GPUProgram
   , _shadowUniforms            :: ShadowingUniforms
+  , _shadowViewport            :: Viewport
   }
 
 data ShadowingUniforms = ShadowingUniforms {
@@ -56,14 +59,15 @@ getShadowing :: (MonadIO m,MonadLogger m,MonadError Log m)
             -> m Shadowing
 getShadowing w h cubeSize = do
   info CoreLog "generating light cube depthmap offscreen"
-  cubeOff <- genCubeOffscreen cubeSize R32F Tex.R (ColorAttachment 0) Depth32F
+  cubeOff <- genCubeOffscreen cubeSize Linear R32F Tex.R (ColorAttachment 0) Depth32F
     Depth DepthAttachment
-  shadowOff <- genOffscreen w h RGB32F Tex.RGB
+  shadowOff <- genOffscreen w h Nearest RGB32F Tex.RGB
   depthProgram <- buildProgram shadowDepthCubemapVS (Just shadowDepthCubemapGS)
     shadowDepthCubemapFS
   shadowProgram <- buildProgram shadowShadowVS Nothing shadowShadowFS
   uniforms <- liftIO (getShadowingUniforms depthProgram shadowProgram)
-  return (Shadowing cubeOff shadowOff depthProgram shadowProgram uniforms)
+  return $ Shadowing cubeOff shadowOff depthProgram shadowProgram uniforms
+    (Viewport cubeSize cubeSize 0 0)
 
 getShadowingUniforms :: GPUProgram -> GPUProgram -> IO ShadowingUniforms
 getShadowingUniforms depthProgram shadowProgram = do

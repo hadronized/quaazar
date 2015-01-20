@@ -23,7 +23,8 @@ import Photon.Render.GL.Framebuffer ( AttachmentPoint(..), Target(..)
 import Photon.Render.GL.Offscreen
 import Photon.Render.GL.Shader ( (@=), buildProgram
                                , getUniform, useProgram )
-import Photon.Render.GL.Texture as Tex ( Format(..), InternalFormat(..) )
+import Photon.Render.GL.Texture as Tex ( Filter(..)
+                                       , Format(..), InternalFormat(..) )
 import Photon.Render.GL.VertexArray ( VertexArray, genAttributelessVertexArray )
 import Photon.Render.Shader ( GPUProgram )
 import Photon.Utils.Either ( generalizeEither )
@@ -45,8 +46,8 @@ getAccumulation :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
 getAccumulation w h = do
   program <- buildProgram accumVS Nothing accumFS <* sinkLogs
   info CoreLog "generating accumulation offscreen"
-  off <- genOffscreen w h RGB32F RGB -- TODO: color offscreen
-  off2 <- genOffscreen w h RGB32F RGB -- TODO: color offscreen
+  off <- genOffscreen w h Nearest RGB32F RGB -- TODO: color offscreen
+  off2 <- genOffscreen w h Nearest RGB32F RGB -- TODO: color offscreen
   va <- liftIO genAttributelessVertexArray
   liftIO $ do
     useProgram program

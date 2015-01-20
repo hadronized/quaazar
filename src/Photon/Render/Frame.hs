@@ -19,7 +19,7 @@ import Numeric.Natural ( Natural )
 import Photon.Render.GL.Framebuffer ( AttachmentPoint(..), Target(..)
                                     , bindFramebuffer )
 import Photon.Render.GL.Offscreen
-import Photon.Render.GL.Texture ( Format(..), InternalFormat(..)
+import Photon.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
                                 , bindTextureAt )
 import Photon.Utils.Either ( generalizeEither )
 import Photon.Utils.Log
@@ -35,6 +35,6 @@ getScreenFrame =
 
 gpuFrame :: (MonadIO m,MonadError Log m) => Natural -> Natural -> m GPUFrame
 gpuFrame w h = do
-    off <- genOffscreen w h RGB32F RGB
+    off <- genOffscreen w h Nearest RGB32F RGB
     return $ GPUFrame (bindFramebuffer (off^.offscreenFB) ReadWrite)
       (bindTextureAt $ off^.offscreenRender)

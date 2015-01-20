@@ -17,20 +17,21 @@ import Photon.Render.Forward.Accumulation
 import Photon.Render.Forward.Lighting
 import Photon.Render.Forward.Looked ( Looked(..) )
 import Photon.Render.Forward.Shadowing
+import Photon.Render.Forward.Viewport ( Viewport )
 import Photon.Render.GL.Framebuffer ( Target(..), bindFramebuffer )
 import Photon.Render.GL.Offscreen
 import Photon.Render.GL.VertexArray ( bindVertexArray )
 import Photon.Render.PostFX ( GPUPostFX(..) )
 
-newtype Post = Post { unPost :: Lighting -> Shadowing -> Accumulation -> IO PingPong }
+newtype Post = Post { unPost :: Viewport -> Lighting -> Shadowing -> Accumulation -> IO PingPong }
 
 type PingPong = (Offscreen,Offscreen)
 
 fromLooked :: Looked -> Post
 fromLooked lk = Post fromLooked_
   where
-    fromLooked_ lighting shadowing accumulation = do
-      unLooked lk lighting shadowing accumulation
+    fromLooked_ screenViewport lighting shadowing accumulation = do
+      unLooked lk screenViewport lighting shadowing accumulation
       glDisable gl_BLEND
       bindVertexArray (accumulation^.accumVA)
       return (accumulation^.accumOff,lighting^.lightOff)
@@ -38,8 +39,8 @@ fromLooked lk = Post fromLooked_
 post :: GPUPostFX -> Post -> Post
 post gpupfx prev = Post post_
   where
-    post_ lighting shadowing accumulation = do
-      (sourceOff,targetOff) <- unPost prev lighting shadowing accumulation
+    post_ screenViewport lighting shadowing accumulation = do
+      (sourceOff,targetOff) <- unPost prev screenViewport lighting shadowing accumulation
       usePostFX gpupfx (sourceOff^.offscreenRender)
       bindFramebuffer (targetOff^.offscreenFB) ReadWrite
       glClear gl_DEPTH_BUFFER_BIT

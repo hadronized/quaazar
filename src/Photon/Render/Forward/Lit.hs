@@ -21,6 +21,7 @@ import Photon.Render.Forward.Accumulation
 import Photon.Render.Forward.Lighting
 import Photon.Render.Forward.Shaded ( Shaded(..) )
 import Photon.Render.Forward.Shadowing
+import Photon.Render.Forward.Viewport
 import Photon.Render.GL.Framebuffer ( Target(..), bindFramebuffer )
 import Photon.Render.GL.Offscreen
 import Photon.Render.GL.Shader ( unused, useProgram )
@@ -28,18 +29,19 @@ import Photon.Render.GL.Texture ( bindTextureAt )
 import Photon.Render.GL.VertexArray ( bindVertexArray )
 import Photon.Render.Light ( GPULight(..) )
 
-newtype Lit = Lit { unLit :: Lighting -> Shadowing -> Accumulation -> GPUCamera -> IO () }
+newtype Lit = Lit { unLit :: Viewport -> Lighting -> Shadowing -> Accumulation -> GPUCamera -> IO () }
 
 instance Monoid Lit where
-  mempty =  Lit $ \_ _ _ _ -> return ()
-  Lit f `mappend` Lit g = Lit $ \l s a c -> f l s a c >> g l s a c
+  mempty =  Lit $ \_ _ _ _ _ -> return ()
+  Lit f `mappend` Lit g = Lit $ \v l s a c -> f v l s a c >> g v l s a c
 
 lighten :: GPULight -> Entity -> Shaded -> Lit
 lighten gpulig ent shd = Lit lighten_
   where
-    lighten_ lighting shadowing accumulation gpucam = do
+    lighten_ screenViewport lighting shadowing accumulation gpucam = do
       purgeShadowingFramebuffer shadowing
-      onlyIfCastShadows gpulig $ generateLightDepthmap shadowing shd gpulig ent -- FIXME: per-light
+      onlyIfCastShadows gpulig $ generateLightDepthmap screenViewport shadowing
+        shd gpulig ent -- FIXME: per-light
       purgeLightingFramebuffer lighting
       applyLighting lighting shd gpulig ent
       generateShadowmap lighting shadowing accumulation gpulig ent gpucam
@@ -58,22 +60,27 @@ applyLighting lighting shd gpulig ent = do
   where
     lunis = lighting^.lightUniforms
 
-generateLightDepthmap :: Shadowing
+generateLightDepthmap :: Viewport
+                      -> Shadowing
                       -> Shaded
                       -> GPULight
                       -> Entity
                       -> IO ()
-generateLightDepthmap shadowing shd gpulig ent = do
+generateLightDepthmap screenViewport shadowing shd gpulig ent = do
     useProgram (shadowing^.shadowCubeDepthmapProgram)
     runLight gpulig unused unused unused ligPosU ligProjViewsU ligIRadU ent
     glDisable gl_BLEND
     glEnable gl_DEPTH_TEST
+    glViewport 0 0 1024 1024
+    setViewport shdwViewport
     unShadedNoMaterial shd shadowing
+    setViewport screenViewport
   where
     sunis = shadowing^.shadowUniforms
     ligProjViewsU = sunis^.shadowDepthLigProjViewsU
     ligPosU = sunis^.shadowDepthLigPosU
     ligIRadU = sunis^.shadowDepthLigIRadU
+    shdwViewport = shadowing^.shadowViewport
 
 generateShadowmap :: Lighting
                   -> Shadowing
