@@ -24,10 +24,7 @@ import Photon.Render.Shader
 import Photon.Render.GPU
 import Photon.Utils.Log ( Log, MonadLogger, sinkLogs )
 
-data GPUPostFX a = GPUPostFX {
-    usePostFX    :: Texture2D -> IO ()
-  , updatePostFX :: a -> IO ()
-  }
+data GPUPostFX a = GPUPostFX { usePostFX :: Texture2D -> a -> IO () }
 
 -- TODO
 {-
@@ -44,11 +41,11 @@ gpuPostFX :: (MonadIO m,MonadLogger m,MonadError Log m)
           -> m (GPUPostFX a)
 gpuPostFX (PostFX src) uniforms = do
     gpuprogram <- gpuProgram vsSrc Nothing src uniforms
-    return $ GPUPostFX (use gpuprogram) (updateUniforms gpuprogram)
+    return $ GPUPostFX (use gpuprogram)
   where
-    use gpuprogram sourceTex = do
+    use gpuprogram sourceTex a = do
       bindTextureAt sourceTex 0
-      useProgram gpuprogram
+      useProgram gpuprogram a
 
 gpuPostFXFree :: (MonadIO m,MonadLogger m,MonadError Log m)
               => PostFX

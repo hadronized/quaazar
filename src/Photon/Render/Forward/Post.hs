@@ -36,12 +36,12 @@ fromLooked lk = Post fromLooked_
       bindVertexArray (accumulation^.accumVA)
       return (accumulation^.accumOff,lighting^.lightOff)
 
-post :: GPUPostFX a -> Post -> Post
-post gpupfx prev = Post post_
+post :: GPUPostFX a -> a -> Post -> Post
+post  gpupfx a prev = Post post_
   where
     post_ screenViewport lighting shadowing accumulation = do
       (sourceOff,targetOff) <- unPost prev screenViewport lighting shadowing accumulation
-      usePostFX gpupfx (sourceOff^.offscreenRender)
+      usePostFX gpupfx (sourceOff^.offscreenRender) a
       bindFramebuffer (targetOff^.offscreenFB) ReadWrite
       glClear gl_DEPTH_BUFFER_BIT
       glDrawArrays gl_TRIANGLE_STRIP 0 4

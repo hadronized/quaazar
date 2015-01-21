@@ -20,10 +20,7 @@ import Photon.Render.GL.Shader ( Uniformable, (@=), buildProgram, getUniform )
 import qualified Photon.Render.GL.Shader as GL ( useProgram )
 import Photon.Utils.Log
 
-data GPUProgram a = GPUProgram {
-    useProgram :: IO ()
-  , updateUniforms :: a -> IO ()
-  }
+newtype GPUProgram a = GPUProgram { useProgram :: a -> IO () }
 
 gpuProgram :: (MonadIO m,MonadLogger m,MonadError Log m)
            => String
@@ -34,7 +31,9 @@ gpuProgram :: (MonadIO m,MonadLogger m,MonadError Log m)
 gpuProgram vs gs fs uniforms = do
     program <- buildProgram vs gs fs
     update <- liftIO $ uniforms (uniformize program)
-    return $ GPUProgram (GL.useProgram program) update
+    return . GPUProgram $ \a -> do
+      GL.useProgram program
+      update a
   where
     uniformize program name = do
       u <- getUniform program name
