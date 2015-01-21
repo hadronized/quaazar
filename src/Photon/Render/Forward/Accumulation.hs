@@ -21,17 +21,16 @@ import Numeric.Natural ( Natural )
 import Photon.Render.GL.Framebuffer ( AttachmentPoint(..), Target(..)
                                     , bindFramebuffer )
 import Photon.Render.GL.Offscreen
-import Photon.Render.GL.Shader ( (@=), buildProgram
-                               , getUniform, useProgram )
+import Photon.Render.GL.Shader ( Program, (@=), buildProgram, getUniform
+                               , useProgram )
 import Photon.Render.GL.Texture as Tex ( Filter(..)
                                        , Format(..), InternalFormat(..) )
 import Photon.Render.GL.VertexArray ( VertexArray, genAttributelessVertexArray )
-import Photon.Render.Shader ( GPUProgram )
 import Photon.Utils.Either ( generalizeEither )
 import Photon.Utils.Log
 
 data Accumulation = Accumulation {
-    _accumProgram :: GPUProgram
+    _accumProgram :: Program
   , _accumOff     :: Offscreen
   , _accumOff2    :: Offscreen
   , _accumVA      :: VertexArray

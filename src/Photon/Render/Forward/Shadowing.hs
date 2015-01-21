@@ -23,18 +23,17 @@ import Photon.Render.Forward.Viewport ( Viewport(..) )
 import Photon.Render.GL.Framebuffer ( AttachmentPoint(..), Target(..)
                                     , bindFramebuffer )
 import Photon.Render.GL.Offscreen
-import Photon.Render.GL.Shader ( Uniform, Uniformable, (@=), buildProgram
-                               , getUniform, useProgram )
+import Photon.Render.GL.Shader ( Program, Uniform, Uniformable, (@=)
+                               , buildProgram, getUniform, useProgram )
 import Photon.Render.GL.Texture as Tex ( Filter(..), Format(..)
                                        , InternalFormat(..) )
-import Photon.Render.Shader ( GPUProgram )
 import Photon.Utils.Log
 
 data Shadowing = Shadowing {
     _shadowDepthCubeOff        :: CubeOffscreen
   , _shadowShadowOff           :: Offscreen
-  , _shadowCubeDepthmapProgram :: GPUProgram
-  , _shadowShadowProgram       :: GPUProgram
+  , _shadowCubeDepthmapProgram :: Program
+  , _shadowShadowProgram       :: Program
   , _shadowUniforms            :: ShadowingUniforms
   , _shadowViewport            :: Viewport
   }
@@ -69,7 +68,7 @@ getShadowing w h cubeSize = do
   return $ Shadowing cubeOff shadowOff depthProgram shadowProgram uniforms
     (Viewport cubeSize cubeSize 0 0)
 
-getShadowingUniforms :: GPUProgram -> GPUProgram -> IO ShadowingUniforms
+getShadowingUniforms :: Program -> Program -> IO ShadowingUniforms
 getShadowingUniforms depthProgram shadowProgram = do
     useProgram shadowProgram
     shadowSem "depthmap" >>= (@= (0 :: Int))

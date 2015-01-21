@@ -24,15 +24,14 @@ import Photon.Core.Material ( Albedo )
 import Photon.Render.Camera ( GPUCamera(..) )
 import Photon.Render.GL.Framebuffer ( Target(..), bindFramebuffer )
 import Photon.Render.GL.Offscreen
-import Photon.Render.GL.Shader ( Uniform, Uniformable, buildProgram
+import Photon.Render.GL.Shader ( Program, Uniform, Uniformable, buildProgram
                                , getUniform, unused, useProgram )
 import Photon.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)  )
-import Photon.Render.Shader ( GPUProgram )
 import Photon.Utils.Log
 
 -- |'Lighting' gathers information about lighting in the scene.
 data Lighting = Lighting {
-    _omniLightProgram :: GPUProgram
+    _omniLightProgram :: Program
   , _lightOff         :: Offscreen
   , _lightUniforms    :: LightingUniforms
   }
@@ -64,7 +63,7 @@ getLighting w h = do
   uniforms <- liftIO (getLightingUniforms program)
   return (Lighting program off uniforms)
 
-getLightingUniforms :: GPUProgram -> IO LightingUniforms
+getLightingUniforms :: Program -> IO LightingUniforms
 getLightingUniforms program = do
     useProgram program
     LightingUniforms
