@@ -34,11 +34,12 @@ makeLenses ''ForwardRenderer
 getForwardRenderer :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
                    => Natural
                    -> Natural
+                   -> Natural
                    -> Window
                    -> m ForwardRenderer
-getForwardRenderer w h window =
+getForwardRenderer w h shadowDef window =
   ForwardRenderer
     <$> getLighting w h
-    <*> getShadowing w h 2048
+    <*> getShadowing w h (256+shadowDef*256)
     <*> getAccumulation w h
     <*> pure window
