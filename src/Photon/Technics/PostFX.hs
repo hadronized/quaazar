@@ -12,9 +12,14 @@
 module Photon.Technics.PostFX (
     -- * Gamma correction
     gammaCorrection
+  , getGammaCorrection
   ) where
 
+import Control.Monad.Error.Class ( MonadError )
+import Control.Monad.Trans ( MonadIO )
 import Photon.Core.PostFX ( PostFX(PostFX) )
+import Photon.Render.PostFX ( GPUPostFX, gpuPostFXFree )
+import Photon.Utils.Log
 
 gammaCorrection :: PostFX
 gammaCorrection = PostFX $ unlines
@@ -26,3 +31,6 @@ gammaCorrection = PostFX $ unlines
   , "  frag = pow(texelFetch(sourceTex, ivec2(gl_FragCoord.xy), 0), vec4(1./2.2));"
   , "}"
   ]
+
+getGammaCorrection :: (MonadIO m,MonadLogger m,MonadError Log m) => m (GPUPostFX ())
+getGammaCorrection = gpuPostFXFree gammaCorrection

@@ -50,6 +50,11 @@ gpuPostFX (PostFX src) uniforms = do
       bindTextureAt sourceTex 0
       useProgram gpuprogram
 
+gpuPostFXFree :: (MonadIO m,MonadLogger m,MonadError Log m)
+              => PostFX
+              -> m (GPUPostFX ())
+gpuPostFXFree pfx = gpuPostFX pfx $ \_ -> return $ \_ -> return ()
+
 vsSrc :: String
 vsSrc = unlines
     [
