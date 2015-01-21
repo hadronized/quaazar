@@ -14,7 +14,7 @@ build-type:          Simple
 cabal-version:       >= 1.10
 
 library
-  ghc-options:         -W -Wall -debug
+  ghc-options:         -W -Wall
 
   hs-source-dirs:      src
 
