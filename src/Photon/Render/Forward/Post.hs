@@ -36,7 +36,7 @@ fromLooked lk = Post fromLooked_
       bindVertexArray (accumulation^.accumVA)
       return (accumulation^.accumOff,lighting^.lightOff)
 
-post :: GPUPostFX -> Post -> Post
+post :: GPUPostFX a -> Post -> Post
 post gpupfx prev = Post post_
   where
     post_ screenViewport lighting shadowing accumulation = do

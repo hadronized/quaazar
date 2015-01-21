@@ -1,3 +1,5 @@
+{-# LANGUAGE RankNTypes #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   : (C) 2014 Dimitri Sabadie
@@ -16,37 +18,37 @@ import Control.Monad.Trans ( MonadIO(..) )
 import Control.Monad.Trans.Journal ( evalJournalT )
 import Photon.Core.PostFX
 import Photon.Render.GL.GLObject
-import Photon.Render.GL.Shader
 import Photon.Render.GL.Texture
+import Photon.Render.GL.Shader ( Uniformable )
+import Photon.Render.Shader
 import Photon.Render.GPU
 import Photon.Utils.Log ( Log, MonadLogger, sinkLogs )
 
-newtype GPUPostFX = GPUPostFX { usePostFX :: Texture2D -> IO () }
+data GPUPostFX a = GPUPostFX {
+    usePostFX    :: Texture2D -> IO ()
+  , updatePostFX :: a -> IO ()
+  }
 
-instance GPU PostFX GPUPostFX where
+-- TODO
+{-
+instance GPU PostFX (GPUPostFX a) where
   gpu pfx = evalJournalT $ do
     gpupfx <- gpuPostFX pfx
     sinkLogs
     return gpupfx
+-}
 
-gpuPostFX :: (MonadIO m,MonadLogger m,MonadError Log m) => PostFX -> m GPUPostFX
-gpuPostFX (PostFX src) = do
-    vs <- liftIO (genObject :: IO VertexShader)
-    fs <- liftIO (genObject :: IO FragmentShader)
-    program <- liftIO genObject
-    sequence_ [compile vs vsSrc,compile fs src]
-    sequence_ [attach program vs,attach program fs]
-    link program
-    liftIO $ do
-      deleteObject vs
-      deleteObject fs
-      sourceTexU <- getUniform program "sourceTex"
-      useProgram program
-      sourceTexU @= (0 :: Int)
-    sinkLogs
-    return . GPUPostFX $ \sourceTex -> do
-      useProgram program
+gpuPostFX :: (MonadIO m,MonadLogger m,MonadError Log m)
+          => PostFX
+          -> ((forall u. (Uniformable u) => String -> IO (Maybe u -> IO ())) -> IO (a -> IO ()))
+          -> m (GPUPostFX a)
+gpuPostFX (PostFX src) uniforms = do
+    gpuprogram <- gpuProgram vsSrc Nothing src uniforms
+    return $ GPUPostFX (use gpuprogram) (updateUniforms gpuprogram)
+  where
+    use gpuprogram sourceTex = do
       bindTextureAt sourceTex 0
+      useProgram gpuprogram
 
 vsSrc :: String
 vsSrc = unlines
