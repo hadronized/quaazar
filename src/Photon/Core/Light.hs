@@ -39,6 +39,7 @@ import Photon.Core.Loader ( Load(..) )
 
 data LightType
   = Omni
+  | Ambient
     deriving (Eq,Show)
 
 instance FromJSON LightType where
@@ -46,6 +47,7 @@ instance FromJSON LightType where
     where
       parseType t
         | t == "omni" = return Omni
+        | t == "ambient" = return Ambient
         | otherwise = fail "unknown light type"
 
 data Light = Light {
@@ -62,7 +64,24 @@ data Light = Light {
   } deriving (Eq,Show)
 
 instance FromJSON Light where
-  parseJSON = withObject "light" $ \o ->
+  parseJSON = withObject "light" $ \o -> do
+    t <- o .: "type"
+    c <- o .: "color"
+    case t of
+      Omni -> do
+        Light
+          <$> pure t
+          <*> pure c
+          <*> o .: "power"
+          <*> o .: "radius"
+          <*> o .:? "cast_shadows" .!= False
+      Ambient -> do
+        Light
+          <$> pure t
+          <*> pure c
+          <*> pure 0
+          <*> pure 0
+          <*> pure False
     Light
       <$> o .: "type"
       <*> o .: "color"
