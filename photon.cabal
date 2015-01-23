@@ -22,14 +22,15 @@ library
                      , Photon.Control
                      , Photon.Control.Monad
                      , Photon.Core
+                     , Photon.Core.AmbientLight
                      , Photon.Core.BoundingVolume
                      , Photon.Core.Color
                      , Photon.Core.Entity
-                     , Photon.Core.Light
                      , Photon.Core.Loader
                      , Photon.Core.Material
                      , Photon.Core.Mesh
                      , Photon.Core.Normal
+                     , Photon.Core.OmniLight
                      , Photon.Core.Position
                      , Photon.Core.PostFX
                      , Photon.Core.Projection
