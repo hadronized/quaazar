@@ -82,12 +82,6 @@ instance FromJSON Light where
           <*> pure 0
           <*> pure 0
           <*> pure False
-    Light
-      <$> o .: "type"
-      <*> o .: "color"
-      <*> o .: "power"
-      <*> o .: "radius"
-      <*> o .:? "cast_shadows" .!= False
 
 makeLenses ''Light
 

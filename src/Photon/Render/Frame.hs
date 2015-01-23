@@ -16,12 +16,10 @@ import Control.Monad.Trans ( MonadIO(..) )
 import Control.Monad.Error.Class ( MonadError )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
-import Photon.Render.GL.Framebuffer ( AttachmentPoint(..), Target(..)
-                                    , bindFramebuffer )
+import Photon.Render.GL.Framebuffer (Target(..), bindFramebuffer )
 import Photon.Render.GL.Offscreen
 import Photon.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
                                 , bindTextureAt )
-import Photon.Utils.Either ( generalizeEither )
 import Photon.Utils.Log
 
 data GPUFrame = GPUFrame {

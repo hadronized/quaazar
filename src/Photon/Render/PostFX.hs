@@ -15,14 +15,11 @@ module Photon.Render.PostFX where
 
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
-import Control.Monad.Trans.Journal ( evalJournalT )
 import Photon.Core.PostFX
-import Photon.Render.GL.GLObject
 import Photon.Render.GL.Texture
 import Photon.Render.GL.Shader ( Uniformable )
 import Photon.Render.Shader
-import Photon.Render.GPU
-import Photon.Utils.Log ( Log, MonadLogger, sinkLogs )
+import Photon.Utils.Log ( Log, MonadLogger )
 
 data GPUPostFX a = GPUPostFX { usePostFX :: Texture2D -> a -> IO () }
 
