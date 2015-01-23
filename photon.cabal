@@ -30,7 +30,6 @@ library
                      , Photon.Core.Material
                      , Photon.Core.Mesh
                      , Photon.Core.Normal
-                     , Photon.Core.OmniLight
                      , Photon.Core.Position
                      , Photon.Core.PostFX
                      , Photon.Core.Projection
