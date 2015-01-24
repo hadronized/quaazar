@@ -31,10 +31,10 @@ shade :: GPUMaterial -> Rendered -> Shaded
 shade gmat rdrd = Shaded shade_ shadeNoMaterial
   where
     shade_ lighting = do
-        runMaterial gmat (lunis^.lightMatDiffAlbU) (lunis^.lightMatSpecAlbU)
-          (lunis^.lightMatShnU)
-        unRendered rdrd (lunis^.lightModelU)
+        runMaterial gmat (lunis^.omniLightMatDiffAlbU) (lunis^.omniLightMatSpecAlbU)
+          (lunis^.omniLightMatShnU)
+        unRendered rdrd (lunis^.omniLightModelU)
       where
-        lunis = lighting^.lightUniforms
+        lunis = lighting^.omniLightUniforms
     shadeNoMaterial shadowing =
       unRendered rdrd (shadowing^.shadowUniforms.shadowDepthModelU)

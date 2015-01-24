@@ -31,26 +31,26 @@ import Photon.Utils.Log
 
 -- |'Lighting' gathers information about lighting in the scene.
 data Lighting = Lighting {
-    _omniLightProgram :: Program
-  , _lightOff         :: Offscreen
-  , _lightUniforms    :: LightingUniforms
+    _omniLightProgram  :: Program
+  , _omniLightUniforms :: OmniLightingUniforms
+  , _lightOff          :: Offscreen
   }
 
-data LightingUniforms = LightingUniforms {
-    _lightCamProjViewU :: Uniform (M44 Float)
-  , _lightModelU       :: Uniform (M44 Float)
-  , _lightEyeU         :: Uniform (V3 Float)
-  , _lightMatDiffAlbU  :: Uniform Albedo
-  , _lightMatSpecAlbU  :: Uniform Albedo
-  , _lightMatShnU      :: Uniform Float
-  , _lightPosU         :: Uniform (V3 Float) -- FIXME: github issue #22
-  , _lightColU         :: Uniform Color
-  , _lightPowU         :: Uniform Float
-  , _lightRadU         :: Uniform Float
+data OmniLightingUniforms = OmniLightingUniforms {
+    _omniLightCamProjViewU :: Uniform (M44 Float)
+  , _omniLightModelU       :: Uniform (M44 Float)
+  , _omniLightEyeU         :: Uniform (V3 Float)
+  , _omniLightMatDiffAlbU  :: Uniform Albedo
+  , _omniLightMatSpecAlbU  :: Uniform Albedo
+  , _omniLightMatShnU      :: Uniform Float
+  , _omniLightPosU         :: Uniform (V3 Float) -- FIXME: github issue #22
+  , _omniLightColU         :: Uniform Color
+  , _omniLightPowU         :: Uniform Float
+  , _omniLightRadU         :: Uniform Float
   }
 
 makeLenses ''Lighting
-makeLenses ''LightingUniforms
+makeLenses ''OmniLightingUniforms
 
 getLighting :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
             => Natural
@@ -58,15 +58,15 @@ getLighting :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
             -> m Lighting
 getLighting w h = do
   info CoreLog "generating light offscreen"
-  program <- buildProgram lightVS Nothing lightFS <* sinkLogs
+  program <- buildProgram omniVS Nothing omniFS <* sinkLogs
   off <- genOffscreen w h Nearest RGB32F RGB
-  uniforms <- liftIO (getLightingUniforms program)
-  return (Lighting program off uniforms)
+  uniforms <- liftIO (getOmniLightingUniforms program)
+  return (Lighting program uniforms off)
 
-getLightingUniforms :: Program -> IO LightingUniforms
-getLightingUniforms program = do
+getOmniLightingUniforms :: Program -> IO OmniLightingUniforms
+getOmniLightingUniforms program = do
     useProgram program
-    LightingUniforms
+    OmniLightingUniforms
       <$> sem "projView"
       <*> sem "model"
       <*> sem "eye"
@@ -87,17 +87,17 @@ purgeLightingFramebuffer lighting = do
   glClearColor 0 0 0 0
   glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
 
-pushCameraToLighting :: Lighting -> GPUCamera -> IO ()
-pushCameraToLighting lighting gcam = do
+pushCameraToOmniLighting :: Lighting -> GPUCamera -> IO ()
+pushCameraToOmniLighting lighting gcam = do
   useProgram (lighting^.omniLightProgram)
   runCamera gcam projViewU unused eyeU
   where
-    projViewU = unis^.lightCamProjViewU
-    eyeU = unis^.lightEyeU
-    unis = lighting^.lightUniforms
+    projViewU = unis^.omniLightCamProjViewU
+    eyeU = unis^.omniLightEyeU
+    unis = lighting^.omniLightUniforms
 
-lightVS :: String
-lightVS = unlines
+omniVS :: String
+omniVS = unlines
   [
     "#version 330 core"
 
@@ -117,8 +117,8 @@ lightVS = unlines
   , "}"
   ]
 
-lightFS :: String
-lightFS = unlines
+omniFS :: String
+omniFS = unlines
   [
     "#version 330 core"
 

@@ -54,11 +54,11 @@ applyLighting lighting shd gpulig ent = do
     useProgram (lighting^.omniLightProgram)
     glDisable gl_BLEND
     glEnable gl_DEPTH_TEST
-    runLight gpulig (lunis^.lightColU) (lunis^.lightPowU) (lunis^.lightRadU)
-      (lunis^.lightPosU) unused unused ent
+    runLight gpulig (lunis^.omniLightColU) (lunis^.omniLightPowU) (lunis^.omniLightRadU)
+      (lunis^.omniLightPosU) unused unused ent
     unShaded shd lighting
   where
-    lunis = lighting^.lightUniforms
+    lunis = lighting^.omniLightUniforms
 
 generateLightDepthmap :: Viewport
                       -> Shadowing
