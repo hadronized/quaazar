@@ -87,8 +87,9 @@ purgeLightingFramebuffer lighting = do
   glClearColor 0 0 0 0
   glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
 
-pushCameraToOmniLighting :: Lighting -> GPUCamera -> IO ()
-pushCameraToOmniLighting lighting gcam = do
+pushCameraToLighting :: Lighting -> GPUCamera -> IO ()
+pushCameraToLighting lighting gcam = do
+  -- omnidirectional lights
   useProgram (lighting^.omniLightProgram)
   runCamera gcam projViewU unused eyeU
   where

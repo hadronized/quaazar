@@ -25,5 +25,5 @@ look gpucam lit = Looked look_
   where
     look_ screenViewport lighting shadowing accumulation = do
       purgeAccumulationFramebuffer accumulation
-      pushCameraToOmniLighting lighting gpucam
+      pushCameraToLighting lighting gpucam
       unLit lit screenViewport lighting shadowing accumulation gpucam
