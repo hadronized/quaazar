@@ -22,13 +22,7 @@
 
 module Photon.Core.Light (
     -- * Light
-    Light(Light)
-  , LightType(..)
-  , ligType
-  , ligColor
-  , ligPower
-  , ligRadius
-  , ligCastShadows
+    Light(..)
   ) where
 
 import Control.Applicative
@@ -37,51 +31,27 @@ import Data.Aeson
 import Photon.Core.Color ( Color )
 import Photon.Core.Loader ( Load(..) )
 
-data LightType
+data Light
   = Omni
-  | Ambient
+      Color -- ^ Light color
+      Float -- ^ Light power
+      Float -- ^ Light radius
+      Bool  -- ^ Does the light cast shadow?
     deriving (Eq,Show)
-
-instance FromJSON LightType where
-  parseJSON = withText "light type" parseType
-    where
-      parseType t
-        | t == "omni" = return Omni
-        | t == "ambient" = return Ambient
-        | otherwise = fail "unknown light type"
-
-data Light = Light {
-    -- |Type of the light.
-    ligType         :: LightType
-    -- |Color of the light.
-  , _ligColor       :: Color
-    -- |Power of the light – a.k.a. intensity.
-  , _ligPower       :: Float
-    -- |Radius of the light.
-  , _ligRadius      :: Float
-    -- |Does the light cast shadows?
-  , _ligCastShadows :: Bool
-  } deriving (Eq,Show)
 
 instance FromJSON Light where
   parseJSON = withObject "light" $ \o -> do
-    t <- o .: "type"
-    c <- o .: "color"
-    case t of
-      Omni -> do
-        Light
-          <$> pure t
-          <*> pure c
-          <*> o .: "power"
-          <*> o .: "radius"
-          <*> o .:? "cast_shadows" .!= False
-      Ambient -> do
-        Light
-          <$> pure t
-          <*> pure c
-          <*> pure 0
-          <*> pure 0
-          <*> pure False
+      t :: String <- o .: "type"
+      withType t o
+    where
+      withType t o
+        | t == "omni" =
+          Omni
+            <$> o .: "color"
+            <*> o .: "power"
+            <*> o .: "radius"
+            <*> o .:? "cast_shadows" .!= False
+        | otherwise = fail "unknown light type"
 
 makeLenses ''Light
 

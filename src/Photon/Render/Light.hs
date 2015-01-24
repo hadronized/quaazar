@@ -36,7 +36,7 @@ instance GPU Light GPULight where
   gpu = gpuLight
 
 gpuLight :: (Monad m) => Light -> m GPULight
-gpuLight (Light _ col power radius castShadows)
+gpuLight (Omni col power radius castShadows)
     | castShadows = return $ GPULight run id
     | otherwise = return $ GPULight run (const $ return ())
   where
