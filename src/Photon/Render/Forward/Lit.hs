@@ -52,14 +52,11 @@ lighten lig ent shd = case lig of
       generateOmniShadowmap lighting shadowing accumulation ligRad ent gpucam
       purgeAccumulationFramebuffer2 accumulation
       combineOmniShadows lighting shadowing accumulation
-      accumulate lighting shadowing accumulation
-    omniWithoutShadows ligCol ligPower ligRad screenViewport lighting shadowing accumulation gpucam = do
-      purgeShadowingFramebuffer shadowing
-      purgeLightingFramebuffer lighting
-      applyOmniLighting lighting shd ligCol ligPower ligRad ent
+      accumulate lighting accumulation
+    omniWithoutShadows ligCol ligPower ligRad _ lighting _ accumulation _ = do
       purgeAccumulationFramebuffer2 accumulation
-      combineOmniShadows lighting shadowing accumulation
-      accumulate lighting shadowing accumulation
+      applyOmniLighting lighting shd ligCol ligPower ligRad ent
+      accumulate lighting accumulation
 
 applyOmniLighting :: Lighting -> Shaded -> Color -> Float -> Float -> Entity -> IO ()
 applyOmniLighting lighting shd ligCol ligPower ligRad ent = do
@@ -162,8 +159,8 @@ combineOmniShadows lighting shadowing accumulation = do
   bindTextureAt (shadowing^.shadowShadowOff.offscreenRender) 0
   glDrawArrays gl_TRIANGLE_STRIP 0 4
 
-accumulate :: Lighting -> Shadowing -> Accumulation -> IO ()
-accumulate lighting shadowing accumulation = do
+accumulate :: Lighting -> Accumulation -> IO ()
+accumulate lighting accumulation = do
   useProgram (accumulation^.accumProgram)
   bindFramebuffer (accumulation^.accumOff.offscreenFB) ReadWrite
   glDisable gl_DEPTH_TEST
