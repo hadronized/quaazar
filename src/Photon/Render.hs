@@ -14,7 +14,6 @@ module Photon.Render (
   , module Photon.Render.Camera
   , module Photon.Render.Frame
   , module Photon.Render.GPU
-  , module Photon.Render.Light
   , module Photon.Render.Material
   , module Photon.Render.Mesh
   , module Photon.Render.PostFX
@@ -26,7 +25,6 @@ import Photon.Render.Forward
 import Photon.Render.Camera
 import Photon.Render.Frame
 import Photon.Render.GPU
-import Photon.Render.Light
 import Photon.Render.Material
 import Photon.Render.Mesh
 import Photon.Render.PostFX

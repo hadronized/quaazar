@@ -60,7 +60,7 @@ purgeAccumulationFramebuffer accumulation = do
 purgeAccumulationFramebuffer2 :: Accumulation -> IO ()
 purgeAccumulationFramebuffer2 accumulation = do
   bindFramebuffer (accumulation^.accumOff2.offscreenFB) ReadWrite
-  glClearColor 0 0 0 0
+  glClearColor 1 1 1 1
   glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
 
 accumVS :: String

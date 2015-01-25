@@ -15,7 +15,11 @@ import Control.Lens
 import Data.Bits ( (.|.) )
 import Data.Monoid
 import Graphics.Rendering.OpenGL.Raw
+import Linear
+import Photon.Core.Color
 import Photon.Core.Entity
+import Photon.Core.Light
+import Photon.Core.Projection ( Projection(..), projectionMatrix )
 import Photon.Render.Camera ( GPUCamera(..) )
 import Photon.Render.Forward.Accumulation
 import Photon.Render.Forward.Lighting
@@ -24,10 +28,9 @@ import Photon.Render.Forward.Shadowing
 import Photon.Render.Forward.Viewport
 import Photon.Render.GL.Framebuffer ( Target(..), bindFramebuffer )
 import Photon.Render.GL.Offscreen
-import Photon.Render.GL.Shader ( unused, useProgram )
+import Photon.Render.GL.Shader ( (@=), unused, useProgram )
 import Photon.Render.GL.Texture ( bindTextureAt )
 import Photon.Render.GL.VertexArray ( bindVertexArray )
-import Photon.Render.Light ( GPULight(..) )
 
 newtype Lit = Lit { unLit :: Viewport -> Lighting -> Shadowing -> Accumulation -> GPUCamera -> IO () }
 
@@ -35,40 +38,53 @@ instance Monoid Lit where
   mempty =  Lit $ \_ _ _ _ _ -> return ()
   Lit f `mappend` Lit g = Lit $ \v l s a c -> f v l s a c >> g v l s a c
 
-lighten :: GPULight -> Entity -> Shaded -> Lit
-lighten gpulig ent shd = Lit lighten_
+lighten :: Light -> Entity -> Shaded -> Lit
+lighten lig ent shd = case lig of
+    Omni ligCol ligPower ligRad castShadows
+      | castShadows -> Lit $ omniWithShadows ligCol ligPower ligRad
+      | otherwise -> Lit $ omniWithoutShadows ligCol ligPower ligRad
   where
-    lighten_ screenViewport lighting shadowing accumulation gpucam = do
+    omniWithShadows ligCol ligPower ligRad screenViewport lighting shadowing accumulation gpucam = do
       purgeShadowingFramebuffer shadowing
-      onlyIfCastShadows gpulig $ generateLightDepthmap screenViewport shadowing
-        shd gpulig ent -- FIXME: per-light
+      generateOmniLightDepthmap screenViewport shadowing shd ligRad ent
       purgeLightingFramebuffer lighting
-      applyLighting lighting shd gpulig ent
-      generateShadowmap lighting shadowing accumulation gpulig ent gpucam
+      applyOmniLighting lighting shd ligCol ligPower ligRad ent
+      generateOmniShadowmap lighting shadowing accumulation ligRad ent gpucam
       purgeAccumulationFramebuffer2 accumulation
-      combineShadows lighting shadowing accumulation
+      combineOmniShadows lighting shadowing accumulation
+      accumulate lighting shadowing accumulation
+    omniWithoutShadows ligCol ligPower ligRad screenViewport lighting shadowing accumulation gpucam = do
+      purgeShadowingFramebuffer shadowing
+      purgeLightingFramebuffer lighting
+      applyOmniLighting lighting shd ligCol ligPower ligRad ent
+      purgeAccumulationFramebuffer2 accumulation
+      combineOmniShadows lighting shadowing accumulation
       accumulate lighting shadowing accumulation
 
-applyLighting :: Lighting -> Shaded -> GPULight -> Entity -> IO ()
-applyLighting lighting shd gpulig ent = do
+applyOmniLighting :: Lighting -> Shaded -> Color -> Float -> Float -> Entity -> IO ()
+applyOmniLighting lighting shd ligCol ligPower ligRad ent = do
     useProgram (lighting^.omniLightProgram)
     glDisable gl_BLEND
     glEnable gl_DEPTH_TEST
-    runLight gpulig (lunis^.omniLightColU) (lunis^.omniLightPowU) (lunis^.omniLightRadU)
-      (lunis^.omniLightPosU) unused unused ent
+    lunis^.omniLightColU @= ligCol
+    lunis^.omniLightPowU @= ligPower
+    lunis^.omniLightRadU @= ligRad
+    lunis^.omniLightPosU @= ent^.entityPosition
     unShaded shd lighting
   where
     lunis = lighting^.omniLightUniforms
 
-generateLightDepthmap :: Viewport
-                      -> Shadowing
-                      -> Shaded
-                      -> GPULight
-                      -> Entity
-                      -> IO ()
-generateLightDepthmap screenViewport shadowing shd gpulig ent = do
+generateOmniLightDepthmap :: Viewport
+                          -> Shadowing
+                          -> Shaded
+                          -> Float
+                          -> Entity
+                          -> IO ()
+generateOmniLightDepthmap screenViewport shadowing shd ligRad ent = do
     useProgram (shadowing^.shadowCubeDepthmapProgram)
-    runLight gpulig unused unused unused ligPosU ligProjViewsU ligIRadU ent
+    ligProjViewsU @= omniProjViews 0.1 ligRad -- TODO: per-light znear
+    ligPosU @= ent^.entityPosition
+    ligIRadU @= 1 / ligRad
     glDisable gl_BLEND
     glEnable gl_DEPTH_TEST
     setViewport shdwViewport
@@ -81,21 +97,44 @@ generateLightDepthmap screenViewport shadowing shd gpulig ent = do
     ligIRadU = sunis^.shadowDepthLigIRadU
     shdwViewport = shadowing^.shadowViewport
 
-generateShadowmap :: Lighting
-                  -> Shadowing
-                  -> Accumulation
-                  -> GPULight
-                  -> Entity
-                  -> GPUCamera
-                  -> IO ()
-generateShadowmap lighting shadowing accumulation gpulig lent gpucam = do
+omniProjViews :: Float -> Float -> [M44 Float]
+omniProjViews znear radius =
+    map ((proj znear !*!) . completeM33RotMat . fromQuaternion)
+      [
+        axisAngle yAxis (-pi/2) * axisAngle zAxis pi -- positive x
+      , axisAngle yAxis (pi/2) * axisAngle zAxis pi -- negative x
+      , axisAngle xAxis (-pi/2) -- positive y
+      , axisAngle xAxis (pi/2) -- negative y
+      , axisAngle yAxis pi * axisAngle zAxis pi -- positive z
+      , axisAngle zAxis (pi) -- negative z
+      ]
+  where
+    proj znear = projectionMatrix $ Perspective (pi/2) 1 znear radius
+
+completeM33RotMat :: M33 Float -> M44 Float
+completeM33RotMat (V3 (V3 a b c) (V3 d e f) (V3 g h i)) =
+  V4
+    (V4 a b c 0)
+    (V4 d e f 0)
+    (V4 g h i 0)
+    (V4 0 0 0 1)
+
+generateOmniShadowmap :: Lighting
+                      -> Shadowing
+                      -> Accumulation
+                      -> Float
+                      -> Entity
+                      -> GPUCamera
+                      -> IO ()
+generateOmniShadowmap lighting shadowing accumulation ligRad lent gpucam = do
     useProgram (shadowing^.shadowShadowProgram)
     bindFramebuffer (shadowing^.shadowShadowOff.offscreenFB) ReadWrite
     bindTextureAt (lighting^.lightOff.offscreenDepthmap) 0
     bindTextureAt (shadowing^.shadowDepthCubeOff.cubeOffscreenColorTex) 1
     bindVertexArray (accumulation^.accumVA)
     runCamera gpucam unused iProjViewU unused
-    runLight gpulig unused unused ligRadU ligPosU unused unused lent
+    ligRadU @= ligRad
+    ligPosU @= lent^.entityPosition
     glDrawArrays gl_TRIANGLE_STRIP 0 4
   where
     sunis = shadowing^.shadowUniforms
@@ -106,8 +145,8 @@ generateShadowmap lighting shadowing accumulation gpulig lent gpucam = do
 -- The idea is to copy the lighting render into the second accum buffer. We
 -- then copy the shadowmap and blend the two images with a smart blending
 -- function.
-combineShadows :: Lighting -> Shadowing -> Accumulation -> IO ()
-combineShadows lighting shadowing accumulation = do
+combineOmniShadows :: Lighting -> Shadowing -> Accumulation -> IO ()
+combineOmniShadows lighting shadowing accumulation = do
   useProgram (accumulation^.accumProgram)
   bindFramebuffer (accumulation^.accumOff2.offscreenFB) ReadWrite
   glDisable gl_DEPTH_TEST
