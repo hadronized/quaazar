@@ -31,9 +31,19 @@ import Photon.Utils.Log
 
 -- |'Lighting' gathers information about lighting in the scene.
 data Lighting = Lighting {
-    _omniLightProgram  :: Program
-  , _omniLightUniforms :: OmniLightingUniforms
-  , _lightOff          :: Offscreen
+    _ambientLightProgram  :: Program
+  , _ambientLightUniforms :: AmbientLightingUniforms
+  , _omniLightProgram     :: Program
+  , _omniLightUniforms    :: OmniLightingUniforms
+  , _lightOff             :: Offscreen
+  }
+
+data AmbientLightingUniforms = AmbientLightingUniforms {
+    _ambientLightCamProjViewU :: Uniform (M44 Float)
+  , _ambientLightModelU       :: Uniform (M44 Float)
+  , _ambientLightMatDiffAlbU  :: Uniform Albedo
+  , _ambientLightColU         :: Uniform Color
+  , _ambientLightPowU         :: Uniform Float
   }
 
 data OmniLightingUniforms = OmniLightingUniforms {
@@ -50,6 +60,7 @@ data OmniLightingUniforms = OmniLightingUniforms {
   }
 
 makeLenses ''Lighting
+makeLenses ''AmbientLightingUniforms
 makeLenses ''OmniLightingUniforms
 
 getLighting :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
@@ -57,15 +68,29 @@ getLighting :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
             -> Natural
             -> m Lighting
 getLighting w h = do
-  info CoreLog "generating light offscreen"
-  program <- buildProgram omniVS Nothing omniFS <* sinkLogs
+  info CoreLog "generating lighting"
+  ambientProgram <- buildProgram ambientVS Nothing ambientFS
+  ambientUniforms <- liftIO (getAmbientLightingUniforms ambientProgram)
+  omniProgram <- buildProgram omniVS Nothing omniFS
+  omniUniforms <- liftIO (getOmniLightingUniforms omniProgram)
   off <- genOffscreen w h Nearest RGB32F RGB
-  uniforms <- liftIO (getOmniLightingUniforms program)
-  return (Lighting program uniforms off)
+  return (Lighting ambientProgram ambientUniforms omniProgram omniUniforms off)
+
+getAmbientLightingUniforms :: Program -> IO AmbientLightingUniforms
+getAmbientLightingUniforms program = do
+    AmbientLightingUniforms
+      <$> sem "projView"
+      <*> sem "model"
+      <*> sem "matDiffAlb"
+      <*> sem "ligCol"
+      <*> sem "ligPow"
+  where
+    sem :: (Uniformable a) => String -> IO (Uniform a)
+    sem = getUniform program
 
 getOmniLightingUniforms :: Program -> IO OmniLightingUniforms
 getOmniLightingUniforms program = do
-    useProgram program
+    useProgram program -- FIXME: not mandatory
     OmniLightingUniforms
       <$> sem "projView"
       <*> sem "model"
@@ -89,13 +114,51 @@ purgeLightingFramebuffer lighting = do
 
 pushCameraToLighting :: Lighting -> GPUCamera -> IO ()
 pushCameraToLighting lighting gcam = do
+  -- ambient lights
+  useProgram (lighting^.ambientLightProgram)
+  runCamera gcam (ambientUnis^.ambientLightCamProjViewU) unused unused
   -- omnidirectional lights
   useProgram (lighting^.omniLightProgram)
-  runCamera gcam projViewU unused eyeU
+  runCamera gcam (omniUnis^.omniLightCamProjViewU) unused (omniUnis^.omniLightEyeU)
   where
-    projViewU = unis^.omniLightCamProjViewU
-    eyeU = unis^.omniLightEyeU
-    unis = lighting^.omniLightUniforms
+    ambientUnis = lighting^.ambientLightUniforms
+    omniUnis = lighting^.omniLightUniforms
+
+ambientVS :: String
+ambientVS = unlines
+  [
+    "#version 330 core"
+
+  , "layout (location = 0) in vec3 co;"
+  -- , "layout (location = 1) in vec3 no;" -- FIXME: not sure
+
+  , "uniform mat4 projView;"
+  , "uniform mat4 model;"
+
+  , "void main() {"
+  , "  vec3 vco = (model * vec4(co,1.)).xyz;"
+  , "  gl_Position = projView * vec4(vco,1.);"
+  , "}"
+  ]
+
+ambientFS :: String
+ambientFS = unlines
+  [
+    "#version 330 core"
+
+  , "in vec3 vco;"
+  , "in vec3 vno;"
+
+  , "uniform vec3 matDiffAlb;"
+  , "uniform vec3 ligCol;"
+  , "uniform float ligPow;"
+
+  , "out vec4 frag;"
+
+  , "void main() {"
+  , "  frag = vec4(ligCol * matDiffAlb * ligPow,1.);"
+  , "}"
+  ]
 
 omniVS :: String
 omniVS = unlines
@@ -127,7 +190,6 @@ omniFS = unlines
   , "in vec3 vno;"
 
   , "uniform vec3 eye;"
-  , "uniform vec3 forward;"
   , "uniform vec3 matDiffAlb;"
   , "uniform vec3 matSpecAlb;"
   , "uniform float matShn;"
@@ -135,7 +197,6 @@ omniFS = unlines
   , "uniform vec3 ligCol;"
   , "uniform float ligPow;"
   , "uniform float ligRad;"
-  , "uniform samplerCube ligDepthmap;"
 
   , "out vec4 frag;"
 
@@ -144,8 +205,6 @@ omniFS = unlines
   , "  vec3 ligDir = normalize(ligToVertex);"
   , "  vec3 v = normalize(eye - vco);"
   , "  vec3 r = normalize(reflect(-ligDir,vno));"
-
-    -- lighting
   , "  vec3 diff = max(0.,dot(vno,ligDir)) * ligCol * matDiffAlb;"
   , "  vec3 spec = pow(max(0.,dot(r,v)),matShn) * ligCol * matSpecAlb;"
   , "  float atten = ligPow / (pow(1. + length(ligToVertex)/ligRad,2.));"

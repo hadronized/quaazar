@@ -40,10 +40,15 @@ instance Monoid Lit where
 
 lighten :: Light -> Entity -> Shaded -> Lit
 lighten lig ent shd = case lig of
+    Ambient ligCol ligPower -> Lit $ ambient ligCol ligPower
     Omni ligCol ligPower ligRad castShadows
       | castShadows -> Lit $ omniWithShadows ligCol ligPower ligRad
       | otherwise -> Lit $ omniWithoutShadows ligCol ligPower ligRad
   where
+    ambient ligCol ligPower _ lighting _ accumulation _ = do
+      purgeAccumulationFramebuffer2 accumulation
+      applyAmbientLighting lighting shd ligCol ligPower
+      accumulate accumulation
     omniWithShadows ligCol ligPower ligRad screenViewport lighting shadowing accumulation gpucam = do
       purgeShadowingFramebuffer shadowing
       generateOmniLightDepthmap screenViewport shadowing shd ligRad ent
@@ -52,11 +57,23 @@ lighten lig ent shd = case lig of
       generateOmniShadowmap lighting shadowing accumulation ligRad ent gpucam
       purgeAccumulationFramebuffer2 accumulation
       combineOmniShadows lighting shadowing accumulation
-      accumulate lighting accumulation
+      accumulate accumulation
     omniWithoutShadows ligCol ligPower ligRad _ lighting _ accumulation _ = do
       purgeAccumulationFramebuffer2 accumulation
       applyOmniLighting lighting shd ligCol ligPower ligRad ent
-      accumulate lighting accumulation
+      accumulate accumulation
+
+applyAmbientLighting :: Lighting -> Shaded -> Color -> Float -> IO ()
+applyAmbientLighting lighting shd ligCol ligPower = do
+    useProgram (lighting^.ambientLightProgram)
+    glDisable gl_BLEND
+    glEnable gl_DEPTH_TEST
+    lunis^.ambientLightColU @= ligCol
+    lunis^.ambientLightPowU @= ligPower
+    unShaded shd (lunis^.ambientLightModelU) (lunis^.ambientLightMatDiffAlbU)
+      unused unused
+  where
+    lunis = lighting^.ambientLightUniforms
 
 applyOmniLighting :: Lighting -> Shaded -> Color -> Float -> Float -> Entity -> IO ()
 applyOmniLighting lighting shd ligCol ligPower ligRad ent = do
@@ -67,7 +84,8 @@ applyOmniLighting lighting shd ligCol ligPower ligRad ent = do
     lunis^.omniLightPowU @= ligPower
     lunis^.omniLightRadU @= ligRad
     lunis^.omniLightPosU @= ent^.entityPosition
-    unShaded shd lighting
+    unShaded shd (lunis^.omniLightModelU) (lunis^.omniLightMatDiffAlbU)
+      (lunis^.omniLightMatSpecAlbU) (lunis^.omniLightMatShnU)
   where
     lunis = lighting^.omniLightUniforms
 
@@ -85,7 +103,7 @@ generateOmniLightDepthmap screenViewport shadowing shd ligRad ent = do
     glDisable gl_BLEND
     glEnable gl_DEPTH_TEST
     setViewport shdwViewport
-    unShadedNoMaterial shd shadowing
+    unShadedNoMaterial shd (sunis^.shadowDepthModelU)
     setViewport screenViewport
   where
     sunis = shadowing^.shadowUniforms
@@ -96,7 +114,7 @@ generateOmniLightDepthmap screenViewport shadowing shd ligRad ent = do
 
 omniProjViews :: Float -> Float -> [M44 Float]
 omniProjViews znear radius =
-    map ((proj znear !*!) . completeM33RotMat . fromQuaternion)
+    map ((proj !*!) . completeM33RotMat . fromQuaternion)
       [
         axisAngle yAxis (-pi/2) * axisAngle zAxis pi -- positive x
       , axisAngle yAxis (pi/2) * axisAngle zAxis pi -- negative x
@@ -106,7 +124,7 @@ omniProjViews znear radius =
       , axisAngle zAxis (pi) -- negative z
       ]
   where
-    proj znear = projectionMatrix $ Perspective (pi/2) 1 znear radius
+    proj = projectionMatrix $ Perspective (pi/2) 1 znear radius
 
 completeM33RotMat :: M33 Float -> M44 Float
 completeM33RotMat (V3 (V3 a b c) (V3 d e f) (V3 g h i)) =
@@ -159,8 +177,8 @@ combineOmniShadows lighting shadowing accumulation = do
   bindTextureAt (shadowing^.shadowShadowOff.offscreenRender) 0
   glDrawArrays gl_TRIANGLE_STRIP 0 4
 
-accumulate :: Lighting -> Accumulation -> IO ()
-accumulate lighting accumulation = do
+accumulate :: Accumulation -> IO ()
+accumulate accumulation = do
   useProgram (accumulation^.accumProgram)
   bindFramebuffer (accumulation^.accumOff.offscreenFB) ReadWrite
   glDisable gl_DEPTH_TEST

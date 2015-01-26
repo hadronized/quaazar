@@ -13,28 +13,30 @@ module Photon.Render.Forward.Shaded where
 
 import Control.Lens
 import Data.Monoid ( Monoid(..) )
-import Photon.Render.Forward.Lighting
+import Linear
+import Photon.Core.Material ( Albedo ) -- FIXME: Photon.Core.Albedo
 import Photon.Render.Forward.Rendered ( Rendered(..) )
-import Photon.Render.Forward.Shadowing
+import Photon.Render.GL.Shader ( Uniform )
 import Photon.Render.Material ( GPUMaterial(..) )
 
 data Shaded = Shaded {
-    unShaded :: Lighting -> IO ()
-  , unShadedNoMaterial :: Shadowing -> IO ()
+    unShaded :: Uniform (M44 Float)
+             -> Uniform Albedo
+             -> Uniform Albedo
+             -> Uniform Float
+             -> IO ()
+  , unShadedNoMaterial :: Uniform (M44 Float) -> IO ()
   }
 
 instance Monoid Shaded where
-  mempty = Shaded (const $ return ()) (const $ return ())
-  Shaded f g `mappend` Shaded f' g' = Shaded (\l -> f l >> f' l) (\s -> g s >> g' s)
+  mempty = Shaded (\_ _ _ _ -> return ()) (\_ -> return ())
+  Shaded f g `mappend` Shaded f' g' =
+    Shaded (\m d s sh -> f m d s sh >> f' m d s sh) (\m -> g m >> g' m)
 
 shade :: GPUMaterial -> Rendered -> Shaded
 shade gmat rdrd = Shaded shade_ shadeNoMaterial
   where
-    shade_ lighting = do
-        runMaterial gmat (lunis^.omniLightMatDiffAlbU) (lunis^.omniLightMatSpecAlbU)
-          (lunis^.omniLightMatShnU)
-        unRendered rdrd (lunis^.omniLightModelU)
-      where
-        lunis = lighting^.omniLightUniforms
-    shadeNoMaterial shadowing =
-      unRendered rdrd (shadowing^.shadowUniforms.shadowDepthModelU)
+    shade_ modelU matDiffAlbU matSpecAlbU matShnU = do
+        runMaterial gmat matDiffAlbU matSpecAlbU matShnU
+        unRendered rdrd modelU
+    shadeNoMaterial = unRendered rdrd
