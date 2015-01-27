@@ -4,7 +4,7 @@ synopsis:            Realtime 3D engine
 description:         "quaazar" is a realtime 3D engine designed to be
                      simple to use, powerful and flexible.
 homepage:            https://github.com/phaazon/quaazar
-issues-page:         https://github.com/phaazon/quaazar/issues
+bug-reports:         https://github.com/phaazon/quaazar/issues
 license:             BSD3
 license-file:        LICENSE
 author:              Dimitri Sabadie <dimitri.sabadie@gmail.com>
