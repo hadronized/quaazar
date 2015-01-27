@@ -8,7 +8,7 @@
 ############################################################################
 
 bl_info = {
-    "name"     : "Export mesh to photon JSON (.ymsh)"
+    "name"     : "Export mesh to Quaazar JSON (.ymsh)"
   , "author"   : "Dimitri Sabadie"
   , "category" : "Import-Export"
   , "location" : "File > Import-Export"
@@ -19,10 +19,10 @@ from bpy_extras.io_utils import ExportHelper
 from bpy.props import BoolProperty
 import json
 
-class PhotonMeshExporter(bpy.types.Operator, ExportHelper):
-  """Photon Mesh Exporter Script"""
-  bl_idname      = "object.photon_mesh_exporter"
-  bl_label       = "Photon Mesh Exporter"
+class QuaazarMeshExporter(bpy.types.Operator, ExportHelper):
+  """Quaazar Mesh Exporter Script"""
+  bl_idname      = "object.Quaazar_mesh_exporter"
+  bl_label       = "Quaazar Mesh Exporter"
   bl_description = "Export all meshes from the scene into a directory"
   bl_options     = {'REGISTER'}
 
@@ -36,7 +36,7 @@ class PhotonMeshExporter(bpy.types.Operator, ExportHelper):
 
   def execute(self, context):
     print("-- ----------------------- --")
-    print("-- Photon Mesh JSON Export --")
+    print("-- Quaazar Mesh JSON Export --")
     o = bpy.context.active_object
     if o == None:
       print("E: no mesh selected")
@@ -46,7 +46,7 @@ class PhotonMeshExporter(bpy.types.Operator, ExportHelper):
         print("W: '" + msh.name + "' is not elegible to export, please convert quadrangles to triangles")
       else:
         print("I: exporting '" + msh.name + "'")
-        phmsh = toPhotonMesh(msh)
+        phmsh = toQuaazarMesh(msh)
         fp = open(self.filepath, "w")
         fp.write(phmsh.toJSON(self.sparse))
         fp.close()
@@ -54,15 +54,15 @@ class PhotonMeshExporter(bpy.types.Operator, ExportHelper):
     return {'FINISHED'}
 
 def register():
-  bpy.utils.register_class(PhotonMeshExporter)
+  bpy.utils.register_class(QuaazarMeshExporter)
 
 def unregister():
-  bpy.utils.unregister_class(PhotonMeshExporter)
+  bpy.utils.unregister_class(QuaazarMeshExporter)
 
 if __name__ == "__main__":
   register()
 
-class PhotonMesh:
+class QuaazarMesh:
   def __init__(self, vs, vgr):
     self.vertices = vs
     self.vgroup   = vgr
@@ -78,7 +78,7 @@ def hasOnlyTris(msh):
       return False
   return True
 
-def toPhotonMesh(msh):
+def toQuaazarMesh(msh):
   vs = []
   vg = []
 
@@ -98,7 +98,7 @@ def toPhotonMesh(msh):
               ])
     i += 3
 
-  return PhotonMesh(vs,vg)
+  return QuaazarMesh(vs,vg)
 
 def round_(x):
   return round(x,6)
