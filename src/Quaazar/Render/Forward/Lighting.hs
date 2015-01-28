@@ -176,7 +176,7 @@ omniVS = unlines
 
   , "void main() {"
   , "  vco = (model * vec4(co,1.)).xyz;"
-  , "  vno = (transpose(inverse(model)) * vec4(no,1.)).xyz;"
+  , "  vno = normalize((transpose(inverse(model)) * vec4(no,1.)).xyz);"
   , "  gl_Position = projView * vec4(vco,1.);"
   , "}"
   ]
