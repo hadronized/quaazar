@@ -36,12 +36,11 @@ import Quaazar.Render
 import Quaazar.Technics
 import Quaazar.Utils
 
-withQuaazar :: (MonadIO m)
-            => Natural -- ^ Width of the window
+withQuaazar :: Natural -- ^ Width of the window
             -> Natural -- ^ Height of the window
             -> Bool -- ^ Should the window be fullscreen?
             -> String -- ^ Title of the window
-            -> (Window -> m [Event] -> IO ()) -- ^ Application
+            -> (Window -> IO [Event] -> IO ()) -- ^ Application
             -> IO ()
 withQuaazar w h full title app = do
     initiated <- GLFW.init
@@ -60,7 +59,7 @@ withQuaazar w h full title app = do
       else do
         print (Log ErrorLog CoreLog "unable to init :(")
 
-withWindow :: (MonadIO m) => Window -> (Window -> m [Event] -> IO ()) -> IO ()
+withWindow :: Window -> (Window -> IO [Event] -> IO ()) -> IO ()
 withWindow window app = do
     -- transaction variables
     events <- newTVarIO []
@@ -75,7 +74,7 @@ withWindow window app = do
     getCursorPos window >>= atomically . writeTVar mouseXY
     initGL
     -- user app
-    app window . liftIO $ do
+    app window $ do
       GLFW.pollEvents
       atomically $ readTVar events <* writeTVar events []
 
