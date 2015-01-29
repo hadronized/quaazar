@@ -15,7 +15,9 @@ build-type:          Simple
 cabal-version:       >= 1.10
 
 library
-  ghc-options:         -O3 -W -Wall
+  ghc-options:         -O3 -W -Wall -funbox-strict-fields
+
+  ghc-prof-options:    -prof -fprof-auto -rtsopts
 
   hs-source-dirs:      src
 

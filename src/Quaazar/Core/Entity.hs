@@ -61,7 +61,7 @@ data Entity = Entity {
   , _entityScale       :: Scale
   } deriving (Eq,Show)
 
-data Scale = Scale {-# UNPACK #-} !Float {-# UNPACK #-} !Float {-# UNPACK #-} !Float deriving (Eq,Ord,Show)
+data Scale = Scale !Float !Float !Float deriving (Eq,Ord,Show)
 
 type Position    = V3 Float
 type Dir         = V3 Float
