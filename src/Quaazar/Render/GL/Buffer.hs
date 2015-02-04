@@ -31,11 +31,16 @@ instance GLObject Buffer where
 data Target
   = ArrayBuffer
   | IndexBuffer
+  | ShaderStorageBuffer
     deriving (Eq,Show)
 
 bindBuffer :: Buffer -> Target -> IO ()
 bindBuffer (Buffer buffer) target =
   glBindBuffer (fromBufferTarget target) buffer
+
+bindBufferAt :: Buffer -> Target -> Natural -> IO ()
+bindBufferAt (Buffer buffer) target index =
+  glBindBufferBase (fromBufferTarget target) (fromIntegral index) buffer
 
 unbindBuffer :: Target -> IO ()
 unbindBuffer target =
@@ -55,5 +60,6 @@ bufferSubData target offset bytes values =
 
 fromBufferTarget :: Target -> GLenum
 fromBufferTarget target = case target of
-  ArrayBuffer -> gl_ARRAY_BUFFER
-  IndexBuffer -> gl_ELEMENT_ARRAY_BUFFER
+  ArrayBuffer         -> gl_ARRAY_BUFFER
+  IndexBuffer         -> gl_ELEMENT_ARRAY_BUFFER
+  ShaderStorageBuffer -> gl_SHADER_STORAGE_BUFFER
