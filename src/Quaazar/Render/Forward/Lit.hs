@@ -11,10 +11,8 @@
 
 module Quaazar.Render.Forward.Lit where
 
-{-
 import Control.Lens
 import Data.Bits ( (.|.) )
-import Data.Monoid
 import Graphics.Rendering.OpenGL.Raw
 import Linear
 import Quaazar.Core.Color
@@ -35,11 +33,7 @@ import Quaazar.Render.GL.VertexArray ( bindVertexArray )
 
 newtype Lit = Lit { unLit :: Viewport -> Lighting -> Shadowing -> Accumulation -> GPUCamera -> IO () }
 
-instance Monoid Lit where
-  mempty =  Lit $ \_ _ _ _ _ -> return ()
-  Lit f `mappend` Lit g = Lit $ \v l s a c -> f v l s a c >> g v l s a c
-
-lighten :: Light -> Entity -> Shaded -> Lit
+lighten :: [Light] -> Entity -> Shaded -> Lit
 lighten lig ent shd = case lig of
     Omni ligCol ligPower ligRad castShadows
       | castShadows -> Lit $ omniWithShadows ligCol ligPower ligRad
@@ -171,5 +165,3 @@ accumulate accumulation = do
   bindTextureAt (accumulation^.accumOff2.offscreenRender) 0
   bindVertexArray (accumulation^.accumVA)
   glDrawArrays gl_TRIANGLE_STRIP 0 4
-
--}

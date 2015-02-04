@@ -8,15 +8,6 @@
 -- Maintainer  : Dimitri Sabadie <dimitri.sabadie@gmail.com>
 -- Stability   : experimental
 -- Portability : portable
---
--- Lighting is required in order to see non-emissive objects.
---
--- 'Light' exposes the light type. You can find these types of light:
---
---   - 'Ambient` : basic flat ambient lighting – often used to adjust the
---     exposure of a scene
---   - 'Omni': omnidirectional lights – a.k.a. point lights – are lights that
---     emit in all directions
 ----------------------------------------------------------------------------
 
 module Quaazar.Core.Light (
@@ -31,10 +22,7 @@ import Quaazar.Core.Color ( Color )
 import Quaazar.Core.Loader ( Load(..) )
 
 data Light
-  = Ambient
-      Color -- ^ Light color
-      Float -- ^ Light power
-  | Omni
+  = Omni
       Color -- ^ Light color
       Float -- ^ Light power
       Float -- ^ Light radius
@@ -47,10 +35,6 @@ instance FromJSON Light where
       withType t o
     where
       withType t o
-        | t == "ambient" =
-          Ambient
-            <$> o .: "color"
-            <*> o .: "power"
         | t == "omni" =
           Omni
             <$> o .: "color"
