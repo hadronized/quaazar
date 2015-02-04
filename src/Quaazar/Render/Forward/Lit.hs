@@ -11,6 +11,7 @@
 
 module Quaazar.Render.Forward.Lit where
 
+{-
 import Control.Lens
 import Data.Bits ( (.|.) )
 import Data.Monoid
@@ -40,15 +41,10 @@ instance Monoid Lit where
 
 lighten :: Light -> Entity -> Shaded -> Lit
 lighten lig ent shd = case lig of
-    Ambient ligCol ligPower -> Lit $ ambient ligCol ligPower
     Omni ligCol ligPower ligRad castShadows
       | castShadows -> Lit $ omniWithShadows ligCol ligPower ligRad
       | otherwise -> Lit $ omniWithoutShadows ligCol ligPower ligRad
   where
-    ambient ligCol ligPower _ lighting _ accumulation _ = do
-      purgeAccumulationFramebuffer2 accumulation
-      applyAmbientLighting lighting shd ligCol ligPower
-      accumulate accumulation
     omniWithShadows ligCol ligPower ligRad screenViewport lighting shadowing accumulation gpucam = do
       purgeShadowingFramebuffer shadowing
       generateOmniLightDepthmap screenViewport shadowing shd ligRad ent
@@ -63,39 +59,27 @@ lighten lig ent shd = case lig of
       applyOmniLighting lighting shd ligCol ligPower ligRad ent
       accumulate accumulation
 
-applyAmbientLighting :: Lighting -> Shaded -> Color -> Float -> IO ()
-applyAmbientLighting lighting shd ligCol ligPower = do
-    useProgram (lighting^.ambientLightProgram)
+applyLighting :: Lighting -> Shaded -> Color -> Float -> Float -> Entity -> IO ()
+applyLighting lighting shd ligCol ligPower ligRad ent = do
+    useProgram (lighting^.lightProgram)
     glDisable gl_BLEND
     glEnable gl_DEPTH_TEST
-    lunis^.ambientLightColU @= ligCol
-    lunis^.ambientLightPowU @= ligPower
-    unShaded shd (lunis^.ambientLightModelU) (lunis^.ambientLightMatDiffAlbU)
-      unused unused
+    unis^.lightColU @= ligCol
+    unis^.lightPowU @= ligPower
+    unis^.lightRadU @= ligRad
+    unis^.lightPosU @= ent^.entityPosition
+    unShaded shd (unis^.lightModelU) (unis^.lightMatDiffAlbU)
+      (unis^.lightMatSpecAlbU) (unis^.lightMatShnU)
   where
-    lunis = lighting^.ambientLightUniforms
+    unis = lighting^.lightUniforms
 
-applyOmniLighting :: Lighting -> Shaded -> Color -> Float -> Float -> Entity -> IO ()
-applyOmniLighting lighting shd ligCol ligPower ligRad ent = do
-    useProgram (lighting^.omniLightProgram)
-    glDisable gl_BLEND
-    glEnable gl_DEPTH_TEST
-    lunis^.omniLightColU @= ligCol
-    lunis^.omniLightPowU @= ligPower
-    lunis^.omniLightRadU @= ligRad
-    lunis^.omniLightPosU @= ent^.entityPosition
-    unShaded shd (lunis^.omniLightModelU) (lunis^.omniLightMatDiffAlbU)
-      (lunis^.omniLightMatSpecAlbU) (lunis^.omniLightMatShnU)
-  where
-    lunis = lighting^.omniLightUniforms
-
-generateOmniLightDepthmap :: Viewport
-                          -> Shadowing
-                          -> Shaded
-                          -> Float
-                          -> Entity
-                          -> IO ()
-generateOmniLightDepthmap screenViewport shadowing shd ligRad ent = do
+generateLightDepthmap :: Viewport
+                      -> Shadowing
+                      -> Shaded
+                      -> Float
+                      -> Entity
+                      -> IO ()
+generateLightDepthmap screenViewport shadowing shd ligRad ent = do
     useProgram (shadowing^.shadowCubeDepthmapProgram)
     ligProjViewsU @= omniProjViews 0.1 ligRad -- TODO: per-light znear
     ligPosU @= ent^.entityPosition
@@ -103,13 +87,13 @@ generateOmniLightDepthmap screenViewport shadowing shd ligRad ent = do
     glDisable gl_BLEND
     glEnable gl_DEPTH_TEST
     setViewport shdwViewport
-    unShadedNoMaterial shd (sunis^.shadowDepthModelU)
+    unShadedNoMaterial shd (unis^.shadowDepthModelU)
     setViewport screenViewport
   where
-    sunis = shadowing^.shadowUniforms
-    ligProjViewsU = sunis^.shadowDepthLigProjViewsU
-    ligPosU = sunis^.shadowDepthLigPosU
-    ligIRadU = sunis^.shadowDepthLigIRadU
+    unis = shadowing^.shadowUniforms
+    ligProjViewsU = unis^.shadowDepthLigProjViewsU
+    ligPosU = unis^.shadowDepthLigPosU
+    ligIRadU = unis^.shadowDepthLigIRadU
     shdwViewport = shadowing^.shadowViewport
 
 omniProjViews :: Float -> Float -> [M44 Float]
@@ -134,14 +118,14 @@ completeM33RotMat (V3 (V3 a b c) (V3 d e f) (V3 g h i)) =
     (V4 g h i 0)
     (V4 0 0 0 1)
 
-generateOmniShadowmap :: Lighting
-                      -> Shadowing
-                      -> Accumulation
-                      -> Float
-                      -> Entity
-                      -> GPUCamera
-                      -> IO ()
-generateOmniShadowmap lighting shadowing accumulation ligRad lent gpucam = do
+generateShadowmap :: Lighting
+                  -> Shadowing
+                  -> Accumulation
+                  -> Float
+                  -> Entity
+                  -> GPUCamera
+                  -> IO ()
+generateShadowmap lighting shadowing accumulation ligRad lent gpucam = do
     useProgram (shadowing^.shadowShadowProgram)
     bindFramebuffer (shadowing^.shadowShadowOff.offscreenFB) ReadWrite
     bindTextureAt (lighting^.lightOff.offscreenDepthmap) 0
@@ -152,16 +136,16 @@ generateOmniShadowmap lighting shadowing accumulation ligRad lent gpucam = do
     ligPosU @= lent^.entityPosition
     glDrawArrays gl_TRIANGLE_STRIP 0 4
   where
-    sunis = shadowing^.shadowUniforms
-    ligRadU = sunis^.shadowShadowLigRadU
-    ligPosU = sunis^.shadowShadowLigPosU
-    iProjViewU = sunis^.shadowShadowIProjViewU
+    unis = shadowing^.shadowUniforms
+    ligRadU = unis^.shadowShadowLigRadU
+    ligPosU = unis^.shadowShadowLigPosU
+    iProjViewU = unis^.shadowShadowIProjViewU
 
 -- The idea is to copy the lighting render into the second accum buffer. We
 -- then copy the shadowmap and blend the two images with a smart blending
 -- function.
-combineOmniShadows :: Lighting -> Shadowing -> Accumulation -> IO ()
-combineOmniShadows lighting shadowing accumulation = do
+combineShadows :: Lighting -> Shadowing -> Accumulation -> IO ()
+combineShadows lighting shadowing accumulation = do
   useProgram (accumulation^.accumProgram)
   bindFramebuffer (accumulation^.accumOff2.offscreenFB) ReadWrite
   glDisable gl_DEPTH_TEST
@@ -187,3 +171,5 @@ accumulate accumulation = do
   bindTextureAt (accumulation^.accumOff2.offscreenRender) 0
   bindVertexArray (accumulation^.accumVA)
   glDrawArrays gl_TRIANGLE_STRIP 0 4
+
+-}

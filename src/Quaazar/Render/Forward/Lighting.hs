@@ -31,37 +31,26 @@ import Quaazar.Utils.Log
 
 -- |'Lighting' gathers information about lighting in the scene.
 data Lighting = Lighting {
-    _ambientLightProgram  :: Program
-  , _ambientLightUniforms :: AmbientLightingUniforms
-  , _omniLightProgram     :: Program
-  , _omniLightUniforms    :: OmniLightingUniforms
-  , _lightOff             :: Offscreen
+    _lightProgram     :: Program
+  , _lightUniforms    :: LightingUniforms
+  , _lightOff         :: Offscreen
   }
 
-data AmbientLightingUniforms = AmbientLightingUniforms {
-    _ambientLightCamProjViewU :: Uniform (M44 Float)
-  , _ambientLightModelU       :: Uniform (M44 Float)
-  , _ambientLightMatDiffAlbU  :: Uniform Albedo
-  , _ambientLightColU         :: Uniform Color
-  , _ambientLightPowU         :: Uniform Float
-  }
-
-data OmniLightingUniforms = OmniLightingUniforms {
-    _omniLightCamProjViewU :: Uniform (M44 Float)
-  , _omniLightModelU       :: Uniform (M44 Float)
-  , _omniLightEyeU         :: Uniform (V3 Float)
-  , _omniLightMatDiffAlbU  :: Uniform Albedo
-  , _omniLightMatSpecAlbU  :: Uniform Albedo
-  , _omniLightMatShnU      :: Uniform Float
-  , _omniLightPosU         :: Uniform (V3 Float) -- FIXME: github issue #22
-  , _omniLightColU         :: Uniform Color
-  , _omniLightPowU         :: Uniform Float
-  , _omniLightRadU         :: Uniform Float
+data LightingUniforms = LightingUniforms {
+    _lightCamProjViewU :: Uniform (M44 Float)
+  , _lightModelU       :: Uniform (M44 Float)
+  , _lightEyeU         :: Uniform (V3 Float)
+  , _lightMatDiffAlbU  :: Uniform Albedo
+  , _lightMatSpecAlbU  :: Uniform Albedo
+  , _lightMatShnU      :: Uniform Float
+  , _lightPosU         :: Uniform (V3 Float) -- FIXME: github issue #22
+  , _lightColU         :: Uniform Color
+  , _lightPowU         :: Uniform Float
+  , _lightRadU         :: Uniform Float
   }
 
 makeLenses ''Lighting
-makeLenses ''AmbientLightingUniforms
-makeLenses ''OmniLightingUniforms
+makeLenses ''LightingUniforms
 
 getLighting :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
             => Natural
@@ -69,29 +58,15 @@ getLighting :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
             -> m Lighting
 getLighting w h = do
   info CoreLog "generating lighting"
-  ambientProgram <- buildProgram ambientVS Nothing ambientFS
-  ambientUniforms <- liftIO (getAmbientLightingUniforms ambientProgram)
-  omniProgram <- buildProgram omniVS Nothing omniFS
-  omniUniforms <- liftIO (getOmniLightingUniforms omniProgram)
+  program <- buildProgram lightVS Nothing lightFS
+  uniforms <- liftIO (getLightingUniforms program)
   off <- genOffscreen w h Nearest RGB32F RGB
-  return (Lighting ambientProgram ambientUniforms omniProgram omniUniforms off)
+  return (Lighting program uniforms off)
 
-getAmbientLightingUniforms :: Program -> IO AmbientLightingUniforms
-getAmbientLightingUniforms program = do
-    AmbientLightingUniforms
-      <$> sem "projView"
-      <*> sem "model"
-      <*> sem "matDiffAlb"
-      <*> sem "ligCol"
-      <*> sem "ligPow"
-  where
-    sem :: (Uniformable a) => String -> IO (Uniform a)
-    sem = getUniform program
-
-getOmniLightingUniforms :: Program -> IO OmniLightingUniforms
-getOmniLightingUniforms program = do
+getLightingUniforms :: Program -> IO LightingUniforms
+getLightingUniforms program = do
     useProgram program -- FIXME: not mandatory
-    OmniLightingUniforms
+    LightingUniforms
       <$> sem "projView"
       <*> sem "model"
       <*> sem "eye"
@@ -114,54 +89,13 @@ purgeLightingFramebuffer lighting = do
 
 pushCameraToLighting :: Lighting -> GPUCamera -> IO ()
 pushCameraToLighting lighting gcam = do
-  -- ambient lights
-  useProgram (lighting^.ambientLightProgram)
-  runCamera gcam (ambientUnis^.ambientLightCamProjViewU) unused unused
-  -- omnidirectional lights
-  useProgram (lighting^.omniLightProgram)
-  runCamera gcam (omniUnis^.omniLightCamProjViewU) unused (omniUnis^.omniLightEyeU)
+  useProgram (lighting^.lightProgram)
+  runCamera gcam (unis^.lightCamProjViewU) unused (unis^.lightEyeU)
   where
-    ambientUnis = lighting^.ambientLightUniforms
-    omniUnis = lighting^.omniLightUniforms
+    unis = lighting^.lightUniforms
 
-ambientVS :: String
-ambientVS = unlines
-  [
-    "#version 330 core"
-
-  , "layout (location = 0) in vec3 co;"
-  -- , "layout (location = 1) in vec3 no;" -- FIXME: not sure
-
-  , "uniform mat4 projView;"
-  , "uniform mat4 model;"
-
-  , "void main() {"
-  , "  vec3 vco = (model * vec4(co,1.)).xyz;"
-  , "  gl_Position = projView * vec4(vco,1.);"
-  , "}"
-  ]
-
-ambientFS :: String
-ambientFS = unlines
-  [
-    "#version 330 core"
-
-  , "in vec3 vco;"
-  , "in vec3 vno;"
-
-  , "uniform vec3 matDiffAlb;"
-  , "uniform vec3 ligCol;"
-  , "uniform float ligPow;"
-
-  , "out vec4 frag;"
-
-  , "void main() {"
-  , "  frag = vec4(ligCol * matDiffAlb * ligPow,1.);"
-  , "}"
-  ]
-
-omniVS :: String
-omniVS = unlines
+lightVS :: String
+lightVS = unlines
   [
     "#version 330 core"
 
@@ -181,8 +115,8 @@ omniVS = unlines
   , "}"
   ]
 
-omniFS :: String
-omniFS = unlines
+lightFS :: String
+lightFS = unlines
   [
     "#version 330 core"
 
