@@ -48,8 +48,8 @@ withQuaazar w h full title app = do
       glfwVersion <- fmap showGLFWVersion getVersion
       print (Log InfoLog CoreLog $ "GLFW " ++ glfwVersion ++ " initialized!")
       monitor <- if full then getPrimaryMonitor else return Nothing
-      windowHint (WindowHint'ContextVersionMajor 3)
-      windowHint (WindowHint'ContextVersionMinor 3)
+      windowHint (WindowHint'ContextVersionMajor 4)
+      windowHint (WindowHint'ContextVersionMinor 4)
       createWindow (fromIntegral w) (fromIntegral h) title monitor Nothing >>= \win -> case win of
         Just window -> makeContextCurrent win >> withWindow window app
         -- TODO: display OpenGL information
