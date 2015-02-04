@@ -35,11 +35,12 @@ getForwardRenderer :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
                    => Natural
                    -> Natural
                    -> Natural
+                   -> Natural
                    -> Window
                    -> m ForwardRenderer
-getForwardRenderer w h shadowDef window =
+getForwardRenderer w h shadowDef lightNb window =
   ForwardRenderer
-    <$> getLighting w h
+    <$> getLighting w h lightNb
     <*> getShadowing w h (256+shadowDef*256)
     <*> getAccumulation w h
     <*> pure window

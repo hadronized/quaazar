@@ -19,13 +19,16 @@ import Data.Bits ( (.|.) )
 import Graphics.Rendering.OpenGL.Raw
 import Linear
 import Numeric.Natural ( Natural )
+import Foreign.Storable ( sizeOf )
 import Quaazar.Core.Color ( Color )
 import Quaazar.Core.Material ( Albedo )
 import Quaazar.Render.Camera ( GPUCamera(..) )
+import Quaazar.Render.GL.Buffer
 import Quaazar.Render.GL.Framebuffer ( Target(..), bindFramebuffer )
+import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Shader ( Program, Uniform, Uniformable, buildProgram
-                               , getUniform, unused, useProgram )
+                                , getUniform, unused, useProgram )
 import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)  )
 import Quaazar.Utils.Log
 
@@ -34,6 +37,7 @@ data Lighting = Lighting {
     _lightProgram     :: Program
   , _lightUniforms    :: LightingUniforms
   , _lightOff         :: Offscreen
+  , _lightLightBuffer :: Buffer
   }
 
 data LightingUniforms = LightingUniforms {
@@ -55,13 +59,15 @@ makeLenses ''LightingUniforms
 getLighting :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
             => Natural
             -> Natural
+            -> Natural
             -> m Lighting
-getLighting w h = do
+getLighting w h nbLights = do
   info CoreLog "generating lighting"
   program <- buildProgram lightVS Nothing lightFS
   uniforms <- liftIO (getLightingUniforms program)
   off <- genOffscreen w h Nearest RGB32F RGB
-  return (Lighting program uniforms off)
+  lightBuffer <- liftIO (genLightBuffer nbLights)
+  return (Lighting program uniforms off lightBuffer)
 
 getLightingUniforms :: Program -> IO LightingUniforms
 getLightingUniforms program = do
@@ -93,6 +99,21 @@ pushCameraToLighting lighting gcam = do
   runCamera gcam (unis^.lightCamProjViewU) unused (unis^.lightEyeU)
   where
     unis = lighting^.lightUniforms
+
+genLightBuffer :: Natural -> IO Buffer
+genLightBuffer nbLights = do
+    buffer <- genObject
+    bindBuffer buffer ShaderStorageBuffer
+    initBuffer ShaderStorageBuffer bytes
+    unbindBuffer ShaderStorageBuffer
+    return buffer
+  where
+    bytes = nbLights * lightBytes
+    lightBytes = fromIntegral $ 
+        sizeOf (undefined :: M44 Float) -- transform
+      + sizeOf (undefined :: Color)
+      + sizeOf (undefined :: Float) -- power
+      + sizeOf (undefined :: Float) -- radius
 
 lightVS :: String
 lightVS = unlines
