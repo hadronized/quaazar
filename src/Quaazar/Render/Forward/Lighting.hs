@@ -146,7 +146,7 @@ lightFS = unlines
   , "uniform float matShn;"
     -- ambient lighting
   , declUniform ligAmbColSem "vec3 ligAmbCol"
-  , declUniform ligAmbPowSem "float ligPow"
+  , declUniform ligAmbPowSem "float ligAmbPow"
   {-
   , "uniform vec3 ligPos;"
   , "uniform vec3 ligCol;"
@@ -170,7 +170,7 @@ lightFS = unlines
   , "  vec3 illum = atten * (diff + spec);"
 
   -}
-  , "  frag = ambient;"
+  , "  frag = vec4(ambient,1.);"
   , "}"
   ]
 

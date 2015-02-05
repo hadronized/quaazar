@@ -37,7 +37,7 @@ lighten :: Ambient ->Shaded -> Lit
 lighten (Ambient ligAmbCol ligAmbPow) shd = Lit lighten_
   where
     lighten_ screenViewport lighting shadowing accumulation gpucam = do
-        bindFramebuffer (lighting^.lightOff.offscreenFB) ReadWrite
+        purgeLightingFramebuffer lighting
         useProgram (lighting^.lightProgram)
         lunis^.lightLigAmbCol @= ligAmbCol
         lunis^.lightLigAmbPow @= ligAmbPow
