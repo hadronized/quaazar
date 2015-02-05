@@ -66,7 +66,7 @@ purgeAccumulationFramebuffer2 accumulation = do
 accumVS :: String
 accumVS = unlines
   [
-    "#version 330 core"
+    "#version 430 core"
 
   , "vec2[4] v = vec2[]("
   , "    vec2(-1,  1)"
@@ -83,7 +83,7 @@ accumVS = unlines
 accumFS :: String
 accumFS = unlines
   [
-    "#version 330 core"
+    "#version 430 core"
 
   , "out vec4 frag;"
 

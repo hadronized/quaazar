@@ -99,7 +99,7 @@ purgeShadowingFramebuffer shadowing = do
 shadowDepthCubemapVS :: String
 shadowDepthCubemapVS = unlines
   [
-    "#version 330 core"
+    "#version 430 core"
 
   , "layout (location = 0) in vec3 co;"
   , "layout (location = 1) in vec3 no;"
@@ -117,7 +117,7 @@ shadowDepthCubemapVS = unlines
 shadowDepthCubemapGS :: String
 shadowDepthCubemapGS = unlines
   [
-    "#version 330 core"
+    "#version 430 core"
 
   , "layout (triangles) in;"
   , "layout (triangle_strip, max_vertices = 18) out;"
@@ -143,7 +143,7 @@ shadowDepthCubemapGS = unlines
 shadowDepthCubemapFS :: String
 shadowDepthCubemapFS = unlines
   [
-    "#version 330 core"
+    "#version 430 core"
 
   , "in vec3 gco;"
   , "out float outDistance;"
@@ -159,7 +159,7 @@ shadowDepthCubemapFS = unlines
 shadowShadowVS :: String
 shadowShadowVS = unlines
   [
-    "#version 330 core"
+    "#version 430 core"
 
   , "out vec2 vv;"
 
@@ -179,7 +179,7 @@ shadowShadowVS = unlines
 shadowShadowFS :: String
 shadowShadowFS = unlines
   [
-    "#version 330 core"
+    "#version 430 core"
 
   , "in vec2 vv;"
 
