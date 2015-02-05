@@ -132,7 +132,7 @@ shadowDepthCubemapGS = unlines
   , "    for (int j = 0; j < 3; ++j) {"
   , "      gl_Layer = i;"
   , "      gco = gl_in[j].gl_Position.xyz;"
-  , "      gl_Position = ligProjViews[i] * (gl_in[j].gl_Position - ligPos);"
+  , "      gl_Position = ligProjViews[i] * vec4(gl_in[j].gl_Position.xyz - ligPos,1.);"
   , "      EmitVertex();"
   , "    }"
   , "    EndPrimitive();"
@@ -211,35 +211,6 @@ shadowShadowFS = unlines
   , "  float distReceiver = min(ligRad,length(depthDir) - bias);"
   , "  float distBlocker = texture(ligDepthmap, depthDir).r;"
   , "  return float(distBlocker*ligRad >= distReceiver);"
-  , "}"
-
-  , "vec3 jitter(vec3 co, float seed, float j) {"
-  , "  vec3 o = vec3( rand3(vec3(cos(seed),sin(1.+seed),sin(seed)))"
-  , "               , rand3(vec3(sin(2*seed),sin(1.+seed),tan(seed)))"
-  , "               , rand3(vec3(sin(356*seed),cos(-seed),sin(-seed)))"
-  , "               );"
-  , "  return co + j*normalize(o);"
-  , "}"
-
-    -- TODO: broken
-  , "float pcf(vec3 co) {"
-  , "  float r = 0.;"
-  , "  float bias = 0.05;"
-  , "  vec3 depthDir = co - ligPos;"
-    -- the min ensures we don’t exceed the light radius
-    -- TODO: this might generate artifacts near the light zfar
-  , "  float distReceiver = min(ligRad,length(depthDir) - bias);"
-  , "  float distBlocker = texture(ligDepthmap, depthDir).r;"
-  , "  float i =  0.1;"
-  , "  for (int a = -1; a <= 1; ++a) {"
-  , "    for (int b = -1; b <= 1; ++b) {"
-  , "      for (int c = -1; c <= 1; ++c) {"
-  , "        r += penumbra(co+vec3(float(a)*i,float(b)*i,float(c)*i));"
-  , "      }"
-  , "    }"
-  , "  }"
-
-  , "  return r / 27.;"
   , "}"
 
   , "void main() {"
