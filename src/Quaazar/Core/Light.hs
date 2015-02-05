@@ -11,26 +11,35 @@
 ----------------------------------------------------------------------------
 
 module Quaazar.Core.Light (
-    -- * Light
-    Light(..)
+    -- * Lights
+    Ambient(..)
+  , Omni(..)
   ) where
 
 import Control.Applicative
-import Control.Lens
 import Data.Aeson
 import Quaazar.Core.Color ( Color )
 import Quaazar.Core.Loader ( Load(..) )
 
-data Light
-  = Omni
-      Color -- ^ Light color
-      Float -- ^ Light power
-      Float -- ^ Light radius
-      Bool  -- ^ Does the light cast shadow?
-    deriving (Eq,Show)
+data Ambient = Ambient Color Float deriving (Eq,Show)
 
-instance FromJSON Light where
-  parseJSON = withObject "light" $ \o -> do
+instance FromJSON Ambient where
+  parseJSON = withObject "ambient light" $ \o -> do
+      t :: String <- o .: "type"
+      withType t o
+    where
+      withType t o
+        | t == "ambient" = Ambient <$> o .: "color" <*> o .: "power"
+        | otherwise = fail "not an ambient light"
+
+instance Load Ambient where
+  loadRoot = const "lights"
+  loadExt = const "ylig"
+
+data Omni = Omni Color Float Float Bool deriving (Eq,Show)
+
+instance FromJSON Omni where
+  parseJSON = withObject "omni light" $ \o -> do
       t :: String <- o .: "type"
       withType t o
     where
@@ -41,10 +50,8 @@ instance FromJSON Light where
             <*> o .: "power"
             <*> o .: "radius"
             <*> o .:? "cast_shadows" .!= False
-        | otherwise = fail "unknown light type"
+        | otherwise = fail "not an omni light"
 
-makeLenses ''Light
-
-instance Load Light where
+instance Load Omni where
   loadRoot = const "lights"
   loadExt = const "ylig"

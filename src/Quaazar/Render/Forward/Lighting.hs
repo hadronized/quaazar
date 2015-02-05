@@ -28,7 +28,7 @@ import Quaazar.Render.GL.Framebuffer ( Target(..), bindFramebuffer )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Shader ( Program, Uniform, Uniformable, buildProgram
-                                , getUniform, unused, useProgram )
+                                , getUniform, unused, useProgram, uniform )
 import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)  )
 import Quaazar.Utils.Log
 
@@ -47,10 +47,8 @@ data LightingUniforms = LightingUniforms {
   , _lightMatDiffAlbU  :: Uniform Albedo
   , _lightMatSpecAlbU  :: Uniform Albedo
   , _lightMatShnU      :: Uniform Float
-  , _lightPosU         :: Uniform (V3 Float) -- FIXME: github issue #22
-  , _lightColU         :: Uniform Color
-  , _lightPowU         :: Uniform Float
-  , _lightRadU         :: Uniform Float
+  , _lightLigAmbCol    :: Uniform Color
+  , _lightLigAmbPow    :: Uniform Float
   }
 
 makeLenses ''Lighting
@@ -79,10 +77,8 @@ getLightingUniforms program = do
       <*> sem "matDiffAlb"
       <*> sem "matSpecAlb"
       <*> sem "matShn"
-      <*> sem "ligPos"
-      <*> sem "ligCol"
-      <*> sem "ligPow"
-      <*> sem "ligRad"
+      <*> pure (uniform $ fromIntegral ligAmbColSem)
+      <*> pure (uniform $ fromIntegral ligAmbPowSem)
   where
     sem :: (Uniformable a) => String -> IO (Uniform a)
     sem = getUniform program
@@ -109,7 +105,7 @@ genLightBuffer nbLights = do
     return buffer
   where
     bytes = nbLights * lightBytes
-    lightBytes = fromIntegral $ 
+    lightBytes = fromIntegral $
         sizeOf (undefined :: M44 Float) -- transform
       + sizeOf (undefined :: Color)
       + sizeOf (undefined :: Float) -- power
@@ -148,14 +144,22 @@ lightFS = unlines
   , "uniform vec3 matDiffAlb;"
   , "uniform vec3 matSpecAlb;"
   , "uniform float matShn;"
+    -- ambient lighting
+  , declUniform ligAmbColSem "vec3 ligAmbCol"
+  , declUniform ligAmbPowSem "float ligPow"
+  {-
   , "uniform vec3 ligPos;"
   , "uniform vec3 ligCol;"
   , "uniform float ligPow;"
   , "uniform float ligRad;"
+  -}
 
   , "out vec4 frag;"
 
   , "void main() {"
+    -- ambient lighting
+  , "  vec3 ambient = ligAmbCol * matDiffAlb * ligAmbPow;"
+  {-
   , "  vec3 ligToVertex = ligPos - vco;"
   , "  vec3 ligDir = normalize(ligToVertex);"
   , "  vec3 v = normalize(eye - vco);"
@@ -165,6 +169,18 @@ lightFS = unlines
   , "  float atten = ligPow / (pow(1. + length(ligToVertex)/ligRad,2.));"
   , "  vec3 illum = atten * (diff + spec);"
 
-  , "  frag = vec4(illum,1.);"
+  -}
+  , "  frag = ambient;"
   , "}"
   ]
+
+--------------------------------------------------------------------------------
+-- GLSL SEMANTICS
+declUniform :: Int -> String -> String
+declUniform s n = "layout (location = " ++ show s ++ ") uniform " ++ n ++ ";"
+
+ligAmbColSem :: Int
+ligAmbColSem = 5
+
+ligAmbPowSem :: Int
+ligAmbPowSem = 6
