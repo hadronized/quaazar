@@ -33,8 +33,8 @@ import Quaazar.Render.GL.VertexArray ( bindVertexArray )
 
 newtype Lit = Lit { unLit :: Viewport -> Lighting -> Shadowing -> Accumulation -> GPUCamera -> IO () }
 
-lighten :: Ambient ->Shaded -> Lit
-lighten (Ambient ligAmbCol ligAmbPow) shd = Lit lighten_
+lighten :: Ambient -> [(Omni,Entity)] -> Shaded -> Lit
+lighten (Ambient ligAmbCol ligAmbPow) omnis shd = Lit lighten_
   where
     lighten_ _ lighting shadowing accumulation gpucam = do
         purgeLightingFramebuffer lighting

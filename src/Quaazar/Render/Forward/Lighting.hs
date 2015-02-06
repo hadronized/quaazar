@@ -32,8 +32,9 @@ import qualified Quaazar.Render.GL.Buffer as B ( MapAccess(..) )
 import Quaazar.Render.GL.Framebuffer as FB ( Target(..), bindFramebuffer )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Offscreen
-import Quaazar.Render.GL.Shader ( Program, Uniform, Uniformable, buildProgram
-                                , getUniform, unused, useProgram, uniform )
+import Quaazar.Render.GL.Shader ( Program, Uniform, Uniformable, (@=)
+                                , buildProgram, getUniform, unused, useProgram
+                                , uniform )
 import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)  )
 import Quaazar.Utils.Log
 
@@ -126,10 +127,10 @@ omniBytes =
 
 -- Poke omnidirectional lights at a given pointer. That pointer should be gotten
 -- from the SSBO.
-pokeOmnis :: [(Omni,Entity)] -> Ptr Word8 -> IO ()
+pokeOmnis :: [(Omni,Entity)] -> Ptr Word8 -> IO Word32
 pokeOmnis omnis ptr = do
     (_,nbLights) <- foldM cache (ptr,0) omnis
-    return ()
+    return nbLights
   where
     cache (ptr,nbLights) (omni,ent) = do
       writeAt ptr omni ent
@@ -143,8 +144,10 @@ pokeOmnis omnis ptr = do
 pushOmnis :: [(Omni,Entity)] -> Lighting -> IO ()
 pushOmnis omnis lighting = do
     bindBufferAt (lighting^.lightOmniBuffer) ShaderStorageBuffer ligOmniSSBOBP
-    withMappedBuffer ShaderStorageBuffer B.Write (pokeOmnis omnis)
-    unbindBuffer ShaderStorageBuffer
+    withMappedBuffer ShaderStorageBuffer B.Write $ \ptr -> do
+      nbLights <- pokeOmnis omnis ptr
+      useProgram (lighting^.lightProgram)
+      lighting^.lightUniforms.lightLigOmniNb @= nbLights
 
 lightVS :: String
 lightVS = unlines
