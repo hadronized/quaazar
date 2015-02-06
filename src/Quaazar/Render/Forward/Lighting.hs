@@ -27,8 +27,9 @@ import Quaazar.Core.Entity ( Entity, entityPosition )
 import Quaazar.Core.Light ( Omni(..) )
 import Quaazar.Core.Material ( Albedo )
 import Quaazar.Render.Camera ( GPUCamera(..) )
-import Quaazar.Render.GL.Buffer
-import Quaazar.Render.GL.Framebuffer ( Target(..), bindFramebuffer )
+import Quaazar.Render.GL.Buffer hiding ( MapAccess(..) )
+import qualified Quaazar.Render.GL.Buffer as B ( MapAccess(..) )
+import Quaazar.Render.GL.Framebuffer as FB ( Target(..), bindFramebuffer )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Shader ( Program, Uniform, Uniformable, buildProgram
@@ -42,7 +43,6 @@ data Lighting = Lighting {
   , _lightUniforms    :: LightingUniforms
   , _lightOff         :: Offscreen
   , _lightOmniBuffer  :: Buffer
-  , _lightOmniCache   :: Ptr Word8 -- used to push omni on-the-fly; allocated once
   }
 
 data LightingUniforms = LightingUniforms {
@@ -71,8 +71,7 @@ getLighting w h nbLights = do
   uniforms <- liftIO (getLightingUniforms program)
   off <- genOffscreen w h Nearest RGB32F RGB
   omniBuffer <- liftIO (genOmniBuffer nbLights)
-  omniCache <- liftIO (genOmniCache nbLights)
-  return (Lighting program uniforms off omniBuffer omniCache)
+  return (Lighting program uniforms off omniBuffer)
 
 getLightingUniforms :: Program -> IO LightingUniforms
 getLightingUniforms program = do
@@ -93,7 +92,7 @@ getLightingUniforms program = do
 
 purgeLightingFramebuffer :: Lighting -> IO ()
 purgeLightingFramebuffer lighting = do
-  bindFramebuffer (lighting^.lightOff.offscreenFB) ReadWrite
+  bindFramebuffer (lighting^.lightOff.offscreenFB) FB.ReadWrite
   glClearColor 0 0 0 0
   glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
 
@@ -114,9 +113,6 @@ genOmniBuffer nbLights = do
   where
     bytes = nbLights * fromIntegral omniBytes
 
-genOmniCache :: Natural -> IO (Ptr Word8)
-genOmniCache nbLights = mallocBytes (fromIntegral nbLights * omniBytes)
-
 -- WARNING: padding
 omniBytes :: Int
 omniBytes =
@@ -128,10 +124,11 @@ omniBytes =
   + sizeOf (undefined :: Float) -- radius
     + sizeOf (undefined :: V2 Float) -- vec2 padding
 
--- Push omnidirectional lights into the omni cache.
-cacheOmni :: [(Omni,Entity)] -> Lighting -> IO ()
-cacheOmni omnis lighting = do
-    (_,nbLights) <- foldM cache (lighting^.lightOmniCache,0) omnis
+-- Poke omnidirectional lights at a given pointer. That pointer should be gotten
+-- from the SSBO.
+pokeOmnis :: [(Omni,Entity)] -> Ptr Word8 -> IO ()
+pokeOmnis omnis ptr = do
+    (_,nbLights) <- foldM cache (ptr,0) omnis
     return ()
   where
     cache (ptr,nbLights) (omni,ent) = do
@@ -142,6 +139,12 @@ cacheOmni omnis lighting = do
       pokeByteOff ptr 16 (unColor col)
       pokeByteOff ptr 32 pow
       pokeByteOff ptr 36 rad
+
+pushOmnis :: [(Omni,Entity)] -> Lighting -> IO ()
+pushOmnis omnis lighting = do
+    bindBufferAt (lighting^.lightOmniBuffer) ShaderStorageBuffer ligOmniSSBOBP
+    withMappedBuffer ShaderStorageBuffer B.Write (pokeOmnis omnis)
+    unbindBuffer ShaderStorageBuffer
 
 lightVS :: String
 lightVS = unlines
@@ -219,3 +222,8 @@ ligAmbPowSem = 6
 
 ligOmniNbSem :: Int
 ligOmniNbSem = 7
+
+--------------------------------------------------------------------------------
+-- GLSL BINDING POINTS
+ligOmniSSBOBP :: Natural
+ligOmniSSBOBP = 0
