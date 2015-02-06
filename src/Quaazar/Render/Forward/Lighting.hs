@@ -144,7 +144,7 @@ pokeOmnis omnis ptr = do
 pushOmnis :: [(Omni,Entity)] -> Lighting -> IO ()
 pushOmnis omnis lighting = do
     bindBufferAt (lighting^.lightOmniBuffer) ShaderStorageBuffer ligOmniSSBOBP
-    withMappedBuffer ShaderStorageBuffer B.Write $ \ptr -> do
+    void . withMappedBuffer ShaderStorageBuffer B.Write $ \ptr -> do
       nbLights <- pokeOmnis omnis ptr
       useProgram (lighting^.lightProgram)
       lighting^.lightUniforms.lightLigOmniNb @= nbLights
@@ -194,30 +194,32 @@ lightFS = unlines
   , " };"
 
   , declUniformBlock ligOmniSSBOBP "OmniBuffer { Omni omnis[]; }"
-  {-
-  , "uniform vec3 ligPos;"
-  , "uniform vec3 ligCol;"
-  , "uniform float ligPow;"
-  , "uniform float ligRad;"
-  -}
+  , declUniform ligOmniNbSem "uint ligOmniNb"
 
   , "out vec4 frag;"
 
   , "void main() {"
+  , "  vec3 v = normalize(eye - vco);"
+
     -- ambient lighting
   , "  vec3 ambient = ligAmbCol * matDiffAlb * ligAmbPow;"
-  {-
-  , "  vec3 ligToVertex = ligPos - vco;"
-  , "  vec3 ligDir = normalize(ligToVertex);"
-  , "  vec3 v = normalize(eye - vco);"
-  , "  vec3 r = normalize(reflect(-ligDir,vno));"
-  , "  vec3 diff = max(0.,dot(vno,ligDir)) * ligCol * matDiffAlb;"
-  , "  vec3 spec = pow(max(0.,dot(r,v)),matShn) * ligCol * matSpecAlb;"
-  , "  float atten = ligPow / (pow(1. + length(ligToVertex)/ligRad,2.));"
-  , "  vec3 illum = atten * (diff + spec);"
 
-  -}
-  , "  frag = vec4(ambient,1.);"
+    -- omni lights
+  , "  vec3 omni = vec3(0.,0.,0.);"
+  , "  for (uint i = 0; i < ligOmniNb; ++i) {"
+  , "    vec3 ligCol = omnis[i].col;"
+  , "    float ligPow = omnis[i].pow;"
+  , "    float ligRad = omnis[i].rad;"
+  , "    vec3 ligToVertex = omnis[i].pos - vco;"
+  , "    vec3 ligDir = normalize(ligToVertex);"
+  , "    vec3 r = normalize(reflect(-ligDir,vno));"
+  , "    vec3 diff = max(0.,dot(vno,ligDir)) * ligCol * matDiffAlb;"
+  , "    vec3 spec = pow(max(0.,dot(r,v)),matShn) * ligCol * matSpecAlb;"
+  , "    float atten = ligPow / (pow(1. + length(ligToVertex)/ligRad,2.));"
+  , "    omni += atten * (diff + spec);"
+  , "  }"
+
+  , "  frag = vec4(ambient + omni,1.);"
   , "}"
   ]
 
