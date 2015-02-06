@@ -36,7 +36,7 @@ newtype Lit = Lit { unLit :: Viewport -> Lighting -> Shadowing -> Accumulation -
 lighten :: Ambient ->Shaded -> Lit
 lighten (Ambient ligAmbCol ligAmbPow) shd = Lit lighten_
   where
-    lighten_ screenViewport lighting shadowing accumulation gpucam = do
+    lighten_ _ lighting shadowing accumulation gpucam = do
         purgeLightingFramebuffer lighting
         useProgram (lighting^.lightProgram)
         lunis^.lightLigAmbCol @= ligAmbCol

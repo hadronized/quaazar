@@ -12,15 +12,19 @@
 module Quaazar.Render.Forward.Lighting where
 
 import Control.Applicative
+import Control.Monad ( foldM )
 import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Data.Bits ( (.|.) )
+import Data.Word ( Word8, Word32 )
 import Graphics.Rendering.OpenGL.Raw
 import Linear
 import Numeric.Natural ( Natural )
-import Foreign.Storable ( sizeOf )
-import Quaazar.Core.Color ( Color )
+import Foreign
+import Quaazar.Core.Color ( Color(..) )
+import Quaazar.Core.Entity ( Entity, entityPosition )
+import Quaazar.Core.Light ( Omni(..) )
 import Quaazar.Core.Material ( Albedo )
 import Quaazar.Render.Camera ( GPUCamera(..) )
 import Quaazar.Render.GL.Buffer
@@ -37,7 +41,8 @@ data Lighting = Lighting {
     _lightProgram     :: Program
   , _lightUniforms    :: LightingUniforms
   , _lightOff         :: Offscreen
-  , _lightLightBuffer :: Buffer
+  , _lightOmniBuffer  :: Buffer
+  , _lightOmniCache   :: Ptr Word8 -- used to push omni on-the-fly; allocated once
   }
 
 data LightingUniforms = LightingUniforms {
@@ -49,6 +54,7 @@ data LightingUniforms = LightingUniforms {
   , _lightMatShnU      :: Uniform Float
   , _lightLigAmbCol    :: Uniform Color
   , _lightLigAmbPow    :: Uniform Float
+  , _lightLigOmniNb    :: Uniform Word32
   }
 
 makeLenses ''Lighting
@@ -64,8 +70,9 @@ getLighting w h nbLights = do
   program <- buildProgram lightVS Nothing lightFS
   uniforms <- liftIO (getLightingUniforms program)
   off <- genOffscreen w h Nearest RGB32F RGB
-  lightBuffer <- liftIO (genLightBuffer nbLights)
-  return (Lighting program uniforms off lightBuffer)
+  omniBuffer <- liftIO (genOmniBuffer nbLights)
+  omniCache <- liftIO (genOmniCache nbLights)
+  return (Lighting program uniforms off omniBuffer omniCache)
 
 getLightingUniforms :: Program -> IO LightingUniforms
 getLightingUniforms program = do
@@ -79,6 +86,7 @@ getLightingUniforms program = do
       <*> sem "matShn"
       <*> pure (uniform $ fromIntegral ligAmbColSem)
       <*> pure (uniform $ fromIntegral ligAmbPowSem)
+      <*> pure (uniform $ fromIntegral ligOmniNbSem)
   where
     sem :: (Uniformable a) => String -> IO (Uniform a)
     sem = getUniform program
@@ -96,20 +104,44 @@ pushCameraToLighting lighting gcam = do
   where
     unis = lighting^.lightUniforms
 
-genLightBuffer :: Natural -> IO Buffer
-genLightBuffer nbLights = do
+genOmniBuffer :: Natural -> IO Buffer
+genOmniBuffer nbLights = do
     buffer <- genObject
     bindBuffer buffer ShaderStorageBuffer
     initBuffer ShaderStorageBuffer bytes
     unbindBuffer ShaderStorageBuffer
     return buffer
   where
-    bytes = nbLights * lightBytes
-    lightBytes = fromIntegral $
-        sizeOf (undefined :: M44 Float) -- transform
-      + sizeOf (undefined :: Color)
-      + sizeOf (undefined :: Float) -- power
-      + sizeOf (undefined :: Float) -- radius
+    bytes = nbLights * fromIntegral omniBytes
+
+genOmniCache :: Natural -> IO (Ptr Word8)
+genOmniCache nbLights = mallocBytes (fromIntegral nbLights * omniBytes)
+
+-- WARNING: padding
+omniBytes :: Int
+omniBytes =
+    sizeOf (undefined :: V3 Float) -- transform
+    + sizeOf (undefined :: Float) -- float padding
+  + sizeOf (undefined :: Color)
+    + sizeOf (undefined :: Float) -- float padding
+  + sizeOf (undefined :: Float) -- power
+  + sizeOf (undefined :: Float) -- radius
+    + sizeOf (undefined :: V2 Float) -- vec2 padding
+
+-- Push omnidirectional lights into the omni cache.
+cacheOmni :: [(Omni,Entity)] -> Lighting -> IO ()
+cacheOmni omnis lighting = do
+    (_,nbLights) <- foldM cache (lighting^.lightOmniCache,0) omnis
+    return ()
+  where
+    cache (ptr,nbLights) (omni,ent) = do
+      writeAt ptr omni ent
+      return (ptr `advancePtr` omniBytes,succ nbLights)
+    writeAt ptr (Omni col pow rad _) ent = do
+      pokeByteOff ptr 0 (ent^.entityPosition)
+      pokeByteOff ptr 16 (unColor col)
+      pokeByteOff ptr 32 pow
+      pokeByteOff ptr 36 rad
 
 lightVS :: String
 lightVS = unlines
@@ -184,3 +216,6 @@ ligAmbColSem = 5
 
 ligAmbPowSem :: Int
 ligAmbPowSem = 6
+
+ligOmniNbSem :: Int
+ligOmniNbSem = 7
