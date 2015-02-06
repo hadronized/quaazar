@@ -16,6 +16,7 @@ import Control.Monad ( unless )
 import Control.Monad.Trans ( MonadIO(..) )
 import Control.Monad.Error.Class ( MonadError(..) )
 import Data.Foldable ( traverse_ )
+import Data.Int ( Int32 )
 import Data.Word ( Word32 )
 import Foreign.C.String ( peekCString, withCString )
 import Foreign.Marshal ( alloca )
@@ -179,10 +180,10 @@ unused = Uniform (-2) (const $ return ())
 class Uniformable a where
   sendUniform :: GLint -> a -> IO ()
 
-instance Uniformable Int where
+instance Uniformable Int32 where
   sendUniform l x = glUniform1i l (fromIntegral x)
 
-instance Uniformable [Int] where
+instance Uniformable [Int32] where
   sendUniform l a =
     withArrayLen a $ \s p -> glUniform1iv l (fromIntegral s) (castPtr p)
 
@@ -200,12 +201,12 @@ instance Uniformable [Float] where
   sendUniform l a =
     withArrayLen a $ \s p -> glUniform1fv l (fromIntegral s) (castPtr p)
 
-instance Uniformable (V2 Int) where
+instance Uniformable (V2 Int32) where
   sendUniform l v2 = glUniform2i l x y
     where
       V2 x y = fmap fromIntegral v2
 
-instance Uniformable [V2 Int] where
+instance Uniformable [V2 Int32] where
   sendUniform l a =
     withArrayLen a $ \s p -> glUniform2iv l (fromIntegral s) (castPtr p)
 
@@ -227,12 +228,12 @@ instance Uniformable [V2 Float] where
   sendUniform l a =
     withArrayLen a $ \s p -> glUniform2fv l (fromIntegral s) (castPtr p)
 
-instance Uniformable (V3 Int) where
+instance Uniformable (V3 Int32) where
   sendUniform l v3 = glUniform3i l x y z
     where
       V3 x y z = fmap fromIntegral v3
 
-instance Uniformable [V3 Int] where
+instance Uniformable [V3 Int32] where
   sendUniform l a =
     withArrayLen a $ \s p -> glUniform3iv l (fromIntegral s) (castPtr p)
 
@@ -254,12 +255,12 @@ instance Uniformable [V3 Float] where
   sendUniform l a =
     withArrayLen a $ \s p -> glUniform3fv l (fromIntegral s) (castPtr p)
 
-instance Uniformable (V4 Int) where
+instance Uniformable (V4 Int32) where
   sendUniform l v4 = glUniform4i l x y z w
     where
       V4 x y z w = fmap fromIntegral v4
 
-instance Uniformable [V4 Int] where
+instance Uniformable [V4 Int32] where
   sendUniform l a =
     withArrayLen a $ \s p -> glUniform4iv l (fromIntegral s) (castPtr p)
 

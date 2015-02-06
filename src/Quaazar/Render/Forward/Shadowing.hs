@@ -16,6 +16,7 @@ import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Data.Bits ( (.|.) )
+import Data.Int ( Int32 )
 import Graphics.Rendering.OpenGL.Raw
 import Linear
 import Numeric.Natural ( Natural )
@@ -71,8 +72,8 @@ getShadowing w h cubeSize = do
 getShadowingUniforms :: Program -> Program -> IO ShadowingUniforms
 getShadowingUniforms depthProgram shadowProgram = do
     useProgram shadowProgram
-    shadowSem "depthmap" >>= (@= (0 :: Int))
-    shadowSem "ligDepthmap" >>= (@= (1 :: Int))
+    shadowSem "depthmap" >>= (@= (0 :: Int32))
+    shadowSem "ligDepthmap" >>= (@= (1 :: Int32))
     ShadowingUniforms
       <$> depthSem "ligProjViews"
       <*> depthSem "model"

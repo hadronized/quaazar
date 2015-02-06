@@ -16,6 +16,7 @@ import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Data.Bits ( (.|.) )
+import Data.Int ( Int32 )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Quaazar.Render.GL.Framebuffer (Target(..), bindFramebuffer )
@@ -48,7 +49,7 @@ getAccumulation w h = do
   va <- liftIO genAttributelessVertexArray
   liftIO $ do
     useProgram program
-    getUniform program "source" >>= (@= (0 :: Int))
+    getUniform program "source" >>= (@= (0 :: Int32))
   return (Accumulation program off off2 va)
 
 purgeAccumulationFramebuffer :: Accumulation -> IO ()
