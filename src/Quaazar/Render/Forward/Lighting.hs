@@ -182,6 +182,15 @@ lightFS = unlines
     -- ambient lighting
   , declUniform ligAmbColSem "vec3 ligAmbCol"
   , declUniform ligAmbPowSem "float ligAmbPow"
+    -- omni lights
+  , "struct Omni {"
+  , "  vec3 pos;"
+  , "  vec3 col;"
+  , "  float pow;"
+  , "  float rad;"
+  , " };"
+
+  , declUniformBlock ligOmniSSBOBP "OmniBuffer { Omni omnis[]; }"
   {-
   , "uniform vec3 ligPos;"
   , "uniform vec3 ligCol;"
@@ -225,5 +234,8 @@ ligOmniNbSem = 7
 
 --------------------------------------------------------------------------------
 -- GLSL BINDING POINTS
+declUniformBlock :: Natural -> String -> String
+declUniformBlock bp block = "layout (std430,binding = " ++ show bp ++ ") buffer " ++ block ++ ";"
+
 ligOmniSSBOBP :: Natural
 ligOmniSSBOBP = 0

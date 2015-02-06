@@ -36,6 +36,7 @@ instance Load Ambient where
   loadRoot = const "lights"
   loadExt = const "ylig"
 
+-- |'Omni col pow rad'.
 data Omni = Omni Color Float Float Bool deriving (Eq,Show)
 
 instance FromJSON Omni where
