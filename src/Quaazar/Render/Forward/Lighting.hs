@@ -120,10 +120,9 @@ omniBytes =
     sizeOf (undefined :: V3 Float) -- transform
     + sizeOf (undefined :: Float) -- float padding
   + sizeOf (undefined :: Color)
-    + sizeOf (undefined :: Float) -- float padding
   + sizeOf (undefined :: Float) -- power
   + sizeOf (undefined :: Float) -- radius
-    + sizeOf (undefined :: V2 Float) -- vec2 padding
+    + sizeOf (undefined :: V3 Float) -- vec2 padding
 
 -- Poke omnidirectional lights at a given pointer. That pointer should be gotten
 -- from the SSBO.
@@ -138,8 +137,8 @@ pokeOmnis omnis ptr = do
     writeAt ptr (Omni col pow rad _) ent = do
       pokeByteOff ptr 0 (ent^.entityPosition)
       pokeByteOff ptr 16 (unColor col)
-      pokeByteOff ptr 32 pow
-      pokeByteOff ptr 36 rad
+      pokeByteOff ptr 28 pow
+      pokeByteOff ptr 32 rad
 
 pushOmnis :: [(Omni,Entity)] -> Lighting -> IO ()
 pushOmnis omnis lighting = do
@@ -192,7 +191,7 @@ lightFS = unlines
   , "  float rad;"
   , " };"
 
-  , declUniformBlock ligOmniSSBOBP "OmniBuffer { Omni omnis[]; }"
+  , declUniformBlock ligOmniSSBOBP "OmniBuffer { Omni ligs[]; } omniBuffer"
   , declUniform ligOmniNbSem "uint ligOmniNb"
 
   , "out vec4 frag;"
@@ -205,11 +204,11 @@ lightFS = unlines
 
     -- omni lights
   , "  vec3 omni = vec3(0.,0.,0.);"
-  , "  for (uint i = 0; i < ligOmniNb; ++i) {"
-  , "    vec3 ligCol = omnis[i].col;"
-  , "    float ligPow = omnis[i].pow;"
-  , "    float ligRad = omnis[i].rad;"
-  , "    vec3 ligToVertex = omnis[i].pos - vco;"
+  , "  for (uint i = 0u; i < ligOmniNb; ++i) {"
+  , "    vec3 ligCol = omniBuffer.ligs[i].col;"
+  , "    float ligPow = omniBuffer.ligs[i].pow;"
+  , "    float ligRad = omniBuffer.ligs[i].rad;"
+  , "    vec3 ligToVertex = omniBuffer.ligs[i].pos - vco;"
   , "    vec3 ligDir = normalize(ligToVertex);"
   , "    vec3 r = normalize(reflect(-ligDir,vno));"
   , "    vec3 diff = max(0.,dot(vno,ligDir)) * ligCol * matDiffAlb;"
