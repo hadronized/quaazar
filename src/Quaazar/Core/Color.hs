@@ -25,6 +25,7 @@ module Quaazar.Core.Color (
 import Control.Lens
 import Data.Aeson
 import Data.Aeson.Types ( typeMismatch )
+import Foreign.Storable ( Storable )
 import Linear.V3
 
 -- |A color is a 3-float vector. The four channels are:
@@ -32,7 +33,7 @@ import Linear.V3
 --   - *red*
 --   - *green*
 --   - *blue*
-newtype Color = Color { unColor :: V3 Float } deriving (Eq,Ord,Show)
+newtype Color = Color { unColor :: V3 Float } deriving (Eq,Ord,Show,Storable)
 
 instance FromJSON Color where
   parseJSON v = do

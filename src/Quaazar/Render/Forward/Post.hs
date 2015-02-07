@@ -34,7 +34,7 @@ fromLooked lk = Post fromLooked_
       unLooked lk screenViewport lighting shadowing accumulation
       glDisable gl_BLEND
       bindVertexArray (accumulation^.accumVA)
-      return (accumulation^.accumOff,lighting^.lightOff)
+      return (lighting^.lightOff,accumulation^.accumOff)
 
 post :: GPUPostFX a -> a -> Post -> Post
 post  gpupfx a prev = Post post_

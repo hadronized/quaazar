@@ -12,158 +12,145 @@
 module Quaazar.Render.Forward.Lighting where
 
 import Control.Applicative
+import Control.Monad ( foldM )
 import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Data.Bits ( (.|.) )
+import Data.Word ( Word8, Word32 )
 import Graphics.Rendering.OpenGL.Raw
 import Linear
 import Numeric.Natural ( Natural )
-import Quaazar.Core.Color ( Color )
+import Foreign
+import Quaazar.Core.Color ( Color(..) )
+import Quaazar.Core.Entity ( Entity, entityPosition )
+import Quaazar.Core.Light ( Omni(..) )
 import Quaazar.Core.Material ( Albedo )
 import Quaazar.Render.Camera ( GPUCamera(..) )
-import Quaazar.Render.GL.Framebuffer ( Target(..), bindFramebuffer )
+import Quaazar.Render.GL.Buffer hiding ( MapAccess(..) )
+import qualified Quaazar.Render.GL.Buffer as B ( MapAccess(..) )
+import Quaazar.Render.GL.Framebuffer as FB ( Target(..), bindFramebuffer )
+import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Offscreen
-import Quaazar.Render.GL.Shader ( Program, Uniform, Uniformable, buildProgram
-                               , getUniform, unused, useProgram )
+import Quaazar.Render.GL.Shader ( Program, Uniform, Uniformable, (@=)
+                                , buildProgram, getUniform, unused, useProgram
+                                , uniform )
 import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)  )
 import Quaazar.Utils.Log
 
 -- |'Lighting' gathers information about lighting in the scene.
 data Lighting = Lighting {
-    _ambientLightProgram  :: Program
-  , _ambientLightUniforms :: AmbientLightingUniforms
-  , _omniLightProgram     :: Program
-  , _omniLightUniforms    :: OmniLightingUniforms
-  , _lightOff             :: Offscreen
+    _lightProgram     :: Program
+  , _lightUniforms    :: LightingUniforms
+  , _lightOff         :: Offscreen
+  , _lightOmniBuffer  :: Buffer
   }
 
-data AmbientLightingUniforms = AmbientLightingUniforms {
-    _ambientLightCamProjViewU :: Uniform (M44 Float)
-  , _ambientLightModelU       :: Uniform (M44 Float)
-  , _ambientLightMatDiffAlbU  :: Uniform Albedo
-  , _ambientLightColU         :: Uniform Color
-  , _ambientLightPowU         :: Uniform Float
-  }
-
-data OmniLightingUniforms = OmniLightingUniforms {
-    _omniLightCamProjViewU :: Uniform (M44 Float)
-  , _omniLightModelU       :: Uniform (M44 Float)
-  , _omniLightEyeU         :: Uniform (V3 Float)
-  , _omniLightMatDiffAlbU  :: Uniform Albedo
-  , _omniLightMatSpecAlbU  :: Uniform Albedo
-  , _omniLightMatShnU      :: Uniform Float
-  , _omniLightPosU         :: Uniform (V3 Float) -- FIXME: github issue #22
-  , _omniLightColU         :: Uniform Color
-  , _omniLightPowU         :: Uniform Float
-  , _omniLightRadU         :: Uniform Float
+data LightingUniforms = LightingUniforms {
+    _lightCamProjViewU :: Uniform (M44 Float)
+  , _lightModelU       :: Uniform (M44 Float)
+  , _lightEyeU         :: Uniform (V3 Float)
+  , _lightMatDiffAlbU  :: Uniform Albedo
+  , _lightMatSpecAlbU  :: Uniform Albedo
+  , _lightMatShnU      :: Uniform Float
+  , _lightLigAmbCol    :: Uniform Color
+  , _lightLigAmbPow    :: Uniform Float
+  , _lightLigOmniNb    :: Uniform Word32
   }
 
 makeLenses ''Lighting
-makeLenses ''AmbientLightingUniforms
-makeLenses ''OmniLightingUniforms
+makeLenses ''LightingUniforms
 
 getLighting :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
             => Natural
             -> Natural
+            -> Natural
             -> m Lighting
-getLighting w h = do
+getLighting w h nbLights = do
   info CoreLog "generating lighting"
-  ambientProgram <- buildProgram ambientVS Nothing ambientFS
-  ambientUniforms <- liftIO (getAmbientLightingUniforms ambientProgram)
-  omniProgram <- buildProgram omniVS Nothing omniFS
-  omniUniforms <- liftIO (getOmniLightingUniforms omniProgram)
+  program <- buildProgram lightVS Nothing lightFS
+  uniforms <- liftIO (getLightingUniforms program)
   off <- genOffscreen w h Nearest RGB32F RGB
-  return (Lighting ambientProgram ambientUniforms omniProgram omniUniforms off)
+  omniBuffer <- liftIO (genOmniBuffer nbLights)
+  return (Lighting program uniforms off omniBuffer)
 
-getAmbientLightingUniforms :: Program -> IO AmbientLightingUniforms
-getAmbientLightingUniforms program = do
-    AmbientLightingUniforms
-      <$> sem "projView"
-      <*> sem "model"
-      <*> sem "matDiffAlb"
-      <*> sem "ligCol"
-      <*> sem "ligPow"
-  where
-    sem :: (Uniformable a) => String -> IO (Uniform a)
-    sem = getUniform program
-
-getOmniLightingUniforms :: Program -> IO OmniLightingUniforms
-getOmniLightingUniforms program = do
+getLightingUniforms :: Program -> IO LightingUniforms
+getLightingUniforms program = do
     useProgram program -- FIXME: not mandatory
-    OmniLightingUniforms
+    LightingUniforms
       <$> sem "projView"
       <*> sem "model"
       <*> sem "eye"
       <*> sem "matDiffAlb"
       <*> sem "matSpecAlb"
       <*> sem "matShn"
-      <*> sem "ligPos"
-      <*> sem "ligCol"
-      <*> sem "ligPow"
-      <*> sem "ligRad"
+      <*> pure (uniform $ fromIntegral ligAmbColSem)
+      <*> pure (uniform $ fromIntegral ligAmbPowSem)
+      <*> pure (uniform $ fromIntegral ligOmniNbSem)
   where
     sem :: (Uniformable a) => String -> IO (Uniform a)
     sem = getUniform program
 
 purgeLightingFramebuffer :: Lighting -> IO ()
 purgeLightingFramebuffer lighting = do
-  bindFramebuffer (lighting^.lightOff.offscreenFB) ReadWrite
+  bindFramebuffer (lighting^.lightOff.offscreenFB) FB.ReadWrite
   glClearColor 0 0 0 0
   glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
 
 pushCameraToLighting :: Lighting -> GPUCamera -> IO ()
 pushCameraToLighting lighting gcam = do
-  -- ambient lights
-  useProgram (lighting^.ambientLightProgram)
-  runCamera gcam (ambientUnis^.ambientLightCamProjViewU) unused unused
-  -- omnidirectional lights
-  useProgram (lighting^.omniLightProgram)
-  runCamera gcam (omniUnis^.omniLightCamProjViewU) unused (omniUnis^.omniLightEyeU)
+  useProgram (lighting^.lightProgram)
+  runCamera gcam (unis^.lightCamProjViewU) unused (unis^.lightEyeU)
   where
-    ambientUnis = lighting^.ambientLightUniforms
-    omniUnis = lighting^.omniLightUniforms
+    unis = lighting^.lightUniforms
 
-ambientVS :: String
-ambientVS = unlines
+genOmniBuffer :: Natural -> IO Buffer
+genOmniBuffer nbLights = do
+    buffer <- genObject
+    bindBuffer buffer ShaderStorageBuffer
+    initBuffer ShaderStorageBuffer bytes
+    unbindBuffer ShaderStorageBuffer
+    return buffer
+  where
+    bytes = nbLights * fromIntegral omniBytes
+
+-- WARNING: padding
+omniBytes :: Int
+omniBytes =
+    sizeOf (undefined :: V3 Float) -- transform
+    + sizeOf (undefined :: Float) -- float padding
+  + sizeOf (undefined :: Color)
+  + sizeOf (undefined :: Float) -- power
+  + sizeOf (undefined :: Float) -- radius
+    + sizeOf (undefined :: V3 Float) -- vec2 padding
+
+-- Poke omnidirectional lights at a given pointer. That pointer should be gotten
+-- from the SSBO.
+pokeOmnis :: [(Omni,Entity)] -> Ptr Word8 -> IO Word32
+pokeOmnis omnis ptr = do
+    (_,nbLights) <- foldM cache (ptr,0) omnis
+    return nbLights
+  where
+    cache (ptr,nbLights) (omni,ent) = do
+      writeAt ptr omni ent
+      return (ptr `advancePtr` omniBytes,succ nbLights)
+    writeAt ptr (Omni col pow rad _) ent = do
+      pokeByteOff ptr 0 (ent^.entityPosition)
+      pokeByteOff ptr 16 (unColor col)
+      pokeByteOff ptr 28 pow
+      pokeByteOff ptr 32 rad
+
+pushOmnis :: [(Omni,Entity)] -> Lighting -> IO ()
+pushOmnis omnis lighting = do
+    bindBufferAt (lighting^.lightOmniBuffer) ShaderStorageBuffer ligOmniSSBOBP
+    void . withMappedBuffer ShaderStorageBuffer B.Write $ \ptr -> do
+      nbLights <- pokeOmnis omnis ptr
+      lighting^.lightUniforms.lightLigOmniNb @= nbLights
+
+lightVS :: String
+lightVS = unlines
   [
-    "#version 330 core"
-
-  , "layout (location = 0) in vec3 co;"
-  -- , "layout (location = 1) in vec3 no;" -- FIXME: not sure
-
-  , "uniform mat4 projView;"
-  , "uniform mat4 model;"
-
-  , "void main() {"
-  , "  vec3 vco = (model * vec4(co,1.)).xyz;"
-  , "  gl_Position = projView * vec4(vco,1.);"
-  , "}"
-  ]
-
-ambientFS :: String
-ambientFS = unlines
-  [
-    "#version 330 core"
-
-  , "in vec3 vco;"
-  , "in vec3 vno;"
-
-  , "uniform vec3 matDiffAlb;"
-  , "uniform vec3 ligCol;"
-  , "uniform float ligPow;"
-
-  , "out vec4 frag;"
-
-  , "void main() {"
-  , "  frag = vec4(ligCol * matDiffAlb * ligPow,1.);"
-  , "}"
-  ]
-
-omniVS :: String
-omniVS = unlines
-  [
-    "#version 330 core"
+    "#version 430 core"
 
   , "layout (location = 0) in vec3 co;"
   , "layout (location = 1) in vec3 no;"
@@ -181,10 +168,10 @@ omniVS = unlines
   , "}"
   ]
 
-omniFS :: String
-omniFS = unlines
+lightFS :: String
+lightFS = unlines
   [
-    "#version 330 core"
+    "#version 430 core"
 
   , "in vec3 vco;"
   , "in vec3 vno;"
@@ -193,23 +180,65 @@ omniFS = unlines
   , "uniform vec3 matDiffAlb;"
   , "uniform vec3 matSpecAlb;"
   , "uniform float matShn;"
-  , "uniform vec3 ligPos;"
-  , "uniform vec3 ligCol;"
-  , "uniform float ligPow;"
-  , "uniform float ligRad;"
+    -- ambient lighting
+  , declUniform ligAmbColSem "vec3 ligAmbCol"
+  , declUniform ligAmbPowSem "float ligAmbPow"
+    -- omni lights
+  , "struct Omni {"
+  , "  vec3 pos;"
+  , "  vec3 col;"
+  , "  float pow;"
+  , "  float rad;"
+  , " };"
+
+  , declUniformBlock ligOmniSSBOBP "OmniBuffer { Omni ligs[]; } omniBuffer"
+  , declUniform ligOmniNbSem "uint ligOmniNb"
 
   , "out vec4 frag;"
 
   , "void main() {"
-  , "  vec3 ligToVertex = ligPos - vco;"
-  , "  vec3 ligDir = normalize(ligToVertex);"
   , "  vec3 v = normalize(eye - vco);"
-  , "  vec3 r = normalize(reflect(-ligDir,vno));"
-  , "  vec3 diff = max(0.,dot(vno,ligDir)) * ligCol * matDiffAlb;"
-  , "  vec3 spec = pow(max(0.,dot(r,v)),matShn) * ligCol * matSpecAlb;"
-  , "  float atten = ligPow / (pow(1. + length(ligToVertex)/ligRad,2.));"
-  , "  vec3 illum = atten * (diff + spec);"
 
-  , "  frag = vec4(illum,1.);"
+    -- ambient lighting
+  , "  vec3 ambient = ligAmbCol * matDiffAlb * ligAmbPow;"
+
+    -- omni lights
+  , "  vec3 omni = vec3(0.,0.,0.);"
+  , "  for (uint i = 0u; i < ligOmniNb; ++i) {"
+  , "    vec3 ligCol = omniBuffer.ligs[i].col;"
+  , "    float ligPow = omniBuffer.ligs[i].pow;"
+  , "    float ligRad = omniBuffer.ligs[i].rad;"
+  , "    vec3 ligToVertex = omniBuffer.ligs[i].pos - vco;"
+  , "    vec3 ligDir = normalize(ligToVertex);"
+  , "    vec3 r = normalize(reflect(-ligDir,vno));"
+  , "    vec3 diff = max(0.,dot(vno,ligDir)) * ligCol * matDiffAlb;"
+  , "    vec3 spec = pow(max(0.,dot(r,v)),matShn) * ligCol * matSpecAlb;"
+  , "    float atten = ligPow / (pow(1. + length(ligToVertex)/ligRad,2.));"
+  , "    omni += atten * (diff + spec);"
+  , "  }"
+
+  , "  frag = vec4(ambient + omni,1.);"
   , "}"
   ]
+
+--------------------------------------------------------------------------------
+-- GLSL SEMANTICS
+declUniform :: Int -> String -> String
+declUniform s n = "layout (location = " ++ show s ++ ") uniform " ++ n ++ ";"
+
+ligAmbColSem :: Int
+ligAmbColSem = 5
+
+ligAmbPowSem :: Int
+ligAmbPowSem = 6
+
+ligOmniNbSem :: Int
+ligOmniNbSem = 7
+
+--------------------------------------------------------------------------------
+-- GLSL BINDING POINTS
+declUniformBlock :: Natural -> String -> String
+declUniformBlock bp block = "layout (std430,binding = " ++ show bp ++ ") buffer " ++ block ++ ";"
+
+ligOmniSSBOBP :: Natural
+ligOmniSSBOBP = 0

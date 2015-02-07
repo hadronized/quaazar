@@ -52,7 +52,7 @@ gpuPostFXFree pfx = gpuPostFX pfx $ \_ -> return $ \_ -> return ()
 vsSrc :: String
 vsSrc = unlines
     [
-    "#version 330 core"
+    "#version 430 core"
   , "out vec2 uv;"
   , "vec2[4] v = vec2[]("
   , "    vec2(-1,  1)"

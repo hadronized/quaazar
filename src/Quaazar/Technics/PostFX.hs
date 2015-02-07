@@ -24,7 +24,7 @@ import Quaazar.Utils.Log
 gammaCorrection :: PostFX
 gammaCorrection = PostFX $ unlines
   [
-    "#version 330 core"
+    "#version 430 core"
   , "uniform sampler2D sourceTex;"
   , "out vec4 frag;"
   , "void main() {"
