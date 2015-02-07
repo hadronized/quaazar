@@ -41,6 +41,7 @@ lighten (Ambient ligAmbCol ligAmbPow) omnis shd = Lit lighten_
         useProgram (lighting^.lightProgram)
         lunis^.lightLigAmbCol @= ligAmbCol
         lunis^.lightLigAmbPow @= ligAmbPow
+        pushOmnis omnis lighting
         unShaded shd (lunis^.lightModelU) (lunis^.lightMatDiffAlbU)
           (lunis^.lightMatSpecAlbU) (lunis^.lightMatShnU)
       where

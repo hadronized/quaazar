@@ -146,7 +146,6 @@ pushOmnis omnis lighting = do
     bindBufferAt (lighting^.lightOmniBuffer) ShaderStorageBuffer ligOmniSSBOBP
     void . withMappedBuffer ShaderStorageBuffer B.Write $ \ptr -> do
       nbLights <- pokeOmnis omnis ptr
-      useProgram (lighting^.lightProgram)
       lighting^.lightUniforms.lightLigOmniNb @= nbLights
 
 lightVS :: String
