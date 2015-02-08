@@ -1,0 +1,6 @@
+[submodule "clock"]
+	path = clock
+	url = git@github.com:phaazon/clock.git
+[submodule "OpenGLRaw"]
+	path = OpenGLRaw
+	url = git@github.com:phaazon/OpenGLRaw.git

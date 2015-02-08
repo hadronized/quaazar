@@ -16,17 +16,13 @@
 
 module Quaazar.Utils.TimePoint (
     -- * Time point
-    TimePoint
-  , timePoint
+    timePoint
   ) where
 
-import Data.Time.Clock ( DiffTime, utctDayTime, getCurrentTime )
-
--- |Time point. This is a very important type used to represent absolute time.
--- Elapsed time between two time points simply gives you how many seconds were
--- stood between those points.
-type TimePoint = DiffTime
+import System.Clock ( Clock(Monotonic), TimeSpec(..), getTime )
 
 -- |Get a time point.
-timePoint :: IO TimePoint
-timePoint = fmap utctDayTime getCurrentTime
+timePoint :: IO Double
+timePoint = do
+  TimeSpec secs nsecs <- getTime Monotonic
+  return $ fromIntegral secs + fromIntegral nsecs / (1000000000 :: Double)
