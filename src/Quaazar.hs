@@ -12,6 +12,7 @@
 module Quaazar (
     -- *
     withQuaazar
+  , setWindowTitle
     -- * Re-exported
   , Window
   , module Quaazar.Control
@@ -27,7 +28,8 @@ import Control.Concurrent.STM ( TVar, atomically, modifyTVar, newTVarIO
                               , readTVar, writeTVar )
 import Data.List ( intercalate )
 import Graphics.Rendering.OpenGL.Raw
-import Graphics.UI.GLFW as GLFW
+import Graphics.UI.GLFW as GLFW hiding ( setWindowTitle )
+import qualified Graphics.UI.GLFW as GLFW ( setWindowTitle )
 import Numeric.Natural ( Natural )
 import Quaazar.Control
 import Quaazar.Core
@@ -83,6 +85,9 @@ initGL = do
   glEnable gl_DEPTH_TEST
   glEnable gl_TEXTURE_CUBE_MAP_SEAMLESS
   glClearColor 0 0 0 0
+
+setWindowTitle :: Window -> String -> IO ()
+setWindowTitle = GLFW.setWindowTitle
 
 -- |Helper function to show 'GLFW.Version' type, because they didn’t pick the
 -- one from "Data.Version"…
