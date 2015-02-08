@@ -66,6 +66,7 @@ library
                      , Quaazar.Utils.Either
                      , Quaazar.Utils.FreeList
                      , Quaazar.Utils.Log
+                     , Quaazar.Utils.TimePoint
 
   other-modules:       Quaazar.Render.Forward.Accumulation
                      , Quaazar.Render.Forward.Lighting
