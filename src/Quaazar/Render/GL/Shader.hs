@@ -185,8 +185,8 @@ instance Uniformable Bool where
 
 instance Uniformable [Bool] where
   sendUniform l a =
-    withArrayLen (map fromBool a) $ \s p -> glUniform1iv l (fromIntegral s) (castPtr p)
-    
+    withArrayLen a $ \s p -> glUniform1iv l (fromIntegral s) (castPtr p)
+
 instance Uniformable Int32 where
   sendUniform l x = glUniform1i l (fromIntegral x)
 
@@ -215,8 +215,8 @@ instance Uniformable (V2 Bool) where
 
 instance Uniformable [V2 Bool] where
   sendUniform l a =
-    withArrayLen (map (fmap fromBool) a) $ \s p -> glUniform2iv l (fromIntegral s) (castPtr p)
-    
+    withArrayLen a $ \s p -> glUniform2iv l (fromIntegral s) (castPtr p)
+
 instance Uniformable (V2 Int32) where
   sendUniform l v2 = glUniform2i l x y
     where
@@ -251,7 +251,7 @@ instance Uniformable (V3 Bool) where
 
 instance Uniformable [V3 Bool] where
   sendUniform l a =
-    withArrayLen (map (fmap fromBool) a) $ \s p -> glUniform3iv l (fromIntegral s) (castPtr p)
+    withArrayLen a $ \s p -> glUniform3iv l (fromIntegral s) (castPtr p)
 
 instance Uniformable (V3 Int32) where
   sendUniform l v3 = glUniform3i l x y z
@@ -287,8 +287,8 @@ instance Uniformable (V4 Bool) where
 
 instance Uniformable [V4 Bool] where
   sendUniform l a =
-    withArrayLen (map (fmap fromBool) a) $ \s p -> glUniform4iv l (fromIntegral s) (castPtr p)
-    
+    withArrayLen a $ \s p -> glUniform4iv l (fromIntegral s) (castPtr p)
+
 instance Uniformable (V4 Int32) where
   sendUniform l v4 = glUniform4i l x y z w
     where
