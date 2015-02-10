@@ -63,8 +63,6 @@ library
                      , Quaazar.Technics.PostFX
                      , Quaazar.Utils
                      , Quaazar.Utils.Directory
-                     , Quaazar.Utils.Either
-                     , Quaazar.Utils.FreeList
                      , Quaazar.Utils.Log
                      , Quaazar.Utils.TimePoint
 
