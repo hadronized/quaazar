@@ -23,8 +23,7 @@ import Control.Monad.Error.Class ( MonadError(..) )
 import Control.Monad.Trans ( MonadIO, liftIO )
 import Data.Aeson
 import Data.ByteString.Lazy as B ( readFile )
-import Data.Either.Combinators ( mapLeft )
-import Quaazar.Utils.Either ( generalizeEither )
+import Data.Either.Combinators ( eitherToError, mapLeft )
 import Quaazar.Utils.Log
 import Quaazar.Utils.TimePoint
 import System.FilePath
@@ -55,7 +54,7 @@ loadJSON path = do
       et <- timePoint
       return (st,r,et)
     deb CoreLog $ "parsing time: " ++ show (et - st)
-    generalizeEither $ mapLeft (Log ErrorLog CoreLog) r
+    eitherToError $ mapLeft (Log ErrorLog CoreLog) r
   where
     onError ioe =
       return . Left $ "unable to open file: " ++ show (ioe :: IOException)
