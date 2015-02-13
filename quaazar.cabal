@@ -64,6 +64,7 @@ library
                      , Quaazar.Utils
                      , Quaazar.Utils.Directory
                      , Quaazar.Utils.Log
+                     , Quaazar.Utils.Scoped
                      , Quaazar.Utils.TimePoint
 
   other-modules:       Quaazar.Render.Forward.Accumulation
