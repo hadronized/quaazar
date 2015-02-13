@@ -17,6 +17,8 @@ module Quaazar.Utils.Scoped (
     -- * IO scoped monad transformer
   , IOScopedT
   , runIOScopedT
+    -- * Re-exported
+  , module Control.Monad.Base
   ) where
 
 import Control.Applicative ( Applicative )
@@ -30,6 +32,7 @@ class (MonadBase b m) => MonadScoped b m where
 newtype IOScopedT m a = IOScopedT { unIOScopedT :: StateT (IO ()) m a } deriving (Applicative,Functor,Monad)
 
 deriving instance (MonadBase IO m) => MonadBase IO (IOScopedT m)
+deriving instance (MonadIO m) => MonadIO (IOScopedT m)
 
 instance (MonadBase IO m) => MonadScoped IO (IOScopedT m) where
   scoped a = IOScopedT $ modify (>>a)
