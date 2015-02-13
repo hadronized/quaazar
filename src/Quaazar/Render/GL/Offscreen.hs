@@ -14,12 +14,12 @@ module Quaazar.Render.GL.Offscreen where
 import Control.Lens ( makeLenses )
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
+import Data.Either.Combinators ( eitherToError )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Quaazar.Render.GL.Framebuffer
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Texture
-import Quaazar.Utils.Either ( generalizeEither )
 import Quaazar.Utils.Log
 
 data Offscreen = Offscreen {
@@ -55,7 +55,7 @@ genOffscreen w h flt texift texft = do
       attachTexture ReadWrite colormap (ColorAttachment 0)
       attachTexture ReadWrite depthmap DepthAttachment
     return (colormap,depthmap,fb)
-  fb <- generalizeEither fb'
+  fb <- eitherToError fb'
   return (Offscreen colormap depthmap fb)
 
 data DepthOffscreen = DepthOffscreen {
@@ -82,7 +82,7 @@ genDepthOffscreen w h flt = do
       attachTexture ReadWrite tex DepthAttachment
       glDrawBuffer gl_NONE
     return (tex,fb)
-  fb <- generalizeEither fb'
+  fb <- eitherToError fb'
   return (DepthOffscreen tex fb)
 
 data CubeOffscreen = CubeOffscreen {
@@ -125,5 +125,5 @@ genCubeOffscreen cubeSize flt colift colft colap depthift depthft depthap = do
       attachTexture ReadWrite colormap colap
       attachTexture ReadWrite depthmap depthap
     return (colormap,depthmap,fb)
-  fb <- generalizeEither fb'
+  fb <- eitherToError fb'
   return (CubeOffscreen colormap depthmap fb)
