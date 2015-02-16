@@ -25,7 +25,6 @@ import Control.Applicative ( Applicative )
 import Control.Monad.Base ( MonadBase(..) )
 import Control.Monad.Journal ( MonadJournal(..) )
 import Control.Monad.Trans ( MonadIO(..), MonadTrans )
-import Control.Monad.Trans.Journal ( JournalT )
 import Control.Monad.Trans.State ( StateT, modify, runStateT )
 import Data.Monoid ( Monoid )
 
