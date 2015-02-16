@@ -27,6 +27,7 @@ import Quaazar.Render.GL.Texture as Tex ( Filter(..)
                                        , Format(..), InternalFormat(..) )
 import Quaazar.Render.GL.VertexArray ( VertexArray, genAttributelessVertexArray )
 import Quaazar.Utils.Log
+import Quaazar.Utils.Scoped
 
 data Accumulation = Accumulation {
     _accumProgram :: Program
@@ -37,7 +38,7 @@ data Accumulation = Accumulation {
 
 makeLenses ''Accumulation
 
-getAccumulation :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
+getAccumulation :: (Applicative m,MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
                 => Natural
                 -> Natural
                 -> m Accumulation
@@ -46,20 +47,20 @@ getAccumulation w h = do
   info CoreLog "generating accumulation offscreen"
   off <- genOffscreen w h Nearest RGB32F RGB -- TODO: color offscreen
   off2 <- genOffscreen w h Nearest RGB32F RGB -- TODO: color offscreen
-  va <- liftIO genAttributelessVertexArray
+  va <- genAttributelessVertexArray
   liftIO $ do
     useProgram program
     getUniform program "source" >>= (@= (0 :: Int32))
   return (Accumulation program off off2 va)
 
-purgeAccumulationFramebuffer :: Accumulation -> IO ()
-purgeAccumulationFramebuffer accumulation = do
+purgeAccumulationFramebuffer :: (MonadIO m) => Accumulation -> m ()
+purgeAccumulationFramebuffer accumulation = liftIO $ do
   bindFramebuffer (accumulation^.accumOff.offscreenFB) ReadWrite
   glClearColor 0 0 0 0
   glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
 
-purgeAccumulationFramebuffer2 :: Accumulation -> IO ()
-purgeAccumulationFramebuffer2 accumulation = do
+purgeAccumulationFramebuffer2 :: (MonadIO m) => Accumulation -> m ()
+purgeAccumulationFramebuffer2 accumulation = liftIO $ do
   bindFramebuffer (accumulation^.accumOff2.offscreenFB) ReadWrite
   glClearColor 0 0 0 0
   glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT

@@ -19,10 +19,11 @@ import Data.Foldable ( traverse_ )
 import Quaazar.Render.GL.Shader ( Uniformable, (@=), buildProgram, getUniform )
 import qualified Quaazar.Render.GL.Shader as GL ( useProgram )
 import Quaazar.Utils.Log
+import Quaazar.Utils.Scoped
 
 newtype GPUProgram a = GPUProgram { useProgram :: a -> IO () }
 
-gpuProgram :: (MonadIO m,MonadLogger m,MonadError Log m)
+gpuProgram :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
            => String
            -> Maybe String
            -> String
@@ -30,7 +31,7 @@ gpuProgram :: (MonadIO m,MonadLogger m,MonadError Log m)
            -> m (GPUProgram a)
 gpuProgram vs gs fs uniforms = do
     program <- buildProgram vs gs fs
-    update <- liftIO $ uniforms (uniformize program)
+    update <- liftBase $ uniforms (uniformize program)
     return . GPUProgram $ \a -> do
       GL.useProgram program
       update a

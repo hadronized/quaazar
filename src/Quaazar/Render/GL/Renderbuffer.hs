@@ -11,6 +11,7 @@
 
 module Quaazar.Render.GL.Renderbuffer where
 
+import Control.Monad.Trans ( MonadIO(..) )
 import Foreign.Marshal ( alloca )
 import Foreign.Marshal.Array ( peekArray, withArrayLen )
 import Graphics.Rendering.OpenGL.Raw
@@ -21,19 +22,15 @@ import Quaazar.Render.GL.Texture ( InternalFormat, fromInternalFormat )
 newtype Renderbuffer = Renderbuffer { unRenderbuffer :: GLuint } deriving (Eq,Show)
 
 instance GLObject Renderbuffer where
-  genObjects n = alloca $ \p -> do
-    glGenRenderbuffers (fromIntegral n) p
-    fmap (map Renderbuffer) $ peekArray n p
-  deleteObjects a = withArrayLen (map unRenderbuffer a) $ \s p ->
-    glDeleteRenderbuffers (fromIntegral s) p
+  genObjects n = genericGenObjects n glGenRenderbuffers glDeleteRenderbuffers Renderbuffer
 
-bindRenderbuffer :: Renderbuffer -> IO ()
-bindRenderbuffer (Renderbuffer rb) = glBindRenderbuffer gl_RENDERBUFFER rb
+bindRenderbuffer :: (MonadIO m) => Renderbuffer -> m ()
+bindRenderbuffer (Renderbuffer rb) = liftIO $ glBindRenderbuffer gl_RENDERBUFFER rb
 
-unbindRenderbuffer :: IO ()
-unbindRenderbuffer = glBindRenderbuffer gl_RENDERBUFFER 0
+unbindRenderbuffer :: (MonadIO m) => m ()
+unbindRenderbuffer = liftIO $ glBindRenderbuffer gl_RENDERBUFFER 0
 
-renderbufferStorage :: InternalFormat -> Natural -> Natural -> IO ()
-renderbufferStorage ift w h = glRenderbufferStorage gl_RENDERBUFFER ift' (fromIntegral w) (fromIntegral h)
+renderbufferStorage :: (MonadIO m) => InternalFormat -> Natural -> Natural -> m ()
+renderbufferStorage ift w h = liftIO $ glRenderbufferStorage gl_RENDERBUFFER ift' (fromIntegral w) (fromIntegral h)
   where
     ift' = fromInternalFormat ift

@@ -30,7 +30,7 @@ data Offscreen = Offscreen {
 
 makeLenses ''Offscreen
 
-genOffscreen :: (MonadIO m,MonadError Log m)
+genOffscreen :: (MonadScoped IO m,MonadIO m,MonadError Log m)
              => Natural
              -> Natural
              -> Filter
@@ -38,7 +38,7 @@ genOffscreen :: (MonadIO m,MonadError Log m)
              -> Format
              -> m Offscreen
 genOffscreen w h flt texift texft = do
-  (colormap,depthmap,fb') <- liftIO $ do
+  (colormap,depthmap,fb') <- do
     colormap <- genObject
     bindTexture colormap
     setTextureWrap colormap ClampToEdge
@@ -65,23 +65,21 @@ data DepthOffscreen = DepthOffscreen {
 
 makeLenses ''DepthOffscreen
 
-genDepthOffscreen :: (MonadIO m,MonadError Log m)
+genDepthOffscreen :: (MonadScoped IO m,MonadIO m,MonadError Log m)
                   => Natural
                   -> Natural
                   -> Filter
                   -> m DepthOffscreen
 genDepthOffscreen w h flt = do
-  (tex,fb') <- liftIO $ do
-    tex <- genObject
-    bindTexture tex
-    setTextureWrap tex ClampToEdge
-    setTextureFilters tex flt
-    setTextureNoImage tex Depth32F w h Depth
-    unbindTexture tex
-    fb <- buildFramebuffer ReadWrite . const $ do
-      attachTexture ReadWrite tex DepthAttachment
-      glDrawBuffer gl_NONE
-    return (tex,fb)
+  tex <- genObject
+  bindTexture tex
+  setTextureWrap tex ClampToEdge
+  setTextureFilters tex flt
+  setTextureNoImage tex Depth32F w h Depth
+  unbindTexture tex
+  fb' <- buildFramebuffer ReadWrite . const $ do
+    attachTexture ReadWrite tex DepthAttachment
+    liftIO $ glDrawBuffer gl_NONE
   fb <- eitherToError fb'
   return (DepthOffscreen tex fb)
 
@@ -93,7 +91,7 @@ data CubeOffscreen = CubeOffscreen {
 
 makeLenses ''CubeOffscreen
 
-genCubeOffscreen :: (MonadIO m,MonadError Log m)
+genCubeOffscreen :: (MonadScoped IO m,MonadIO m,MonadError Log m)
                  => Natural
                  -> Filter
                  -> InternalFormat
@@ -104,7 +102,7 @@ genCubeOffscreen :: (MonadIO m,MonadError Log m)
                  -> AttachmentPoint
                  -> m CubeOffscreen
 genCubeOffscreen cubeSize flt colift colft colap depthift depthft depthap = do
-  (colormap,depthmap,fb') <- liftIO $ do
+  (colormap,depthmap,fb') <- do
     -- color cubemap
     colormap <- genObject
     bindTexture colormap

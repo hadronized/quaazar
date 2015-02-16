@@ -11,6 +11,7 @@
 
 module Quaazar.Render.GL.VertexArray where
 
+import Control.Monad.Trans ( MonadIO(..) )
 import Data.Word ( Word8 )
 import Foreign.Marshal ( alloca )
 import Foreign.Marshal.Array ( advancePtr, peekArray, withArrayLen )
@@ -23,11 +24,8 @@ import Quaazar.Render.GL.GLObject
 newtype VertexArray = VertexArray { unVertexArray :: GLuint } deriving (Eq,Ord,Show)
 
 instance GLObject VertexArray where
-  genObjects n = alloca $ \p -> do
-    glGenVertexArrays (fromIntegral n) p
-    fmap (map VertexArray) $ peekArray n p
-  deleteObjects a = withArrayLen (map unVertexArray a) $ \s p ->
-    glDeleteVertexArrays (fromIntegral s) p
+  genObjects n =
+    genericGenObjects n glGenVertexArrays glDeleteVertexArrays VertexArray
 
 data AttribType
   = Ints
@@ -35,24 +33,25 @@ data AttribType
   | Floats
     deriving (Eq,Show)
 
-genAttributelessVertexArray :: IO VertexArray
+genAttributelessVertexArray :: (MonadScoped IO m) => m VertexArray
 genAttributelessVertexArray = do
   va <- genObject
-  bindVertexArray va
-  unbindVertexArray
-  return va
+  liftBase $ do
+    bindVertexArray va
+    unbindVertexArray
+    return va
 
-bindVertexArray :: VertexArray -> IO ()
-bindVertexArray (VertexArray va) = glBindVertexArray va
+bindVertexArray :: (MonadIO m) => VertexArray -> m ()
+bindVertexArray (VertexArray va) = liftIO $ glBindVertexArray va
 
-unbindVertexArray :: IO ()
-unbindVertexArray = glBindVertexArray 0
+unbindVertexArray :: (MonadIO m) => m ()
+unbindVertexArray = liftIO $ glBindVertexArray 0
 
-enableVertexAttrib :: Natural -> IO ()
-enableVertexAttrib = glEnableVertexAttribArray . fromIntegral
+enableVertexAttrib :: (MonadIO m) => Natural -> m ()
+enableVertexAttrib = liftIO . glEnableVertexAttribArray . fromIntegral
 
-vertexAttribPointer :: Natural -> Natural -> AttribType -> Bool -> Int -> IO ()
-vertexAttribPointer attrib size atype normalized offset =
+vertexAttribPointer :: (MonadIO m) => Natural -> Natural -> AttribType -> Bool -> Int -> m ()
+vertexAttribPointer attrib size atype normalized offset = liftIO $
     glVertexAttribPointer (fromIntegral attrib) (fromIntegral size) atype' (fromBool normalized) 0 ptr
   where
     atype' = fromAttribType atype

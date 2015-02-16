@@ -12,6 +12,7 @@
 module Quaazar.Render.GL.GLObject (
     -- * OpenGL object
     GLObject(..)
+  , genericGenObjects
     -- * Re-exported
   , module Quaazar.Utils.Scoped
   , GLuint
@@ -21,7 +22,7 @@ import Control.Monad ( replicateM )
 import Foreign.Marshal ( malloc, free )
 import Foreign.Marshal.Array ( peekArray )
 import Foreign.Ptr
-import Graphics.Rendering.OpenGL.Raw ( GLuint )
+import Graphics.Rendering.OpenGL.Raw
 import Quaazar.Utils.Scoped
 
 class GLObject a where
@@ -39,8 +40,8 @@ class GLObject a where
 -- This function captures that pattern for generice OpenGL objects.
 genericGenObjects :: (MonadScoped IO m)
                   => Int -- ^ number of objects to allocate
-                  -> (Int -> Ptr GLuint -> IO ()) -- ^ allocator
-                  -> (Int -> Ptr GLuint -> IO ()) -- ^ deallocator
+                  -> (GLsizei -> Ptr GLuint -> IO ()) -- ^ allocator
+                  -> (GLsizei -> Ptr GLuint -> IO ()) -- ^ deallocator
                   -> (GLuint -> a) -- ^ Haskell wrapper
                   -> m [a]
 genericGenObjects n alloc dealloc wrapper = do

@@ -19,8 +19,9 @@ import Numeric.Natural ( Natural )
 import Quaazar.Render.GL.Framebuffer (Target(..), bindFramebuffer )
 import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
-                                , bindTextureAt )
+                                 , bindTextureAt )
 import Quaazar.Utils.Log
+import Quaazar.Utils.Scoped
 
 data GPUFrame = GPUFrame {
     useFrame :: IO ()
@@ -31,7 +32,10 @@ getScreenFrame :: (Monad m) => m GPUFrame
 getScreenFrame =
   return $ GPUFrame (glBindFramebuffer gl_FRAMEBUFFER 0) undefined
 
-gpuFrame :: (MonadIO m,MonadError Log m) => Natural -> Natural -> m GPUFrame
+gpuFrame :: (MonadScoped IO m, MonadIO m,MonadError Log m)
+         => Natural
+         -> Natural
+         -> m GPUFrame
 gpuFrame w h = do
     off <- genOffscreen w h Nearest RGB32F RGB
     return $ GPUFrame (bindFramebuffer (off^.offscreenFB) ReadWrite)

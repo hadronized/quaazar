@@ -21,6 +21,7 @@ import Quaazar.Render.Forward.Accumulation ( Accumulation, getAccumulation )
 import Quaazar.Render.Forward.Lighting ( Lighting, getLighting )
 import Quaazar.Render.Forward.Shadowing ( Shadowing, getShadowing )
 import Quaazar.Utils.Log
+import Quaazar.Utils.Scoped
 
 data ForwardRenderer = ForwardRenderer {
     _frLighting :: Lighting
@@ -31,7 +32,7 @@ data ForwardRenderer = ForwardRenderer {
 
 makeLenses ''ForwardRenderer
 
-getForwardRenderer :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
+getForwardRenderer :: (Applicative m,MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
                    => Natural
                    -> Natural
                    -> Natural

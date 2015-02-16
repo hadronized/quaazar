@@ -12,7 +12,7 @@
 module Quaazar.Render.Mesh where
 
 import Control.Lens
-import Control.Monad.Trans ( liftIO )
+import Control.Monad.Trans ( MonadIO(..) )
 import Data.Word ( Word32 )
 import Foreign.Ptr ( nullPtr )
 import Foreign.Storable ( sizeOf )
@@ -30,7 +30,7 @@ import Quaazar.Render.GL.Entity ( entityTransform )
 import Quaazar.Render.GL.Primitive
 import Quaazar.Render.GL.Shader ( Uniform, (@=) )
 import Quaazar.Render.GL.VertexArray
-import Quaazar.Render.GPU
+import Quaazar.Utils.Scoped
 
 data GPUMesh = GPUMesh {
     vertexBuffer :: Buffer
@@ -42,11 +42,8 @@ data GPUMesh = GPUMesh {
 
 makeLenses ''GPUMesh
 
-instance GPU Mesh GPUMesh where
-  gpu = liftIO . gpuMesh
-
 -- |OpenGL 'Mesh' representation.
-gpuMesh :: Mesh -> IO GPUMesh
+gpuMesh :: (MonadScoped IO m,MonadIO m) => Mesh -> m GPUMesh
 gpuMesh msh = case msh^.meshVertices of
     Interleaved v -> gpuMesh (msh & meshVertices .~ deinterleaved v)
     Deinterleaved vnb positions normals uvs -> do

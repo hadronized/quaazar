@@ -20,6 +20,7 @@ import Quaazar.Render.GL.Texture
 import Quaazar.Render.GL.Shader ( Uniformable )
 import Quaazar.Render.Shader
 import Quaazar.Utils.Log ( Log, MonadLogger )
+import Quaazar.Utils.Scoped
 
 data GPUPostFX a = GPUPostFX { usePostFX :: Texture2D -> a -> IO () }
 
@@ -32,7 +33,7 @@ instance GPU PostFX (GPUPostFX a) where
     return gpupfx
 -}
 
-gpuPostFX :: (MonadIO m,MonadLogger m,MonadError Log m)
+gpuPostFX :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
           => PostFX
           -> ((forall u. (Uniformable u) => String -> IO (Maybe u -> IO ())) -> IO (a -> IO ()))
           -> m (GPUPostFX a)
@@ -44,7 +45,7 @@ gpuPostFX (PostFX src) uniforms = do
       bindTextureAt sourceTex 0
       useProgram gpuprogram a
 
-gpuPostFXFree :: (MonadIO m,MonadLogger m,MonadError Log m)
+gpuPostFXFree :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
               => PostFX
               -> m (GPUPostFX ())
 gpuPostFXFree pfx = gpuPostFX pfx $ \_ -> return $ \_ -> return ()

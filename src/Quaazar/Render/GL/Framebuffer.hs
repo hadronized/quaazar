@@ -12,6 +12,7 @@
 module Quaazar.Render.GL.Framebuffer where
 
 import Control.Monad ( void )
+import Control.Monad.Trans ( MonadIO(..) )
 import Foreign.Marshal ( alloca )
 import Foreign.Marshal.Array ( peekArray, withArrayLen )
 import Graphics.Rendering.OpenGL.Raw
@@ -25,11 +26,7 @@ import Quaazar.Utils.Log
 newtype Framebuffer = Framebuffer { unFramebuffer :: GLuint } deriving (Eq,Show)
 
 instance GLObject Framebuffer where
-  genObjects n = alloca $ \p -> do
-    glGenFramebuffers (fromIntegral n) p
-    fmap (map Framebuffer) $ peekArray n p
-  deleteObjects a = withArrayLen (map unFramebuffer a) $ \s p ->
-    glDeleteFramebuffers (fromIntegral s) p
+  genObjects n = genericGenObjects n glGenFramebuffers glDeleteFramebuffers Framebuffer
 
 data Target
   = Read
@@ -42,18 +39,18 @@ data AttachmentPoint
   | DepthAttachment
     deriving (Eq,Show)
 
-bindFramebuffer :: Framebuffer -> Target -> IO ()
-bindFramebuffer (Framebuffer fb) target = glBindFramebuffer target' fb
+bindFramebuffer :: (MonadIO m) => Framebuffer -> Target -> m ()
+bindFramebuffer (Framebuffer fb) target = liftIO $ glBindFramebuffer target' fb
   where
     target' = fromTarget target
 
-unbindFramebuffer :: Target -> IO ()
-unbindFramebuffer target = glBindFramebuffer target' 0
+unbindFramebuffer :: (MonadIO m) => Target -> m ()
+unbindFramebuffer target = liftIO $ glBindFramebuffer target' 0
   where
     target' = fromTarget target
 
-checkFramebufferStatus :: IO (Maybe String)
-checkFramebufferStatus = fmap treatStatus (glCheckFramebufferStatus gl_FRAMEBUFFER)
+checkFramebufferStatus :: (MonadIO m) => m (Maybe String)
+checkFramebufferStatus = liftIO $ fmap treatStatus (glCheckFramebufferStatus gl_FRAMEBUFFER)
   where
     treatStatus status
         | status == gl_FRAMEBUFFER_COMPLETE = Nothing
@@ -67,29 +64,29 @@ checkFramebufferStatus = fmap treatStatus (glCheckFramebufferStatus gl_FRAMEBUFF
         | status == gl_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS = Just "layer targets"
         | otherwise = Just "unknown error"
 
-attachTextureAt :: (TextureLike t)
+attachTextureAt :: (MonadIO m,TextureLike t)
                 => Target
                 -> t
                 -> AttachmentPoint
                 -> Natural
-                -> IO ()
-attachTextureAt target tex ap level = glFramebufferTexture target' ap' tid lvl
+                -> m ()
+attachTextureAt target tex ap level = liftIO $ glFramebufferTexture target' ap' tid lvl
   where
     target' = fromTarget target
     ap' = fromAttachmentPoint ap
     tid = textureID tex
     lvl = fromIntegral level
 
-attachTexture :: (TextureLike t) => Target -> t -> AttachmentPoint -> IO ()
+attachTexture :: (MonadIO m,TextureLike t) => Target -> t -> AttachmentPoint -> m ()
 attachTexture target tex ap = attachTextureAt target tex ap 0
 
-attachRenderbuffer :: Target -> Renderbuffer -> AttachmentPoint -> IO ()
-attachRenderbuffer target (Renderbuffer rbuf) ap = glFramebufferRenderbuffer target' ap' gl_RENDERBUFFER rbuf
+attachRenderbuffer :: (MonadIO m) => Target -> Renderbuffer -> AttachmentPoint -> m ()
+attachRenderbuffer target (Renderbuffer rbuf) ap = liftIO $ glFramebufferRenderbuffer target' ap' gl_RENDERBUFFER rbuf
   where
     target' = fromTarget target
     ap'     = fromAttachmentPoint ap
 
-buildFramebuffer :: Target -> (Framebuffer -> IO a) -> IO (Either Log Framebuffer)
+buildFramebuffer :: (MonadScoped IO m,MonadIO m) => Target -> (Framebuffer -> m a) -> m (Either Log Framebuffer)
 buildFramebuffer target f = do
     fb <- genObject
     bindFramebuffer fb target
@@ -98,8 +95,8 @@ buildFramebuffer target f = do
   where
     onError = Left . Log ErrorLog gllog
 
-drawBuffers :: [AttachmentPoint] -> IO ()
-drawBuffers bufs = withArrayLen (map fromAttachmentPoint bufs) (\s b -> glDrawBuffers (fromIntegral s) b)
+drawBuffers :: (MonadIO m) => [AttachmentPoint] -> m ()
+drawBuffers bufs = liftIO $ withArrayLen (map fromAttachmentPoint bufs) (\s b -> glDrawBuffers (fromIntegral s) b)
 
 fromTarget :: Target -> GLenum
 fromTarget target = case target of

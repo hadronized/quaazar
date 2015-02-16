@@ -11,6 +11,7 @@
 
 module Quaazar.Render.GL.Buffer where
 
+import Control.Monad.Trans ( MonadIO(..) )
 import Data.Word ( Word8 )
 import Foreign
 import Graphics.Rendering.OpenGL.Raw
@@ -20,11 +21,7 @@ import Quaazar.Render.GL.GLObject
 newtype Buffer = Buffer { unBuffer :: GLuint } deriving (Eq,Ord,Show)
 
 instance GLObject Buffer where
-  genObjects n = alloca $ \p -> do
-    glGenBuffers (fromIntegral n) p
-    fmap (map Buffer) $ peekArray n p
-  deleteObjects a = withArrayLen (map unBuffer a) $ \s p ->
-    glDeleteBuffers (fromIntegral s) p
+  genObjects n = genericGenObjects n glGenBuffers glDeleteBuffers Buffer
 
 data Target
   = ArrayBuffer
@@ -38,37 +35,37 @@ data MapAccess
   | ReadWrite
     deriving (Eq,Show)
 
-bindBuffer :: Buffer -> Target -> IO ()
-bindBuffer (Buffer buffer) target =
+bindBuffer :: (MonadIO m) => Buffer -> Target -> m ()
+bindBuffer (Buffer buffer) target = liftIO $
   glBindBuffer (fromTarget target) buffer
 
-bindBufferAt :: Buffer -> Target -> Natural -> IO ()
-bindBufferAt (Buffer buffer) target index =
+bindBufferAt :: (MonadIO m) => Buffer -> Target -> Natural -> m ()
+bindBufferAt (Buffer buffer) target index = liftIO $
   glBindBufferBase (fromTarget target) (fromIntegral index) buffer
 
-unbindBuffer :: Target -> IO ()
-unbindBuffer target =
+unbindBuffer :: (MonadIO m) => Target -> m ()
+unbindBuffer target = liftIO $
   glBindBuffer (fromTarget target) 0
 
-initBuffer :: Target -> Natural -> IO ()
-initBuffer target bytes =
+initBuffer :: (MonadIO m) => Target -> Natural -> m ()
+initBuffer target bytes = liftIO $
     glBufferData target' (fromIntegral bytes) nullPtr gl_STATIC_DRAW -- FIXME
   where
     target' = fromTarget target
 
-bufferSubData :: (Storable a) => Target -> Int -> Natural -> [a] -> IO ()
-bufferSubData target offset bytes values =
+bufferSubData :: (MonadIO m,Storable a) => Target -> Int -> Natural -> [a] -> m ()
+bufferSubData target offset bytes values = liftIO $
     withArray values $ glBufferSubData target' (fromIntegral offset) (fromIntegral bytes)
   where
     target' = fromTarget target
 
-mapBuffer :: Target -> MapAccess -> IO (Ptr Word8)
-mapBuffer target access = glMapBuffer (fromTarget target) (fromMapAccess access)
+mapBuffer :: (MonadIO m) => Target -> MapAccess -> m (Ptr Word8)
+mapBuffer target access = liftIO $ glMapBuffer (fromTarget target) (fromMapAccess access)
 
-unmapBuffer :: Target -> IO Bool
-unmapBuffer = fmap toBool . glUnmapBuffer . fromTarget
+unmapBuffer :: (MonadIO m) => Target -> m Bool
+unmapBuffer = liftIO . fmap toBool . glUnmapBuffer . fromTarget
 
-withMappedBuffer :: Target -> MapAccess -> (Ptr Word8 -> IO ()) -> IO Bool
+withMappedBuffer :: (MonadIO m) => Target -> MapAccess -> (Ptr Word8 -> m ()) -> m Bool
 withMappedBuffer target access f =
   mapBuffer target access >>= f >> unmapBuffer target
 

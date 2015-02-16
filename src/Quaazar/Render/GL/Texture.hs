@@ -11,6 +11,7 @@
 
 module Quaazar.Render.GL.Texture where
 
+import Control.Monad.Trans ( MonadIO(..) )
 import Foreign.Marshal ( alloca )
 import Foreign.Marshal.Array ( peekArray, withArray, withArrayLen )
 import Foreign.Ptr ( nullPtr )
@@ -61,39 +62,35 @@ class TextureLike t where
   -- |
   textureID :: t -> GLuint
   -- |
-  bindTexture :: t -> IO ()
+  bindTexture :: (MonadIO m) => t -> m ()
   -- |
-  unbindTexture :: t -> IO ()
+  unbindTexture :: (MonadIO m) => t -> m ()
   -- |
-  setTextureWrap :: t -> Wrap -> IO ()
+  setTextureWrap :: (MonadIO m) => t -> Wrap -> m ()
   -- |
-  setTextureFilters :: t -> Filter -> IO ()
+  setTextureFilters :: (MonadIO m) => t -> Filter -> m ()
   -- |
-  setTextureImage :: (Storable a) => t -> InternalFormat -> Natural -> Natural -> Format -> [a] -> IO ()
+  setTextureImage :: (MonadIO m,Storable a) => t -> InternalFormat -> Natural -> Natural -> Format -> [a] -> m ()
   -- |
-  setTextureNoImage :: t -> InternalFormat -> Natural -> Natural -> Format -> IO ()
+  setTextureNoImage :: (MonadIO m) => t -> InternalFormat -> Natural -> Natural -> Format -> m ()
   -- |
-  setTextureCompareFunc :: t -> Maybe CompareFunc -> IO ()
+  setTextureCompareFunc :: (MonadIO m) => t -> Maybe CompareFunc -> m ()
   -- |
-  setTextureMaxLevel :: t -> Int -> IO ()
+  setTextureMaxLevel :: (MonadIO m) => t -> Int -> m ()
 
 newtype Texture2D = Texture2D { unTexture2D :: GLuint } deriving (Eq,Ord,Show)
 
 instance GLObject Texture2D where
-  genObjects n = alloca $ \p -> do
-    glGenTextures (fromIntegral n) p
-    fmap (map Texture2D) $ peekArray n p
-  deleteObjects a = withArrayLen (map unTexture2D a) $ \s p ->
-    glDeleteTextures (fromIntegral s) p
+  genObjects n = genericGenObjects n glGenTextures glDeleteTextures Texture2D
 
 instance TextureLike Texture2D where
   textureID = unTexture2D
-  bindTexture (Texture2D t) = glBindTexture gl_TEXTURE_2D t
-  unbindTexture _ = glBindTexture gl_TEXTURE_2D 0
+  bindTexture (Texture2D t) = liftIO $ glBindTexture gl_TEXTURE_2D t
+  unbindTexture _ = liftIO $ glBindTexture gl_TEXTURE_2D 0
   setTextureWrap _ = setTextureWrap_ gl_TEXTURE_2D
   setTextureFilters _ = setTextureFilters_ gl_TEXTURE_2D
   setTextureImage _ = setTextureImage_ gl_TEXTURE_2D
-  setTextureNoImage _ ift w h ft =
+  setTextureNoImage _ ift w h ft = liftIO $
       glTexImage2D gl_TEXTURE_2D 0 ift' (fromIntegral w) (fromIntegral h) 0 ft' gl_FLOAT nullPtr
     where
       ift' = fromIntegral (fromInternalFormat ift)
@@ -104,20 +101,16 @@ instance TextureLike Texture2D where
 newtype Cubemap = Cubemap { unCubemap :: GLuint } deriving (Eq,Ord,Show)
 
 instance GLObject Cubemap where
-  genObjects n = alloca $ \p -> do
-    glGenTextures (fromIntegral n) p
-    fmap (map Cubemap) $ peekArray n p
-  deleteObjects a = withArrayLen (map unCubemap a) $ \s p ->
-    glDeleteTextures (fromIntegral s) p
+  genObjects n = genericGenObjects n glGenTextures glDeleteTextures Cubemap
 
 instance TextureLike Cubemap where
   textureID = unCubemap
-  bindTexture (Cubemap t) = glBindTexture gl_TEXTURE_CUBE_MAP t
-  unbindTexture _ = glBindTexture gl_TEXTURE_CUBE_MAP 0
+  bindTexture (Cubemap t) = liftIO $ glBindTexture gl_TEXTURE_CUBE_MAP t
+  unbindTexture _ = liftIO $ glBindTexture gl_TEXTURE_CUBE_MAP 0
   setTextureWrap _ = setTextureWrap_ gl_TEXTURE_CUBE_MAP
   setTextureFilters _ = setTextureFilters_ gl_TEXTURE_CUBE_MAP
   setTextureImage = error "setting image of cubemap not supported yet"
-  setTextureNoImage _ ift w h ft = mapM_ texImage2D
+  setTextureNoImage _ ift w h ft = liftIO $ mapM_ texImage2D
       [
         gl_TEXTURE_CUBE_MAP_POSITIVE_X
       , gl_TEXTURE_CUBE_MAP_NEGATIVE_X
@@ -134,44 +127,44 @@ instance TextureLike Cubemap where
   setTextureCompareFunc _ = setTextureCompareFunc_ gl_TEXTURE_CUBE_MAP
   setTextureMaxLevel _ = setTextureMaxLevel_ gl_TEXTURE_CUBE_MAP
 
-bindTextureAt :: (TextureLike t) => t -> Natural -> IO ()
+bindTextureAt :: (MonadIO m,TextureLike t) => t -> Natural -> m ()
 bindTextureAt tex unit = do
-  glActiveTexture (gl_TEXTURE0 + fromIntegral unit)
+  liftIO $ glActiveTexture (gl_TEXTURE0 + fromIntegral unit)
   bindTexture tex
 
-setTextureWrap_ :: GLenum -> Wrap -> IO ()
-setTextureWrap_ t wrap = do
+setTextureWrap_ :: (MonadIO m) => GLenum -> Wrap -> m ()
+setTextureWrap_ t wrap = liftIO $ do
     glTexParameteri t gl_TEXTURE_WRAP_R wrap'
     glTexParameteri t gl_TEXTURE_WRAP_S wrap'
     glTexParameteri t gl_TEXTURE_WRAP_T wrap'
   where
     wrap'  = fromIntegral (fromWrap wrap)
 
-setTextureFilters_ :: GLenum -> Filter -> IO ()
-setTextureFilters_ t filt = do
+setTextureFilters_ :: (MonadIO m) => GLenum -> Filter -> m ()
+setTextureFilters_ t filt = liftIO $ do
     glTexParameteri t gl_TEXTURE_MIN_FILTER filt'
     glTexParameteri t gl_TEXTURE_MAG_FILTER filt'
   where
     filt'  = fromIntegral (fromFilter filt)
 
-setTextureImage_ :: (Storable a) => GLenum -> InternalFormat -> Natural -> Natural -> Format -> [a] -> IO ()
-setTextureImage_ t ift w h ft texels =
+setTextureImage_ :: (MonadIO m,Storable a) => GLenum -> InternalFormat -> Natural -> Natural -> Format -> [a] -> m ()
+setTextureImage_ t ift w h ft texels = liftIO $ do
     withArray texels (glTexImage2D t 0 ift' (fromIntegral w) (fromIntegral h) 0 ft' gl_FLOAT)
   where
     ift'   = fromIntegral (fromInternalFormat ift)
     ft'    = fromFormat ft
 
-setTextureCompareFunc_ :: GLenum -> Maybe CompareFunc -> IO ()
+setTextureCompareFunc_ :: (MonadIO m) => GLenum -> Maybe CompareFunc -> m ()
 setTextureCompareFunc_ t = maybe compareNothing compareRefToTexture
   where
-    compareNothing =
+    compareNothing = liftIO $
       glTexParameteri t gl_TEXTURE_COMPARE_MODE (fromIntegral gl_NONE)
-    compareRefToTexture func = do
+    compareRefToTexture func = liftIO $ do
       glTexParameteri t gl_TEXTURE_COMPARE_MODE (fromIntegral gl_COMPARE_REF_TO_TEXTURE)
       glTexParameteri t gl_TEXTURE_COMPARE_FUNC (fromIntegral $ fromCompareFunc func)
 
-setTextureMaxLevel_ :: GLenum -> Int -> IO ()
-setTextureMaxLevel_ t l =
+setTextureMaxLevel_ :: (MonadIO m) => GLenum -> Int -> m ()
+setTextureMaxLevel_ t l = liftIO $
     glTexParameteri t gl_TEXTURE_MAX_LEVEL (fromIntegral l)
 
 fromWrap :: Wrap -> GLenum

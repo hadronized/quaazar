@@ -61,7 +61,7 @@ data LightingUniforms = LightingUniforms {
 makeLenses ''Lighting
 makeLenses ''LightingUniforms
 
-getLighting :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
+getLighting :: (Applicative m,MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
             => Natural
             -> Natural
             -> Natural
@@ -69,13 +69,13 @@ getLighting :: (Applicative m,MonadIO m,MonadLogger m,MonadError Log m)
 getLighting w h nbLights = do
   info CoreLog "generating lighting"
   program <- buildProgram lightVS Nothing lightFS
-  uniforms <- liftIO (getLightingUniforms program)
+  uniforms <- getLightingUniforms program
   off <- genOffscreen w h Nearest RGB32F RGB
-  omniBuffer <- liftIO (genOmniBuffer nbLights)
+  omniBuffer <- genOmniBuffer nbLights
   return (Lighting program uniforms off omniBuffer)
 
-getLightingUniforms :: Program -> IO LightingUniforms
-getLightingUniforms program = do
+getLightingUniforms :: (MonadIO m) => Program -> m LightingUniforms
+getLightingUniforms program = liftIO $ do
     useProgram program -- FIXME: not mandatory
     LightingUniforms
       <$> sem "projView"
@@ -104,7 +104,7 @@ pushCameraToLighting lighting gcam = do
   where
     unis = lighting^.lightUniforms
 
-genOmniBuffer :: Natural -> IO Buffer
+genOmniBuffer :: (MonadScoped IO m,MonadIO m) => Natural -> m Buffer
 genOmniBuffer nbLights = do
     buffer <- genObject
     bindBuffer buffer ShaderStorageBuffer

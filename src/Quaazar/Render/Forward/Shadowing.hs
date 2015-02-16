@@ -29,6 +29,7 @@ import Quaazar.Render.GL.Shader ( Program, Uniform, Uniformable, (@=)
 import Quaazar.Render.GL.Texture as Tex ( Filter(..), Format(..)
                                        , InternalFormat(..) )
 import Quaazar.Utils.Log
+import Quaazar.Utils.Scoped
 
 data Shadowing = Shadowing {
     _shadowDepthCubeOff        :: CubeOffscreen
@@ -52,7 +53,7 @@ data ShadowingUniforms = ShadowingUniforms {
 makeLenses ''Shadowing
 makeLenses ''ShadowingUniforms
 
-getShadowing :: (MonadIO m,MonadLogger m,MonadError Log m)
+getShadowing :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
             => Natural
             -> Natural
             -> Natural
@@ -65,12 +66,12 @@ getShadowing w h cubeSize = do
   depthProgram <- buildProgram shadowDepthCubemapVS (Just shadowDepthCubemapGS)
     shadowDepthCubemapFS
   shadowProgram <- buildProgram shadowShadowVS Nothing shadowShadowFS
-  uniforms <- liftIO (getShadowingUniforms depthProgram shadowProgram)
+  uniforms <- getShadowingUniforms depthProgram shadowProgram
   return $ Shadowing cubeOff shadowOff depthProgram shadowProgram uniforms
     (Viewport cubeSize cubeSize 0 0)
 
-getShadowingUniforms :: Program -> Program -> IO ShadowingUniforms
-getShadowingUniforms depthProgram shadowProgram = do
+getShadowingUniforms :: (MonadIO m) => Program -> Program -> m ShadowingUniforms
+getShadowingUniforms depthProgram shadowProgram = liftIO $ do
     useProgram shadowProgram
     shadowSem "depthmap" >>= (@= (0 :: Int32))
     shadowSem "ligDepthmap" >>= (@= (1 :: Int32))
@@ -88,14 +89,16 @@ getShadowingUniforms depthProgram shadowProgram = do
     shadowSem :: (Uniformable a) => String -> IO (Uniform a)
     shadowSem = getUniform shadowProgram
 
-purgeShadowingFramebuffer :: Shadowing -> IO ()
+purgeShadowingFramebuffer :: (MonadIO m) => Shadowing -> m ()
 purgeShadowingFramebuffer shadowing = do
   bindFramebuffer (shadowing^.shadowShadowOff.offscreenFB) ReadWrite
-  glClearColor 0 0 0 0
-  glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
+  liftIO $ do
+    glClearColor 0 0 0 0
+    glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
   bindFramebuffer (shadowing^.shadowDepthCubeOff.cubeOffscreenFB) ReadWrite
-  glClearColor 1 1 1 1
-  glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
+  liftIO $ do
+    glClearColor 1 1 1 1
+    glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
 
 shadowDepthCubemapVS :: String
 shadowDepthCubemapVS = unlines

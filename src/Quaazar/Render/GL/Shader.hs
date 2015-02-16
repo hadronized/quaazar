@@ -32,33 +32,42 @@ import Quaazar.Core.Position ( Position(unPosition) )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Log ( gllog )
 import Quaazar.Utils.Log
+import Quaazar.Utils.Scoped
 
 throwError_ :: (MonadError Log m) => String -> m a
 throwError_ = throwError . Log ErrorLog gllog
 
+genericGenShader :: (MonadScoped IO m)
+                 => GLenum -- ^ shader type
+                 -> (GLuint -> a) -- ^ Haskell wrapper
+                 -> m a
+genericGenShader shaderType wrapper = do
+  s <- liftBase $ glCreateShader shaderType
+  scoped $ glDeleteShader s
+  return $ wrapper s
+
 newtype VertexShader = VertexShader { unVertexShader :: GLuint } deriving (Eq,Show)
 
 instance GLObject VertexShader where
-  genObject = fmap VertexShader $ glCreateShader gl_VERTEX_SHADER
-  deleteObject (VertexShader s) = glDeleteShader s
+  genObject = genericGenShader gl_VERTEX_SHADER VertexShader
 
 newtype GeometryShader = GeometryShader { unGeometryShader :: GLuint } deriving (Eq,Show)
 
 instance GLObject GeometryShader where
-  genObject = fmap GeometryShader $ glCreateShader gl_GEOMETRY_SHADER
-  deleteObject (GeometryShader s) = glDeleteShader s
+  genObject = genericGenShader gl_GEOMETRY_SHADER GeometryShader
 
 newtype FragmentShader = FragmentShader { unFragmentShader :: GLuint } deriving (Eq,Show)
 
 instance GLObject FragmentShader where
-  genObject = fmap FragmentShader $ glCreateShader gl_FRAGMENT_SHADER
-  deleteObject (FragmentShader s) = glDeleteShader s
+  genObject = genericGenShader gl_FRAGMENT_SHADER FragmentShader
 
 newtype Program = Program { unProgram :: GLuint } deriving (Eq,Show)
 
 instance GLObject Program where
-  genObject = fmap Program glCreateProgram
-  deleteObject (Program p) = glDeleteProgram p
+  genObject = do
+    p <- liftBase $ glCreateProgram
+    scoped $ glDeleteProgram p
+    return $ Program p
 
 class ShaderLike s where
   shaderID :: s -> GLuint
@@ -122,28 +131,24 @@ link (Program pid) = do
     clog l s     = allocaArray l $
         liftA2 (*>) (glGetProgramInfoLog s (fromIntegral l) nullPtr) (peekCString . castPtr)
 
-buildProgram :: (MonadIO m,MonadLogger m,MonadError Log m)
+buildProgram :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
              => String
              -> Maybe String
              -> String
              -> m Program
 buildProgram vsSrc gsSrc fsSrc = do
-  program <- liftIO genObject
-  vs :: VertexShader <- liftIO genObject
-  fs :: FragmentShader <- liftIO genObject
+  program <- genObject
+  vs :: VertexShader <- genObject
+  fs :: FragmentShader <- genObject
   sequence_ [compile vs vsSrc,compile fs fsSrc]
   liftIO $ sequence_ [attach program vs,attach program fs]
   case gsSrc of
     Just src -> do
-      gs :: GeometryShader <- liftIO genObject
+      gs :: GeometryShader <- genObject
       compile gs src
       liftIO (attach program gs)
       link program
-      liftIO (deleteObject gs)
     Nothing -> link program
-  liftIO $ do
-    deleteObject vs
-    deleteObject fs
   return program
 
 useProgram :: Program -> IO ()
