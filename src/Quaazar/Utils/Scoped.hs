@@ -1,4 +1,4 @@
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE BangPatterns, StandaloneDeriving, UndecidableInstances #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -23,16 +23,20 @@ module Quaazar.Utils.Scoped (
 
 import Control.Applicative ( Applicative )
 import Control.Monad.Base ( MonadBase(..) )
-import Control.Monad.Trans ( MonadIO(..) )
+import Control.Monad.Journal ( MonadJournal(..) )
+import Control.Monad.Trans ( MonadIO(..), MonadTrans )
+import Control.Monad.Trans.Journal ( JournalT )
 import Control.Monad.Trans.State ( StateT, modify, runStateT )
+import Data.Monoid ( Monoid )
 
 class (MonadBase b m) => MonadScoped b m where
   scoped :: b () -> m ()
 
-newtype IOScopedT m a = IOScopedT { unIOScopedT :: StateT (IO ()) m a } deriving (Applicative,Functor,Monad)
+newtype IOScopedT m a = IOScopedT { unIOScopedT :: StateT (IO ()) m a } deriving (Applicative,Functor,Monad,MonadTrans)
 
 deriving instance (MonadBase IO m) => MonadBase IO (IOScopedT m)
 deriving instance (MonadIO m) => MonadIO (IOScopedT m)
+deriving instance (MonadJournal w m,Monoid w) => MonadJournal w (IOScopedT m)
 
 instance (MonadBase IO m) => MonadScoped IO (IOScopedT m) where
   scoped a = IOScopedT $ modify (>>a)

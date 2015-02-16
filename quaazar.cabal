@@ -91,7 +91,8 @@ library
                      , ScopedTypeVariables
                      , TemplateHaskell
 
-  other-extensions:    ConstraintKinds
+  other-extensions:    BangPatterns
+                     , ConstraintKinds
                      , OverloadedStrings
                      , RankNTypes
                      , TypeFamilies
