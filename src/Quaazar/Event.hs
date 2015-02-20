@@ -151,12 +151,10 @@ data Key
     deriving (Eq,Ord,Read,Show)
 
 -- |If a key has an event attached to it, it might be 'KeyPressed' or
--- 'KeyReleased'. If your application has /repeating/ enabled, several
--- 'KeyPressed' 'KeyReleased' event pairs are generated after the first to
--- emulate the repeating.
+-- 'KeyReleased'.
 data KeyState
-  = KeyPressed Key -- ^ Occurs when a key is pressed
-  | KeyReleased Key -- ^ Occurs when a key is released
+  = KeyPressed -- ^ Occurs when a key is pressed
+  | KeyReleased -- ^ Occurs when a key is released
     deriving (Eq,Read,Show)
 
 -- |Mouse button.
@@ -174,8 +172,8 @@ data MouseButton
 -- |If a mouse button has an event attached to it, it might be 'ButtonPressed'
 -- or 'ButtonReleased'.
 data MouseButtonState
-  = ButtonPressed MouseButton
-  | ButtonReleased MouseButton
+  = ButtonPressed
+  | ButtonReleased
     deriving (Eq,Ord,Read,Show)
 
 -- |When the mouse moves, it generates a 'MouseMotion' event. That event
@@ -206,8 +204,8 @@ data SystemState
 
 -- |Gather all core events.
 data Event
-  = KeyEvent KeyState
-  | MouseButtonEvent MouseButtonState
+  = KeyEvent Key KeyState
+  | MouseButtonEvent MouseButton MouseButtonState
   | MouseMotionEvent MouseMotion
   | WindowEvent WindowState
   | SystemEvent SystemState

@@ -226,14 +226,14 @@ handleKey events _ k _ s _ = atomically . modifyTVar events $ (++ keys)
         Key'RightSuper   -> r RightSuper
         Key'Menu         -> r Menu
       where
-        r x = [KeyEvent $ st x]
+        r x = [KeyEvent x st]
 
 handleMouseButton :: TVar [Event] -> Window -> GLFW.MouseButton -> GLFW.MouseButtonState -> ModifierKeys -> IO ()
-handleMouseButton events _ b s _ = atomically . modifyTVar events $ (++ [MouseButtonEvent mouseEvent])
+handleMouseButton events _ b s _ = atomically . modifyTVar events $ (++ [MouseButtonEvent button st])
   where
-    mouseEvent = case s of
-      MouseButtonState'Pressed -> ButtonPressed button
-      MouseButtonState'Released -> ButtonReleased button
+    st = case s of
+      MouseButtonState'Pressed -> ButtonPressed
+      MouseButtonState'Released -> ButtonReleased
     button = case b of
       MouseButton'1 -> MouseLeft
       MouseButton'2 -> MouseRight
