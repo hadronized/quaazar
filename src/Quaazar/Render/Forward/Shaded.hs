@@ -19,6 +19,7 @@ import Quaazar.Render.Forward.Rendered ( Rendered(..) )
 import Quaazar.Render.GL.Shader ( Uniform )
 import Quaazar.Render.Material ( GPUMaterial(..) )
 
+{-
 data Shaded = Shaded {
     unShaded :: Uniform (M44 Float)
              -> Uniform Albedo
@@ -40,3 +41,4 @@ shade gmat rdrd = Shaded shade_ shadeNoMaterial
         runMaterial gmat matDiffAlbU matSpecAlbU matShnU
         unRendered rdrd modelU
     shadeNoMaterial = unRendered rdrd
+-}

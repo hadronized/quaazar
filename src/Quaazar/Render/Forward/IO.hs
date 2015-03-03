@@ -29,7 +29,7 @@ import Quaazar.Render.GL.VertexArray ( bindVertexArray )
 swapBuffers :: (MonadIO m) => ForwardRenderer -> GPUFrame -> Viewport -> Post -> m ()
 swapBuffers (ForwardRenderer lighting shadowing accumulation window) gpuframe screenViewport pst = liftIO $ do
   setViewport screenViewport
-  (finalOff,_) <- unPost pst screenViewport lighting shadowing accumulation
+  (finalOff,_) <- unPost pst lighting shadowing accumulation
   useProgram (accumulation^.accumProgram)
   useFrame gpuframe
   glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT

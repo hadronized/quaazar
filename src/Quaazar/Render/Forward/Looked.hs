@@ -18,12 +18,12 @@ import Quaazar.Render.Forward.Lit ( Lit(..) )
 import Quaazar.Render.Forward.Shadowing
 import Quaazar.Render.Forward.Viewport ( Viewport )
 
-newtype Looked = Looked { unLooked :: Viewport -> Lighting -> Shadowing -> Accumulation -> IO () }
+newtype Looked = Looked { unLooked :: Lighting -> Shadowing -> Accumulation -> IO () }
 
 look :: GPUCamera -> Lit -> Looked
 look gpucam lit = Looked look_
   where
-    look_ screenViewport lighting shadowing accumulation = do
+    look_ lighting shadowing accumulation = do
       purgeAccumulationFramebuffer accumulation
       pushCameraToLighting lighting gpucam
-      unLit lit screenViewport lighting shadowing accumulation gpucam
+      unLit lit lighting shadowing accumulation gpucam
