@@ -37,13 +37,13 @@ newtype Lit = Lit { unLit :: Lighting -> Shadowing -> Accumulation -> GPUCamera 
 instance Monoid Lit where
   mempty = Lit $ \_ _ _ _ -> return ()
   Lit f `mappend` Lit g = Lit $ \l s a c -> f l s a c >> g l s a c
-  
+
 lighten :: Ambient -> [(Omni,Entity)] -> Rendered -> Lit
 lighten (Ambient ligAmbCol ligAmbPow) omnis shd = Lit lighten_
   where
     lighten_ lighting shadowing accumulation gpucam = do
         purgeLightingFramebuffer lighting
-        useProgram (lighting^.lightProgram)
+        -- useProgram (lighting^.lightProgram) -- --> see shade from Shaded
         lunis^.lightLigAmbCol @= ligAmbCol
         lunis^.lightLigAmbPow @= ligAmbPow
         pushOmnis omnis lighting

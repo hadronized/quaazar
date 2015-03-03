@@ -15,30 +15,29 @@ import Control.Lens
 import Data.Monoid ( Monoid(..) )
 import Linear
 import Quaazar.Core.Material ( Albedo ) -- FIXME: Quaazar.Core.Albedo
+import Quaazar.Render.Camera ( GPUCamera )
+import Quaazar.Render.Forward.Accumulation ( Accumulation )
+import Quaazar.Render.Forward.Lighting ( Lighting )
+import Quaazar.Render.Forward.Lit ( Lit(..) )
 import Quaazar.Render.Forward.Rendered ( Rendered(..) )
+import Quaazar.Render.Forward.Shadowing ( Shadowing )
 import Quaazar.Render.GL.Shader ( Uniform )
 import Quaazar.Render.Material ( GPUMaterial(..) )
+import Quaazar.Render.Shader ( GPUProgram(..) )
 
-{-
 data Shaded = Shaded {
-    unShaded :: Uniform (M44 Float)
-             -> Uniform Albedo
-             -> Uniform Albedo
-             -> Uniform Float
+    unShaded :: Lighting
+             -> Shadowing
+             -> Accumulation
+             -> GPUCamera
              -> IO ()
-  , unShadedNoMaterial :: Uniform (M44 Float) -> IO ()
   }
 
 instance Monoid Shaded where
-  mempty = Shaded (\_ _ _ _ -> return ()) (\_ -> return ())
-  Shaded f g `mappend` Shaded f' g' =
-    Shaded (\m d s sh -> f m d s sh >> f' m d s sh) (\m -> g m >> g' m)
+  mempty = Shaded $ \_ _ _ _ -> return ()
+  Shaded f `mappend` Shaded g = Shaded $ \l s a c -> f l s a c >> g l s a c
 
-shade :: GPUMaterial -> Rendered -> Shaded
-shade gmat rdrd = Shaded shade_ shadeNoMaterial
-  where
-    shade_ modelU matDiffAlbU matSpecAlbU matShnU = do
-        runMaterial gmat matDiffAlbU matSpecAlbU matShnU
-        unRendered rdrd modelU
-    shadeNoMaterial = unRendered rdrd
--}
+shade :: GPUProgram a -> a -> Lit -> Shaded
+shade gprog inputs lt = Shaded $ \lighting shadowing accumulation gpucam -> do
+  useProgram gprog inputs
+  unLit lt lighting shadowing accumulation gpucam
