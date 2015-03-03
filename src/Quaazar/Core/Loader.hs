@@ -15,7 +15,6 @@ module Quaazar.Core.Loader (
     Load(..)
   , load
   , loadJSON
-  , rootPath
   ) where
 
 import Control.Exception ( IOException, catch )
@@ -28,25 +27,24 @@ import Quaazar.Utils.Log
 import Quaazar.Utils.TimePoint
 import System.FilePath
 
-rootPath :: FilePath
-rootPath = "data"
-
 class (FromJSON a) => Load a where
   loadRoot :: a -> String
   loadExt :: a -> String
 
 load :: forall m a. (MonadIO m,MonadLogger m,MonadError Log m,FromJSON a,Load a)
      => FilePath
+     -> FilePath
      -> m a
-load n = loadJSON $ root </> n <.> ext
+load rootPath n = loadJSON rootPath $ resRoot </> n <.> resExt
   where
-    root = loadRoot (undefined :: a) -- TODO: use Proxy instead?
-    ext = loadExt (undefined :: a) -- TODO: use Proxy instead?
+    resRoot = loadRoot (undefined :: a) -- TODO: use Proxy instead?
+    resExt = loadExt (undefined :: a) -- TODO: use Proxy instead?
 
 loadJSON :: (MonadIO m,MonadLogger m,MonadError Log m,FromJSON a)
          => FilePath
+         -> FilePath
          -> m a
-loadJSON path = do
+loadJSON rootPath path = do
     deb CoreLog $ "parsing '" ++ path ++ "'"
     (st,r,et) <- liftIO $ do
       st <- timePoint

@@ -21,7 +21,7 @@ import json
 
 class QuaazarMeshExporter(bpy.types.Operator, ExportHelper):
   """Quaazar Mesh Exporter Script"""
-  bl_idname      = "object.Quaazar_mesh_exporter"
+  bl_idname      = "object.quaazar_mesh_exporter"
   bl_label       = "Quaazar Mesh Exporter"
   bl_description = "Export all meshes from the scene into a directory"
   bl_options     = {'REGISTER'}
