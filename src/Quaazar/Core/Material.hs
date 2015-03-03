@@ -60,7 +60,7 @@ instance FromJSON MaterialLayer where
   parseJSON = withObject "material layer" $ \o ->
     MaterialLayer <$> o .: "diffalb" <*> o .: "specalb" <*> o .: "shininess"
 
-newtype Material = Material { materialLayers :: [MaterialLayer] }
+newtype Material = Material { materialLayers :: [MaterialLayer] } deriving (Eq,Show)
 
 instance FromJSON Material where
   parseJSON a = do
