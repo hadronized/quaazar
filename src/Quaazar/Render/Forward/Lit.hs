@@ -13,6 +13,7 @@ module Quaazar.Render.Forward.Lit where
 
 import Control.Lens
 import Data.Bits ( (.|.) )
+import Data.Monoid ( Monoid(..) )
 import Graphics.Rendering.OpenGL.Raw
 import Linear
 import Quaazar.Core.Color
@@ -33,6 +34,10 @@ import Quaazar.Render.GL.VertexArray ( bindVertexArray )
 
 newtype Lit = Lit { unLit :: Lighting -> Shadowing -> Accumulation -> GPUCamera -> IO () }
 
+instance Monoid Lit where
+  mempty = Lit $ \_ _ _ _ -> return ()
+  Lit f `mappend` Lit g = Lit $ \l s a c -> f l s a c >> g l s a c
+  
 lighten :: Ambient -> [(Omni,Entity)] -> Rendered -> Lit
 lighten (Ambient ligAmbCol ligAmbPow) omnis shd = Lit lighten_
   where
