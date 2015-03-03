@@ -40,8 +40,7 @@ import Quaazar.Utils.Log
 
 -- |'Lighting' gathers information about lighting in the scene.
 data Lighting = Lighting {
-    _lightProgram     :: Program
-  , _lightUniforms    :: LightingUniforms
+    _lightUniforms    :: LightingUniforms
   , _lightOff         :: Offscreen
   , _lightOmniBuffer  :: Buffer
   }
@@ -68,28 +67,27 @@ getLighting :: (Applicative m,MonadScoped IO m,MonadIO m,MonadLogger m,MonadErro
             -> m Lighting
 getLighting w h nbLights = do
   info CoreLog "generating lighting"
-  program <- buildProgram lightVS Nothing lightFS
-  uniforms <- getLightingUniforms program
   off <- genOffscreen w h Nearest RGB32F RGB
   omniBuffer <- genOmniBuffer nbLights
-  return (Lighting program uniforms off omniBuffer)
-
-getLightingUniforms :: (MonadIO m) => Program -> m LightingUniforms
-getLightingUniforms program = liftIO $ do
-    useProgram program -- FIXME: not mandatory
-    LightingUniforms
-      <$> sem "projView"
-      <*> sem "model"
-      <*> sem "eye"
-      <*> sem "matDiffAlb"
-      <*> sem "matSpecAlb"
-      <*> sem "matShn"
-      <*> pure (uniform $ fromIntegral ligAmbColSem)
-      <*> pure (uniform $ fromIntegral ligAmbPowSem)
-      <*> pure (uniform $ fromIntegral ligOmniNbSem)
+  return (Lighting uniforms off omniBuffer)
   where
-    sem :: (Uniformable a) => String -> IO (Uniform a)
-    sem = getUniform program
+    uniforms = getLightingUniforms
+
+getLightingUniforms :: LightingUniforms
+getLightingUniforms =
+    LightingUniforms
+      (sem camProjViewSem)
+      (sem modelSem)
+      (sem eyeSem)
+      (sem matDiffAlbSem)
+      (sem matSpecAlbSem)
+      (sem matShnSem)
+      (sem ligAmbColSem)
+      (sem ligAmbPowSem)
+      (sem ligOmniNbSem)
+  where
+    sem :: (Uniformable a) => Int -> Uniform a
+    sem = uniform . fromIntegral
 
 purgeLightingFramebuffer :: Lighting -> IO ()
 purgeLightingFramebuffer lighting = do
@@ -148,8 +146,8 @@ lightVS = unlines
   , "layout (location = 0) in vec3 co;"
   , "layout (location = 1) in vec3 no;"
 
-  , "uniform mat4 projView;"
-  , "uniform mat4 model;"
+  , declUniform camProjViewSem "mat4 projView"
+  , declUniform modelSem "mat4 model"
 
   , "out vec3 vco;"
   , "out vec3 vno;"
@@ -169,10 +167,10 @@ lightFS = unlines
   , "in vec3 vco;"
   , "in vec3 vno;"
 
-  , "uniform vec3 eye;"
-  , "uniform vec3 matDiffAlb;"
-  , "uniform vec3 matSpecAlb;"
-  , "uniform float matShn;"
+  , declUniform eyeSem "vec3 eye"
+  , declUniform matDiffAlbSem "vec3 matDiffAlb"
+  , declUniform matSpecAlbSem "vec3 matSpecAlb"
+  , declUniform matShnSem "float matShn"
     -- ambient lighting
   , declUniform ligAmbColSem "vec3 ligAmbCol"
   , declUniform ligAmbPowSem "float ligAmbPow"
@@ -219,14 +217,32 @@ lightFS = unlines
 declUniform :: Int -> String -> String
 declUniform s n = "layout (location = " ++ show s ++ ") uniform " ++ n ++ ";"
 
+camProjViewSem :: Int
+camProjViewSem = 0
+
+modelSem :: Int
+modelSem = 1
+
+eyeSem :: Int
+eyeSem = 2
+
+matDiffAlbSem :: Int
+matDiffAlbSem = 3
+
+matSpecAlbSem :: Int
+matSpecAlbSem = 4
+
+matShnSem :: Int
+matShnSem = 5
+
 ligAmbColSem :: Int
-ligAmbColSem = 5
+ligAmbColSem = 6
 
 ligAmbPowSem :: Int
-ligAmbPowSem = 6
+ligAmbPowSem = 7
 
 ligOmniNbSem :: Int
-ligOmniNbSem = 7
+ligOmniNbSem = 8
 
 --------------------------------------------------------------------------------
 -- GLSL BINDING POINTS
