@@ -25,5 +25,4 @@ look gpucam shaded = Looked look_
   where
     look_ lighting shadowing accumulation = do
       purgeAccumulationFramebuffer accumulation
-      pushCameraToLighting lighting gpucam
       unShaded shaded lighting shadowing accumulation gpucam

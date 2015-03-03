@@ -20,7 +20,6 @@ import Quaazar.Core.Color
 import Quaazar.Core.Entity
 import Quaazar.Core.Light
 import Quaazar.Core.Projection ( Projection(..), projectionMatrix )
-import Quaazar.Render.Camera ( GPUCamera(..) )
 import Quaazar.Render.Forward.Accumulation
 import Quaazar.Render.Forward.Lighting
 import Quaazar.Render.Forward.Rendered ( Rendered(..) )
@@ -32,16 +31,16 @@ import Quaazar.Render.GL.Shader ( (@=), unused, useProgram )
 import Quaazar.Render.GL.Texture ( bindTextureAt )
 import Quaazar.Render.GL.VertexArray ( bindVertexArray )
 
-newtype Lit = Lit { unLit :: Lighting -> Shadowing -> Accumulation -> GPUCamera -> IO () }
+newtype Lit = Lit { unLit :: Lighting -> Shadowing -> Accumulation -> IO () }
 
 instance Monoid Lit where
-  mempty = Lit $ \_ _ _ _ -> return ()
-  Lit f `mappend` Lit g = Lit $ \l s a c -> f l s a c >> g l s a c
+  mempty = Lit $ \_ _ _ -> return ()
+  Lit f `mappend` Lit g = Lit $ \l s a -> f l s a >> g l s a
 
 lighten :: Ambient -> [(Omni,Entity)] -> Rendered -> Lit
 lighten (Ambient ligAmbCol ligAmbPow) omnis shd = Lit lighten_
   where
-    lighten_ lighting shadowing accumulation gpucam = do
+    lighten_ lighting shadowing accumulation = do
         purgeLightingFramebuffer lighting
         -- useProgram (lighting^.lightProgram) -- --> see shade from Shaded
         lunis^.lightLigAmbCol @= ligAmbCol

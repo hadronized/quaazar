@@ -97,13 +97,6 @@ purgeLightingFramebuffer lighting = do
   glClearColor 0 0 0 0
   glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
 
-pushCameraToLighting :: Lighting -> GPUCamera -> IO ()
-pushCameraToLighting lighting gcam = do
-  useProgram (lighting^.lightProgram)
-  runCamera gcam (unis^.lightCamProjViewU) unused (unis^.lightEyeU)
-  where
-    unis = lighting^.lightUniforms
-
 genOmniBuffer :: (MonadScoped IO m,MonadIO m) => Natural -> m Buffer
 genOmniBuffer nbLights = do
     buffer <- genObject
