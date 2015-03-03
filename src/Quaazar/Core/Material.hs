@@ -14,10 +14,8 @@
 ----------------------------------------------------------------------------
 
 module Quaazar.Core.Material (
-    -- * Material and layers
+    -- * Material
     Material(..)
-  , material
-  , MaterialLayer(MaterialLayer)
   , matDiffuseAlbedo
   , matSpecularAlbedo
   , matShininess
@@ -44,8 +42,8 @@ instance FromJSON Albedo where
       [r,g,b] -> return (albedo r g b)
       _       -> typeMismatch "albedo" v
 
--- |Material layer.
-data MaterialLayer = MaterialLayer {
+-- |Material.
+data Material = Material {
     -- |Diffuse albedo of the material layer.
     _matDiffuseAlbedo  :: Albedo
     -- |Specular albedo of the material layer.
@@ -56,31 +54,15 @@ data MaterialLayer = MaterialLayer {
   , _matShininess      :: Float
   } deriving (Eq,Show)
 
-instance FromJSON MaterialLayer where
-  parseJSON = withObject "material layer" $ \o ->
-    MaterialLayer <$> o .: "diffalb" <*> o .: "specalb" <*> o .: "shininess"
-
-newtype Material = Material { materialLayers :: [MaterialLayer] } deriving (Eq,Show)
-
 instance FromJSON Material where
-  parseJSON a = do
-    layers <- parseJSON a
-    case layers of
-      [] -> fail "a material should have at least one layer"
-      _ -> return (Material layers)
-
-instance Semigroup Material where
-  Material a <> Material b = Material (a ++ b)
-  sconcat = Material . concatMap materialLayers . toList
-
-material :: Albedo -> Albedo -> Float -> Material
-material diff spec shn = Material [MaterialLayer diff spec shn]
-
-albedo :: Float -> Float -> Float -> Albedo
-albedo r g b = Albedo (V3 r g b)
-
-makeLenses ''MaterialLayer
+  parseJSON = withObject "material" $ \o ->
+    Material <$> o .: "diffalb" <*> o .: "specalb" <*> o .: "shininess"
 
 instance Load Material where
   loadRoot = const "materials"
   loadExt = const "ymat"
+
+albedo :: Float -> Float -> Float -> Albedo
+albedo r g b = Albedo (V3 r g b)
+
+makeLenses ''Material

@@ -15,7 +15,7 @@ module Quaazar.Render.Material (
   , gpuMaterial
   ) where
 
-import Quaazar.Core.Material ( Albedo, Material(..), MaterialLayer(..) )
+import Quaazar.Core.Material ( Albedo, Material(..) )
 import Quaazar.Render.GL.Shader ( Uniform, (@=) )
 import Quaazar.Render.GPU
 
@@ -31,8 +31,7 @@ instance GPU Material GPUMaterial where
 
 -- TODO: implement multilayered material
 gpuMaterial :: (Monad m) => Material -> m GPUMaterial
-gpuMaterial (Material []) = return . GPUMaterial $ \_ _ _ -> return ()
-gpuMaterial (Material (MaterialLayer dalb salb shn:_)) =
+gpuMaterial (Material dalb salb shn) =
   return . GPUMaterial $ \diffu specu shnu -> do
     diffu @= dalb
     specu @= salb
