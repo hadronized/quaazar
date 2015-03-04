@@ -11,7 +11,34 @@
 
 module Quaazar.Technics.Lighting where
 
+import Control.Monad.Error.Class ( MonadError )
+import Control.Monad.Trans ( MonadIO )
+import Quaazar.Core.Albedo ( Albedo )
+import Quaazar.Render.GL.Shader ( (@=), uniform )
 import Quaazar.Render.GLSL
+import Quaazar.Render.Shader
+import Quaazar.Utils.Log
+import Quaazar.Utils.Scoped
+
+phong :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
+      => m (GPUProgram (Albedo,Albedo,Float))
+phong = gpuProgram phongVS Nothing phongFS $ \(diffAlb,specAlb,shn) -> do
+    diffAlbSem @= diffAlb
+    specAlbSem @= specAlb
+    shnSem @= shn
+  where
+    diffAlbSem = uniform (fromIntegral matDiffAlbSem)
+    specAlbSem = uniform (fromIntegral matSpecAlbSem)
+    shnSem = uniform (fromIntegral matShnSem)
+
+matDiffAlbSem :: Int
+matDiffAlbSem = 10
+
+matSpecAlbSem :: Int
+matSpecAlbSem = 11
+
+matShnSem :: Int
+matShnSem = 12
 
 phongVS :: String
 phongVS = unlines

@@ -35,10 +35,10 @@ instance GPU PostFX (GPUPostFX a) where
 
 gpuPostFX :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
           => PostFX
-          -> ((forall u. (Uniformable u) => String -> IO (Maybe u -> IO ())) -> IO (a -> IO ()))
+          -> (a -> IO ())
           -> m (GPUPostFX a)
-gpuPostFX (PostFX src) uniforms = do
-    gpuprogram <- gpuProgram vsSrc Nothing src uniforms
+gpuPostFX (PostFX src) update = do
+    gpuprogram <- gpuProgram vsSrc Nothing src update
     return $ GPUPostFX (use gpuprogram)
   where
     use gpuprogram sourceTex a = do
@@ -48,7 +48,7 @@ gpuPostFX (PostFX src) uniforms = do
 gpuPostFXFree :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
               => PostFX
               -> m (GPUPostFX ())
-gpuPostFXFree pfx = gpuPostFX pfx $ \_ -> return $ \_ -> return ()
+gpuPostFXFree pfx = gpuPostFX pfx . const $ return ()
 
 vsSrc :: String
 vsSrc = unlines

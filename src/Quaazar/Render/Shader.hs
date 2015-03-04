@@ -1,5 +1,3 @@
-{-# LANGUAGE RankNTypes #-}
-
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   : (C) 2014 Dimitri Sabadie
@@ -11,7 +9,10 @@
 --
 ----------------------------------------------------------------------------
 
-module Quaazar.Render.Shader where
+module Quaazar.Render.Shader (
+    GPUProgram(useProgram)
+  , gpuProgram
+  ) where
 
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
@@ -27,15 +28,10 @@ gpuProgram :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
            => String
            -> Maybe String
            -> String
-           -> ((forall u. (Uniformable u) => String -> IO (Maybe u -> IO ())) -> IO (a -> IO ()))
+           -> (a -> IO ())
            -> m (GPUProgram a)
-gpuProgram vs gs fs uniforms = do
+gpuProgram vs gs fs update = do
     program <- buildProgram vs gs fs
-    update <- liftBase $ uniforms (uniformize program)
     return . GPUProgram $ \a -> do
       GL.useProgram program
       update a
-  where
-    uniformize program name = do
-      u <- getUniform program name
-      return $ traverse_ (u @=)
