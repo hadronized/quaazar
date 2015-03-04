@@ -30,7 +30,6 @@ import Quaazar.Render.GL.Entity ( entityTransform )
 import Quaazar.Render.GL.Primitive
 import Quaazar.Render.GL.Shader ( Uniform, (@=) )
 import Quaazar.Render.GL.VertexArray
-import Quaazar.Utils.Scoped
 
 data GPUMesh = GPUMesh {
     vertexBuffer :: Buffer

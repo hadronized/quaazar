@@ -12,8 +12,7 @@
 module Quaazar.Render.GL.Texture where
 
 import Control.Monad.Trans ( MonadIO(..) )
-import Foreign.Marshal ( alloca )
-import Foreign.Marshal.Array ( peekArray, withArray, withArrayLen )
+import Foreign.Marshal.Array ( withArray )
 import Foreign.Ptr ( nullPtr )
 import Foreign.Storable ( Storable )
 import Graphics.Rendering.OpenGL.Raw

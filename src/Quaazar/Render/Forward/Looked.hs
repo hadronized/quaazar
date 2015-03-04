@@ -16,7 +16,6 @@ import Quaazar.Render.Forward.Accumulation
 import Quaazar.Render.Forward.Lighting
 import Quaazar.Render.Forward.Shaded ( Shaded(..) )
 import Quaazar.Render.Forward.Shadowing
-import Quaazar.Render.Forward.Viewport ( Viewport )
 
 newtype Looked = Looked { unLooked :: Lighting -> Shadowing -> Accumulation -> IO () }
 

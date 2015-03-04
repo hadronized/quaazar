@@ -12,7 +12,6 @@
 module Quaazar.Render.GL.Buffer where
 
 import Control.Monad.Trans ( MonadIO(..) )
-import Data.Word ( Word8 )
 import Foreign
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )

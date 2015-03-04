@@ -17,7 +17,6 @@ import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Quaazar.Core.PostFX
 import Quaazar.Render.GL.Texture
-import Quaazar.Render.GL.Shader ( Uniformable )
 import Quaazar.Render.Shader
 import Quaazar.Utils.Log ( Log, MonadLogger )
 import Quaazar.Utils.Scoped

@@ -12,29 +12,23 @@
 module Quaazar.Render.Forward.Lighting where
 
 import Control.Applicative
-import Control.Monad ( foldM )
+import Control.Monad ( foldM, void )
 import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
-import Data.Bits ( (.|.) )
-import Data.Word ( Word8, Word32 )
 import Graphics.Rendering.OpenGL.Raw
 import Linear
 import Numeric.Natural ( Natural )
-import Foreign
-import Quaazar.Core.Albedo ( Albedo )
+import Foreign hiding ( void )
 import Quaazar.Core.Color ( Color(..) )
 import Quaazar.Core.Entity ( Entity, entityPosition )
 import Quaazar.Core.Light ( Omni(..) )
-import Quaazar.Render.Camera ( GPUCamera(..) )
 import Quaazar.Render.GL.Buffer hiding ( MapAccess(..) )
 import qualified Quaazar.Render.GL.Buffer as B ( MapAccess(..) )
 import Quaazar.Render.GL.Framebuffer as FB ( Target(..), bindFramebuffer )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Offscreen
-import Quaazar.Render.GL.Shader ( Program, Uniform, Uniformable, (@=)
-                                , buildProgram, getUniform, unused, useProgram
-                                , uniform )
+import Quaazar.Render.GL.Shader ( Uniform, Uniformable, (@=), uniform )
 import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)  )
 import Quaazar.Render.GLSL
 import Quaazar.Utils.Log
@@ -117,14 +111,14 @@ pokeOmnis omnis ptr = do
     (_,nbLights) <- foldM cache (ptr,0) omnis
     return nbLights
   where
-    cache (ptr,nbLights) (omni,ent) = do
-      writeAt ptr omni ent
-      return (ptr `advancePtr` omniBytes,succ nbLights)
-    writeAt ptr (Omni col pow rad _) ent = do
-      pokeByteOff ptr 0 (ent^.entityPosition)
-      pokeByteOff ptr 16 (unColor col)
-      pokeByteOff ptr 28 pow
-      pokeByteOff ptr 32 rad
+    cache (ptr',nbLights) (omni,ent) = do
+      writeAt ptr' omni ent
+      return (ptr' `advancePtr` omniBytes,succ nbLights)
+    writeAt ptr' (Omni col pw rad _) ent = do
+      pokeByteOff ptr' 0 (ent^.entityPosition)
+      pokeByteOff ptr' 16 (unColor col)
+      pokeByteOff ptr' 28 pw
+      pokeByteOff ptr' 32 rad
 
 pushOmnis :: [(Omni,Entity)] -> Lighting -> IO ()
 pushOmnis omnis lighting = do

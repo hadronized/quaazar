@@ -17,7 +17,6 @@ import Quaazar.Render.Forward.Accumulation
 import Quaazar.Render.Forward.Lighting
 import Quaazar.Render.Forward.Looked ( Looked(..) )
 import Quaazar.Render.Forward.Shadowing
-import Quaazar.Render.Forward.Viewport ( Viewport )
 import Quaazar.Render.GL.Framebuffer ( Target(..), bindFramebuffer )
 import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.VertexArray ( bindVertexArray )

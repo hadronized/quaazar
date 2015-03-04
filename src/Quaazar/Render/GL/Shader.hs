@@ -32,7 +32,6 @@ import Quaazar.Core.Position ( Position(unPosition) )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Log ( gllog )
 import Quaazar.Utils.Log
-import Quaazar.Utils.Scoped
 
 throwError_ :: (MonadError Log m) => String -> m a
 throwError_ = throwError . Log ErrorLog gllog

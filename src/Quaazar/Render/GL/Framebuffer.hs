@@ -13,8 +13,7 @@ module Quaazar.Render.GL.Framebuffer where
 
 import Control.Monad ( void )
 import Control.Monad.Trans ( MonadIO(..) )
-import Foreign.Marshal ( alloca )
-import Foreign.Marshal.Array ( peekArray, withArrayLen )
+import Foreign.Marshal.Array ( withArrayLen )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Quaazar.Render.GL.GLObject

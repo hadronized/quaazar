@@ -16,8 +16,7 @@ module Quaazar.Render.Shader (
 
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
-import Data.Foldable ( traverse_ )
-import Quaazar.Render.GL.Shader ( Uniformable, (@=), buildProgram, getUniform )
+import Quaazar.Render.GL.Shader ( buildProgram )
 import qualified Quaazar.Render.GL.Shader as GL ( useProgram )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped

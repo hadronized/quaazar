@@ -13,14 +13,12 @@ module Quaazar.Render.Forward.Shaded where
 
 import Control.Lens
 import Data.Monoid ( Monoid(..) )
-import Linear
 import Quaazar.Render.Camera ( GPUCamera(..) )
 import Quaazar.Render.Forward.Accumulation ( Accumulation )
 import Quaazar.Render.Forward.Lighting
 import Quaazar.Render.Forward.Lit ( Lit(..) )
-import Quaazar.Render.Forward.Rendered ( Rendered(..) )
 import Quaazar.Render.Forward.Shadowing ( Shadowing )
-import Quaazar.Render.GL.Shader ( Uniform, unused )
+import Quaazar.Render.GL.Shader ( unused )
 import Quaazar.Render.Shader ( GPUProgram(..) )
 
 data Shaded = Shaded {
