@@ -10,9 +10,8 @@
 ----------------------------------------------------------------------------
 
 module Quaazar.Technics.PostFX (
-    -- * Gamma correction
+    -- * End of pipeline
     gammaCorrection
-  , getGammaCorrection
   ) where
 
 import Control.Monad.Error.Class ( MonadError )
@@ -22,8 +21,8 @@ import Quaazar.Render.PostFX ( GPUPostFX, gpuPostFXFree )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
-gammaCorrection :: PostFX
-gammaCorrection = PostFX $ unlines
+gammaCorrectionPFX :: PostFX
+gammaCorrectionPFX = PostFX $ unlines
   [
     "#version 430 core"
   , "uniform sampler2D sourceTex;"
@@ -33,5 +32,5 @@ gammaCorrection = PostFX $ unlines
   , "}"
   ]
 
-getGammaCorrection :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m) => m (GPUPostFX ())
-getGammaCorrection = gpuPostFXFree gammaCorrection
+gammaCorrection :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m) => m (GPUPostFX ())
+gammaCorrection = gpuPostFXFree gammaCorrectionPFX
