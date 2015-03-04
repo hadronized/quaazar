@@ -53,6 +53,7 @@ library
                      , Quaazar.Render.Forward.Shaded
                      , Quaazar.Render.Forward.Viewport
                      , Quaazar.Render.Frame
+                     , Quaazar.Render.GLSL
                      , Quaazar.Render.GPU
                      , Quaazar.Render.Material
                      , Quaazar.Render.Mesh
@@ -60,6 +61,7 @@ library
                      , Quaazar.Render.Shader
                      , Quaazar.Render.Texture
                      , Quaazar.Technics
+                     , Quaazar.Technics.Lighting
                      , Quaazar.Technics.PostFX
                      , Quaazar.Utils
                      , Quaazar.Utils.Directory
