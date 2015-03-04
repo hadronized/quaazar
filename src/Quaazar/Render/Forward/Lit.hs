@@ -42,7 +42,6 @@ lighten (Ambient ligAmbCol ligAmbPow) omnis shd = Lit lighten_
   where
     lighten_ lighting shadowing accumulation = do
         purgeLightingFramebuffer lighting
-        -- useProgram (lighting^.lightProgram) -- --> see shade from Shaded
         lunis^.lightLigAmbCol @= ligAmbCol
         lunis^.lightLigAmbPow @= ligAmbPow
         pushOmnis omnis lighting

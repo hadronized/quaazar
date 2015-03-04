@@ -50,9 +50,6 @@ data LightingUniforms = LightingUniforms {
     _lightCamProjViewU :: Uniform (M44 Float)
   , _lightModelU       :: Uniform (M44 Float)
   , _lightEyeU         :: Uniform (V3 Float)
-  , _lightMatDiffAlbU  :: Uniform Albedo
-  , _lightMatSpecAlbU  :: Uniform Albedo
-  , _lightMatShnU      :: Uniform Float
   , _lightLigAmbCol    :: Uniform Color
   , _lightLigAmbPow    :: Uniform Float
   , _lightLigOmniNb    :: Uniform Word32
@@ -80,9 +77,6 @@ getLightingUniforms =
       (sem camProjViewSem)
       (sem modelSem)
       (sem eyeSem)
-      (sem matDiffAlbSem)
-      (sem matSpecAlbSem)
-      (sem matShnSem)
       (sem ligAmbColSem)
       (sem ligAmbPowSem)
       (sem ligOmniNbSem)
