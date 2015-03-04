@@ -13,7 +13,6 @@ module Quaazar.Render (
     module Quaazar.Render.Forward
   , module Quaazar.Render.Camera
   , module Quaazar.Render.Frame
-  , module Quaazar.Render.Material
   , module Quaazar.Render.Mesh
   , module Quaazar.Render.PostFX
   , module Quaazar.Render.Shader
@@ -23,7 +22,6 @@ module Quaazar.Render (
 import Quaazar.Render.Forward
 import Quaazar.Render.Camera
 import Quaazar.Render.Frame
-import Quaazar.Render.Material
 import Quaazar.Render.Mesh
 import Quaazar.Render.PostFX
 import Quaazar.Render.Shader

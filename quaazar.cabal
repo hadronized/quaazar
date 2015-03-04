@@ -25,12 +25,12 @@ library
                      , Quaazar.Control
                      , Quaazar.Control.Monad
                      , Quaazar.Core
+                     , Quaazar.Core.Albedo
                      , Quaazar.Core.BoundingVolume
                      , Quaazar.Core.Color
                      , Quaazar.Core.Entity
                      , Quaazar.Core.Light
                      , Quaazar.Core.Loader
-                     , Quaazar.Core.Material
                      , Quaazar.Core.Mesh
                      , Quaazar.Core.Normal
                      , Quaazar.Core.Position
@@ -54,7 +54,6 @@ library
                      , Quaazar.Render.Forward.Viewport
                      , Quaazar.Render.Frame
                      , Quaazar.Render.GLSL
-                     , Quaazar.Render.Material
                      , Quaazar.Render.Mesh
                      , Quaazar.Render.PostFX
                      , Quaazar.Render.Shader

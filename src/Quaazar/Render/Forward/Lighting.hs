@@ -22,10 +22,10 @@ import Graphics.Rendering.OpenGL.Raw
 import Linear
 import Numeric.Natural ( Natural )
 import Foreign
+import Quaazar.Core.Albedo ( Albedo )
 import Quaazar.Core.Color ( Color(..) )
 import Quaazar.Core.Entity ( Entity, entityPosition )
 import Quaazar.Core.Light ( Omni(..) )
-import Quaazar.Core.Material ( Albedo )
 import Quaazar.Render.Camera ( GPUCamera(..) )
 import Quaazar.Render.GL.Buffer hiding ( MapAccess(..) )
 import qualified Quaazar.Render.GL.Buffer as B ( MapAccess(..) )

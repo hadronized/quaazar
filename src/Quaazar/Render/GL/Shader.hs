@@ -26,8 +26,8 @@ import Foreign.Ptr ( castPtr, nullPtr )
 import Foreign.Storable ( peek )
 import Linear
 import Graphics.Rendering.OpenGL.Raw
+import Quaazar.Core.Albedo ( Albedo(unAlbedo) )
 import Quaazar.Core.Color ( Color(unColor) )
-import Quaazar.Core.Material ( Albedo(unAlbedo) )
 import Quaazar.Core.Position ( Position(unPosition) )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Log ( gllog )
