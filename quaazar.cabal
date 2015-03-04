@@ -54,7 +54,6 @@ library
                      , Quaazar.Render.Forward.Viewport
                      , Quaazar.Render.Frame
                      , Quaazar.Render.GLSL
-                     , Quaazar.Render.GPU
                      , Quaazar.Render.Material
                      , Quaazar.Render.Mesh
                      , Quaazar.Render.PostFX

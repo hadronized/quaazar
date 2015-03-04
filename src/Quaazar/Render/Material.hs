@@ -17,7 +17,6 @@ module Quaazar.Render.Material (
 
 import Quaazar.Core.Material ( Albedo, Material(..) )
 import Quaazar.Render.GL.Shader ( Uniform, (@=) )
-import Quaazar.Render.GPU
 
 newtype GPUMaterial = GPUMaterial {
     runMaterial :: Uniform Albedo -- ^ diffuse albedo
@@ -25,9 +24,6 @@ newtype GPUMaterial = GPUMaterial {
                 -> Uniform Float -- ^ shininess
                 -> IO ()
   }
-
-instance GPU Material GPUMaterial where
-  gpu = gpuMaterial
 
 -- TODO: implement multilayered material
 gpuMaterial :: (Monad m) => Material -> m GPUMaterial

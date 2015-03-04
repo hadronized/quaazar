@@ -18,7 +18,6 @@ import Quaazar.Core.Entity ( Entity, entityPosition )
 import Quaazar.Core.Projection ( Projection, projectionMatrix )
 import Quaazar.Render.GL.Entity ( cameraTransform )
 import Quaazar.Render.GL.Shader ( Uniform, (@=) )
-import Quaazar.Render.GPU
 
 data GPUCamera = GPUCamera {
     runCamera :: Uniform (M44 Float) -- ^ projection * view
@@ -27,9 +26,6 @@ data GPUCamera = GPUCamera {
               -> IO ()
   , cameraProjection :: M44 Float
   }
-
-instance GPU (Projection,Entity) GPUCamera where
-  gpu = uncurry gpuCamera
 
 gpuCamera :: (Monad m) => Projection -> Entity -> m GPUCamera
 gpuCamera proj ent = return (GPUCamera sendCamera proj')
