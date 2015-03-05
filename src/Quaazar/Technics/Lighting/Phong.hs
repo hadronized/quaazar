@@ -9,8 +9,9 @@
 --
 ----------------------------------------------------------------------------
 
-module Quaazar.Technics.Lighting where
+module Quaazar.Technics.Lighting.Phong where
 
+import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO )
 import Quaazar.Core.Albedo ( Albedo )
@@ -20,25 +21,33 @@ import Quaazar.Render.Shader
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
+data PhongMaterial = PhongMaterial {
+    _phongDiffAlb :: Albedo
+  , _phongSpecAlb :: Albedo
+  , _phongShn     :: Float
+  }
+
+makeLenses ''PhongMaterial
+
 phong :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
-      => m (GPUProgram (Albedo,Albedo,Float))
-phong = gpuProgram phongVS Nothing phongFS $ \(diffAlb,specAlb,shn) -> do
+      => m (GPUProgram PhongMaterial)
+phong = gpuProgram phongVS Nothing phongFS $ \(PhongMaterial diffAlb specAlb shn) -> do
     diffAlbSem @= diffAlb
     specAlbSem @= specAlb
     shnSem @= shn
   where
-    diffAlbSem = uniform (fromIntegral matDiffAlbSem)
-    specAlbSem = uniform (fromIntegral matSpecAlbSem)
-    shnSem = uniform (fromIntegral matShnSem)
+    diffAlbSem = uniform (fromIntegral phongDiffAlbSem)
+    specAlbSem = uniform (fromIntegral phongSpecAlbSem)
+    shnSem = uniform (fromIntegral phongShnSem)
 
-matDiffAlbSem :: Int
-matDiffAlbSem = 10
+phongDiffAlbSem :: Int
+phongDiffAlbSem = 10
 
-matSpecAlbSem :: Int
-matSpecAlbSem = 11
+phongSpecAlbSem :: Int
+phongSpecAlbSem = 11
 
-matShnSem :: Int
-matShnSem = 12
+phongShnSem :: Int
+phongShnSem = 12
 
 phongVS :: String
 phongVS = unlines
@@ -70,9 +79,9 @@ phongFS = unlines
   , "in vec3 vno;"
 
   , declUniform eyeSem "vec3 eye"
-  , declUniform matDiffAlbSem "vec3 matDiffAlb"
-  , declUniform matSpecAlbSem "vec3 matSpecAlb"
-  , declUniform matShnSem "float matShn"
+  , declUniform phongDiffAlbSem "vec3 phongDiffAlb"
+  , declUniform phongSpecAlbSem "vec3 phongSpecAlb"
+  , declUniform phongShnSem "float phongShn"
     -- ambient lighting
   , declUniform ligAmbColSem "vec3 ligAmbCol"
   , declUniform ligAmbPowSem "float ligAmbPow"
@@ -93,7 +102,7 @@ phongFS = unlines
   , "  vec3 v = normalize(eye - vco);"
 
     -- ambient lighting
-  , "  vec3 ambient = ligAmbCol * matDiffAlb * ligAmbPow;"
+  , "  vec3 ambient = ligAmbCol * phongDiffAlb * ligAmbPow;"
 
     -- omni lights
   , "  vec3 omni = vec3(0.,0.,0.);"
@@ -104,8 +113,8 @@ phongFS = unlines
   , "    vec3 ligToVertex = omniBuffer.ligs[i].pos - vco;"
   , "    vec3 ligDir = normalize(ligToVertex);"
   , "    vec3 r = normalize(reflect(-ligDir,vno));"
-  , "    vec3 diff = max(0.,dot(vno,ligDir)) * ligCol * matDiffAlb;"
-  , "    vec3 spec = pow(max(0.,dot(r,v)),matShn) * ligCol * matSpecAlb;"
+  , "    vec3 diff = max(0.,dot(vno,ligDir)) * ligCol * phongDiffAlb;"
+  , "    vec3 spec = pow(max(0.,dot(r,v)),phongShn) * ligCol * phongSpecAlb;"
   , "    float atten = ligPow / (pow(1. + length(ligToVertex)/ligRad,2.));"
   , "    omni += atten * (diff + spec);"
   , "  }"
