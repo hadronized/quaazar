@@ -27,8 +27,8 @@ data GPUCamera = GPUCamera {
   , cameraProjection :: M44 Float
   }
 
-gpuCamera :: (Monad m) => Projection -> Entity -> m GPUCamera
-gpuCamera proj ent = return (GPUCamera sendCamera proj')
+gpuCamera :: Projection -> Entity -> GPUCamera
+gpuCamera proj ent = GPUCamera sendCamera proj'
   where
     sendCamera projViewU iProjViewU eyeU = do
         projViewU @= projView
