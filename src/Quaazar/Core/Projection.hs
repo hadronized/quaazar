@@ -22,7 +22,7 @@ import Linear
 
 -- |Projection type.
 --
--- @Perspective ratio fovy znear zfar@ creates a perspective projection.
+-- @Perspective fovy ratio znear zfar@ creates a perspective projection.
 data Projection
   = Perspective
       Float

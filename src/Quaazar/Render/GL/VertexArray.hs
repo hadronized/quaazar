@@ -13,8 +13,7 @@ module Quaazar.Render.GL.VertexArray where
 
 import Control.Monad.Trans ( MonadIO(..) )
 import Data.Word ( Word8 )
-import Foreign.Marshal ( alloca )
-import Foreign.Marshal.Array ( advancePtr, peekArray, withArrayLen )
+import Foreign.Marshal.Array ( advancePtr )
 import Foreign.Marshal.Utils ( fromBool )
 import Foreign.Ptr ( Ptr, nullPtr )
 import Graphics.Rendering.OpenGL.Raw

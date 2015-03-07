@@ -23,7 +23,6 @@ module Quaazar (
   ) where
 
 import Control.Applicative
-import Control.Monad.Trans ( MonadIO(..) )
 import Control.Concurrent.STM ( TVar, atomically, modifyTVar, newTVarIO
                               , readTVar, writeTVar )
 import Data.List ( intercalate )

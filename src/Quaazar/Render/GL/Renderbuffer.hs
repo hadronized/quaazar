@@ -12,8 +12,6 @@
 module Quaazar.Render.GL.Renderbuffer where
 
 import Control.Monad.Trans ( MonadIO(..) )
-import Foreign.Marshal ( alloca )
-import Foreign.Marshal.Array ( peekArray, withArrayLen )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Quaazar.Render.GL.GLObject

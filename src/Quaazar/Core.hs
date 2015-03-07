@@ -10,12 +10,11 @@
 ----------------------------------------------------------------------------
 
 module Quaazar.Core (
-    module Quaazar.Core.BoundingVolume
+    module Quaazar.Core.Albedo
   , module Quaazar.Core.Color
   , module Quaazar.Core.Entity
   , module Quaazar.Core.Light
   , module Quaazar.Core.Loader
-  , module Quaazar.Core.Material
   , module Quaazar.Core.Mesh
   , module Quaazar.Core.Normal
   , module Quaazar.Core.Position
@@ -27,12 +26,11 @@ module Quaazar.Core (
   , module Quaazar.Core.VGroup
   ) where
 
-import Quaazar.Core.BoundingVolume
+import Quaazar.Core.Albedo
 import Quaazar.Core.Color
 import Quaazar.Core.Entity
 import Quaazar.Core.Light
 import Quaazar.Core.Loader
-import Quaazar.Core.Material
 import Quaazar.Core.Mesh
 import Quaazar.Core.Normal
 import Quaazar.Core.Position

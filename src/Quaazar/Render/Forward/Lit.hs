@@ -12,41 +12,35 @@
 module Quaazar.Render.Forward.Lit where
 
 import Control.Lens
-import Data.Bits ( (.|.) )
 import Data.Monoid ( Monoid(..) )
-import Graphics.Rendering.OpenGL.Raw
-import Linear
-import Quaazar.Core.Color
 import Quaazar.Core.Entity
 import Quaazar.Core.Light
-import Quaazar.Core.Projection ( Projection(..), projectionMatrix )
 import Quaazar.Render.Forward.Accumulation
 import Quaazar.Render.Forward.Lighting
 import Quaazar.Render.Forward.Rendered ( Rendered(..) )
 import Quaazar.Render.Forward.Shadowing
-import Quaazar.Render.Forward.Viewport
-import Quaazar.Render.GL.Framebuffer ( Target(..), bindFramebuffer )
-import Quaazar.Render.GL.Offscreen
-import Quaazar.Render.GL.Shader ( (@=), unused, useProgram )
-import Quaazar.Render.GL.Texture ( bindTextureAt )
-import Quaazar.Render.GL.VertexArray ( bindVertexArray )
+import Quaazar.Render.GL.Shader ( (@=) )
 
-newtype Lit = Lit { unLit :: Lighting -> Shadowing -> Accumulation -> IO () }
+newtype Lit mat = Lit {
+    unLit :: Lighting
+          -> Shadowing
+          -> Accumulation
+          -> (mat -> IO ())
+          -> IO ()
+  }
 
-instance Monoid Lit where
-  mempty = Lit $ \_ _ _ -> return ()
-  Lit f `mappend` Lit g = Lit $ \l s a -> f l s a >> g l s a
+instance Monoid (Lit mat) where
+  mempty = Lit $ \_ _ _ _ -> return ()
+  Lit f `mappend` Lit g = Lit $ \l s a ms -> f l s a ms >> g l s a ms
 
-lighten :: Ambient -> [(Omni,Entity)] -> Rendered -> Lit
+lighten :: Ambient -> [(Omni,Entity)] -> Rendered mat -> Lit mat
 lighten (Ambient ligAmbCol ligAmbPow) omnis shd = Lit lighten_
   where
-    lighten_ lighting shadowing accumulation = do
+    lighten_ lighting _ _ sinkMat = do
         purgeLightingFramebuffer lighting
-        -- useProgram (lighting^.lightProgram) -- --> see shade from Shaded
         lunis^.lightLigAmbCol @= ligAmbCol
         lunis^.lightLigAmbPow @= ligAmbPow
         pushOmnis omnis lighting
-        unRendered shd (lunis^.lightModelU) (lunis^.lightMatDiffAlbU)
-          (lunis^.lightMatSpecAlbU) (lunis^.lightMatShnU)
+        unRendered shd (lunis^.lightModelU) sinkMat
       where
         lunis = lighting^.lightUniforms

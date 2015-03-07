@@ -27,23 +27,14 @@ modelSem = 1
 eyeSem :: Int
 eyeSem = 2
 
-matDiffAlbSem :: Int
-matDiffAlbSem = 3
-
-matSpecAlbSem :: Int
-matSpecAlbSem = 4
-
-matShnSem :: Int
-matShnSem = 5
-
 ligAmbColSem :: Int
-ligAmbColSem = 6
+ligAmbColSem = 3
 
 ligAmbPowSem :: Int
-ligAmbPowSem = 7
+ligAmbPowSem = 4
 
 ligOmniNbSem :: Int
-ligOmniNbSem = 8
+ligOmniNbSem = 5
 
 --------------------------------------------------------------------------------
 -- GLSL BINDING POINTS

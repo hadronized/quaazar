@@ -13,16 +13,12 @@ module Quaazar.Render.Forward.Shaded where
 
 import Control.Lens
 import Data.Monoid ( Monoid(..) )
-import Linear
-import Quaazar.Core.Material ( Albedo ) -- FIXME: Quaazar.Core.Albedo
 import Quaazar.Render.Camera ( GPUCamera(..) )
 import Quaazar.Render.Forward.Accumulation ( Accumulation )
 import Quaazar.Render.Forward.Lighting
 import Quaazar.Render.Forward.Lit ( Lit(..) )
-import Quaazar.Render.Forward.Rendered ( Rendered(..) )
 import Quaazar.Render.Forward.Shadowing ( Shadowing )
-import Quaazar.Render.GL.Shader ( Uniform, unused )
-import Quaazar.Render.Material ( GPUMaterial(..) )
+import Quaazar.Render.GL.Shader ( unused )
 import Quaazar.Render.Shader ( GPUProgram(..) )
 
 data Shaded = Shaded {
@@ -37,9 +33,9 @@ instance Monoid Shaded where
   mempty = Shaded $ \_ _ _ _ -> return ()
   Shaded f `mappend` Shaded g = Shaded $ \l s a c -> f l s a c >> g l s a c
 
-shade :: GPUProgram a -> a -> Lit -> Shaded
-shade gprog inputs lt = Shaded $ \lighting shadowing accumulation gcam -> do
+shade :: GPUProgram mat -> Lit mat -> Shaded
+shade gprog lt = Shaded $ \lighting shadowing accumulation gcam -> do
   let unis = lighting^.lightUniforms
-  useProgram gprog inputs
+  useProgram gprog
   runCamera gcam (unis^.lightCamProjViewU) unused (unis^.lightEyeU)
-  unLit lt lighting shadowing accumulation
+  unLit lt lighting shadowing accumulation (sendToProgram gprog)
