@@ -19,6 +19,7 @@ import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO )
 import Data.Aeson
 import Quaazar.Core.Albedo ( Albedo )
+import Quaazar.Core.Loader ( Load(..) )
 import Quaazar.Render.GL.Shader ( (@=), uniform )
 import Quaazar.Render.GLSL
 import Quaazar.Render.Shader
@@ -37,6 +38,10 @@ instance FromJSON PhongMaterial where
       <$> o .: "diffuse"
       <*> o .: "specular"
       <*> o .: "shininess"
+
+instance Load PhongMaterial where
+  loadRoot = const "materials"
+  loadExt = const "ymat"
 
 makeLenses ''PhongMaterial
 
