@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   : (C) 2014 Dimitri Sabadie
@@ -11,9 +13,11 @@
 
 module Quaazar.Technics.Lighting.Phong where
 
+import Control.Applicative
 import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO )
+import Data.Aeson
 import Quaazar.Core.Albedo ( Albedo )
 import Quaazar.Render.GL.Shader ( (@=), uniform )
 import Quaazar.Render.GLSL
@@ -26,6 +30,13 @@ data PhongMaterial = PhongMaterial {
   , _phongSpecAlb :: Albedo
   , _phongShn     :: Float
   }
+
+instance FromJSON PhongMaterial where
+  parseJSON = withObject "phong material" $ \o ->
+    PhongMaterial
+      <$> o .: "diffuse"
+      <*> o .: "specular"
+      <*> o .: "shininess"
 
 makeLenses ''PhongMaterial
 
