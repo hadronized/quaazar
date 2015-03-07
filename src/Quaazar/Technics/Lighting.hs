@@ -13,4 +13,4 @@ module Quaazar.Technics.Lighting (
     module Quaazar.Technics.Lighting.Phong
   ) where
 
-import Quaazar.Technics.Technics.Lighting.Phong
+import Quaazar.Technics.Lighting.Phong
