@@ -33,9 +33,9 @@ instance Monoid Shaded where
   mempty = Shaded $ \_ _ _ _ -> return ()
   Shaded f `mappend` Shaded g = Shaded $ \l s a c -> f l s a c >> g l s a c
 
-shade :: GPUProgram a -> a -> Lit -> Shaded
-shade gprog inputs lt = Shaded $ \lighting shadowing accumulation gcam -> do
+shade :: GPUProgram mat -> Lit mat -> Shaded
+shade gprog lt = Shaded $ \lighting shadowing accumulation gcam -> do
   let unis = lighting^.lightUniforms
-  useProgram gprog inputs
+  useProgram gprog
   runCamera gcam (unis^.lightCamProjViewU) unused (unis^.lightEyeU)
-  unLit lt lighting shadowing accumulation
+  unLit lt lighting shadowing accumulation (sendToProgram gprog)

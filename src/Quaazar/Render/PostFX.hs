@@ -23,15 +23,6 @@ import Quaazar.Utils.Scoped
 
 data GPUPostFX a = GPUPostFX { usePostFX :: Texture2D -> a -> IO () }
 
--- TODO
-{-
-instance GPU PostFX (GPUPostFX a) where
-  gpu pfx = evalJournalT $ do
-    gpupfx <- gpuPostFX pfx
-    sinkLogs
-    return gpupfx
--}
-
 gpuPostFX :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
           => PostFX
           -> (a -> IO ())
@@ -40,9 +31,10 @@ gpuPostFX (PostFX src) update = do
     gpuprogram <- gpuProgram vsSrc Nothing src update
     return $ GPUPostFX (use gpuprogram)
   where
-    use gpuprogram sourceTex a = do
+    use gprog sourceTex a = do
       bindTextureAt sourceTex 0
-      useProgram gpuprogram a
+      useProgram gprog
+      sendToProgram gprog a
 
 gpuPostFXFree :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
               => PostFX

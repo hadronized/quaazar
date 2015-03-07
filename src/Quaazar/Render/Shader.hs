@@ -10,7 +10,7 @@
 ----------------------------------------------------------------------------
 
 module Quaazar.Render.Shader (
-    GPUProgram(useProgram)
+    GPUProgram(useProgram, sendToProgram)
   , gpuProgram
   ) where
 
@@ -21,7 +21,10 @@ import qualified Quaazar.Render.GL.Shader as GL ( useProgram )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
-newtype GPUProgram a = GPUProgram { useProgram :: a -> IO () }
+data GPUProgram a = GPUProgram {
+    useProgram :: IO ()
+  , sendToProgram :: a -> IO ()
+  }
 
 gpuProgram :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
            => String
@@ -31,6 +34,4 @@ gpuProgram :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
            -> m (GPUProgram a)
 gpuProgram vs gs fs update = do
     program <- buildProgram vs gs fs
-    return . GPUProgram $ \a -> do
-      GL.useProgram program
-      update a
+    return $ GPUProgram (GL.useProgram program) update

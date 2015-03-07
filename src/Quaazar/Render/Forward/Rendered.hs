@@ -17,17 +17,18 @@ import Quaazar.Core.Entity ( Entity )
 import Quaazar.Render.GL.Shader ( Uniform )
 import Quaazar.Render.Mesh ( GPUMesh(..) )
 
-newtype Rendered = Rendered {
+newtype Rendered mat = Rendered {
     unRendered :: Uniform (M44 Float) -- ^ model matrix
+               -> (mat -> IO ()) -- ^ material properties sink
                -> IO ()
   }
 
-instance Monoid Rendered where
-  mempty = Rendered $ \_ -> return ()
+instance Monoid (Rendered mat) where
+  mempty = Rendered $ \_ _ -> return ()
   Rendered f `mappend` Rendered g =
-    Rendered $ \m -> f m >> g m
+    Rendered $ \m s -> f m s >> g m s
 
-render :: GPUMesh -> IO () -> Entity -> Rendered
-render gmsh runMat ent = Rendered $ \modelU -> do
-    runMat
+render :: GPUMesh -> mat -> Entity -> Rendered mat
+render gmsh mat ent = Rendered $ \modelU sinkMat -> do
+    sinkMat mat
     renderMesh gmsh modelU ent

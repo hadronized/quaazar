@@ -21,20 +21,26 @@ import Quaazar.Render.Forward.Rendered ( Rendered(..) )
 import Quaazar.Render.Forward.Shadowing
 import Quaazar.Render.GL.Shader ( (@=) )
 
-newtype Lit = Lit { unLit :: Lighting -> Shadowing -> Accumulation -> IO () }
+newtype Lit mat = Lit {
+    unLit :: Lighting
+          -> Shadowing
+          -> Accumulation
+          -> (mat -> IO ())
+          -> IO ()
+  }
 
-instance Monoid Lit where
-  mempty = Lit $ \_ _ _ -> return ()
-  Lit f `mappend` Lit g = Lit $ \l s a -> f l s a >> g l s a
+instance Monoid (Lit mat) where
+  mempty = Lit $ \_ _ _ _ -> return ()
+  Lit f `mappend` Lit g = Lit $ \l s a ms -> f l s a ms >> g l s a ms
 
-lighten :: Ambient -> [(Omni,Entity)] -> Rendered -> Lit
+lighten :: Ambient -> [(Omni,Entity)] -> Rendered mat -> Lit mat
 lighten (Ambient ligAmbCol ligAmbPow) omnis shd = Lit lighten_
   where
-    lighten_ lighting _ _ = do
+    lighten_ lighting _ _ sinkMat = do
         purgeLightingFramebuffer lighting
         lunis^.lightLigAmbCol @= ligAmbCol
         lunis^.lightLigAmbPow @= ligAmbPow
         pushOmnis omnis lighting
-        unRendered shd (lunis^.lightModelU)
+        unRendered shd (lunis^.lightModelU) sinkMat
       where
         lunis = lighting^.lightUniforms
