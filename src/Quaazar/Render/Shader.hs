@@ -28,10 +28,11 @@ data GPUProgram a = GPUProgram {
 
 gpuProgram :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
            => String
+           -> Maybe (String,String)
            -> Maybe String
            -> String
            -> (a -> IO ())
            -> m (GPUProgram a)
-gpuProgram vs gs fs update = do
-    program <- buildProgram vs gs fs
+gpuProgram vs tcstes gs fs update = do
+    program <- buildProgram vs tcstes gs fs
     return $ GPUProgram (GL.useProgram program) update

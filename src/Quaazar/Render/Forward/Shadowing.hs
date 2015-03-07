@@ -63,9 +63,9 @@ getShadowing w h cubeSize = do
   cubeOff <- genCubeOffscreen cubeSize Linear R32F Tex.R (ColorAttachment 0) Depth32F
     Depth DepthAttachment
   shadowOff <- genOffscreen w h Nearest RGB32F Tex.RGB
-  depthProgram <- buildProgram shadowDepthCubemapVS (Just shadowDepthCubemapGS)
+  depthProgram <- buildProgram shadowDepthCubemapVS Nothing (Just shadowDepthCubemapGS)
     shadowDepthCubemapFS
-  shadowProgram <- buildProgram shadowShadowVS Nothing shadowShadowFS
+  shadowProgram <- buildProgram shadowShadowVS Nothing Nothing shadowShadowFS
   uniforms <- getShadowingUniforms depthProgram shadowProgram
   return $ Shadowing cubeOff shadowOff depthProgram shadowProgram uniforms
     (Viewport cubeSize cubeSize 0 0)

@@ -43,7 +43,7 @@ getAccumulation :: (Applicative m,MonadScoped IO m,MonadIO m,MonadLogger m,Monad
                 -> Natural
                 -> m Accumulation
 getAccumulation w h = do
-  program <- buildProgram accumVS Nothing accumFS <* sinkLogs
+  program <- buildProgram accumVS Nothing Nothing accumFS <* sinkLogs
   info CoreLog "generating accumulation offscreen"
   off <- genOffscreen w h Nearest RGB32F RGB -- TODO: color offscreen
   off2 <- genOffscreen w h Nearest RGB32F RGB -- TODO: color offscreen

@@ -47,7 +47,7 @@ makeLenses ''PhongMaterial
 
 phong :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
       => m (GPUProgram PhongMaterial)
-phong = gpuProgram phongVS Nothing phongFS $ \(PhongMaterial diffAlb specAlb shn) -> do
+phong = gpuProgram phongVS Nothing Nothing phongFS $ \(PhongMaterial diffAlb specAlb shn) -> do
     diffAlbSem @= diffAlb
     specAlbSem @= specAlb
     shnSem @= shn

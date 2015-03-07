@@ -50,6 +50,16 @@ newtype VertexShader = VertexShader { unVertexShader :: GLuint } deriving (Eq,Sh
 instance GLObject VertexShader where
   genObject = genericGenShader gl_VERTEX_SHADER VertexShader
 
+newtype TessCtrlShader = TessCtrlShader { unTessCtrlShader :: GLuint } deriving (Eq,Show)
+
+instance GLObject TessCtrlShader where
+  genObject = genericGenShader gl_TESS_CONTROL_SHADER TessCtrlShader
+
+newtype TessEvalShader = TessEvalShader { unTessEvalShader :: GLuint } deriving (Eq,Show)
+
+instance GLObject TessEvalShader where
+  genObject = genericGenShader gl_TESS_EVALUATION_SHADER TessEvalShader
+
 newtype GeometryShader = GeometryShader { unGeometryShader :: GLuint } deriving (Eq,Show)
 
 instance GLObject GeometryShader where
@@ -60,14 +70,6 @@ newtype FragmentShader = FragmentShader { unFragmentShader :: GLuint } deriving 
 instance GLObject FragmentShader where
   genObject = genericGenShader gl_FRAGMENT_SHADER FragmentShader
 
-newtype Program = Program { unProgram :: GLuint } deriving (Eq,Show)
-
-instance GLObject Program where
-  genObject = do
-    p <- liftBase $ glCreateProgram
-    scoped $ glDeleteProgram p
-    return $ Program p
-
 class ShaderLike s where
   shaderID :: s -> GLuint
   compile :: (MonadIO m,MonadLogger m,MonadError Log m) => s -> String -> m ()
@@ -76,6 +78,14 @@ instance ShaderLike VertexShader where
   shaderID = unVertexShader
   compile = compile_ "vertex"
 
+instance ShaderLike TessCtrlShader where
+  shaderID = unTessCtrlShader
+  compile = compile_ "tessellation control"
+
+instance ShaderLike TessEvalShader where
+  shaderID = unTessEvalShader
+  compile = compile_ "tessellation evaluation"
+
 instance ShaderLike GeometryShader where
   shaderID = unGeometryShader
   compile = compile_ "geometry"
@@ -83,6 +93,14 @@ instance ShaderLike GeometryShader where
 instance ShaderLike FragmentShader where
   shaderID = unFragmentShader
   compile = compile_ "fragment"
+
+newtype Program = Program { unProgram :: GLuint } deriving (Eq,Show)
+
+instance GLObject Program where
+  genObject = do
+    p <- liftBase $ glCreateProgram
+    scoped $ glDeleteProgram p
+    return $ Program p
 
 compile_ :: (MonadIO m,MonadLogger m,MonadError Log m,ShaderLike s)
          => String
@@ -132,15 +150,21 @@ link (Program pid) = do
 
 buildProgram :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
              => String
+             -> Maybe (String,String)
              -> Maybe String
              -> String
              -> m Program
-buildProgram vsSrc gsSrc fsSrc = do
+buildProgram vsSrc tcstesSrc gsSrc fsSrc = do
   program <- genObject
   vs :: VertexShader <- genObject
   fs :: FragmentShader <- genObject
   sequence_ [compile vs vsSrc,compile fs fsSrc]
   liftIO $ sequence_ [attach program vs,attach program fs]
+  flip traverse_ tcstesSrc $ \(tcsSrc,tesSrc) -> do
+    tcs :: TessCtrlShader <- genObject
+    tes :: TessEvalShader <- genObject
+    sequence_ [compile tcs tcsSrc,compile tes tesSrc]
+    liftIO $ sequence_ [attach program tcs,attach program tes]
   case gsSrc of
     Just src -> do
       gs :: GeometryShader <- genObject
