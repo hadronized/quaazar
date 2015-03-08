@@ -28,7 +28,7 @@ gpuPostFX :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
           -> (a -> IO ())
           -> m (GPUPostFX a)
 gpuPostFX (PostFX src) update = do
-    gpuprogram <- gpuProgram vsSrc Nothing src update
+    gpuprogram <- gpuProgram vsSrc Nothing Nothing src update
     return $ GPUPostFX (use gpuprogram)
   where
     use gprog sourceTex a = do
