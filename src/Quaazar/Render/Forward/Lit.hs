@@ -29,10 +29,6 @@ newtype Lit mat = Lit {
           -> IO ()
   }
 
-instance Monoid (Lit mat) where
-  mempty = Lit $ \_ _ _ _ -> return ()
-  Lit f `mappend` Lit g = Lit $ \l s a ms -> f l s a ms >> g l s a ms
-
 lighten :: Ambient -> [(Omni,Entity)] -> Rendered mat -> Lit mat
 lighten (Ambient ligAmbCol ligAmbPow) omnis shd = Lit lighten_
   where
