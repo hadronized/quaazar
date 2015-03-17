@@ -25,7 +25,7 @@ import Quaazar.Utils.Scoped
 
 data GPUFrame = GPUFrame {
     useFrame :: IO ()
-  , bindFrameAt :: Natural -> IO ()
+  , asTexture :: GPUTexture
   }
 
 getScreenFrame :: (Monad m) => m GPUFrame
@@ -39,4 +39,4 @@ gpuFrame :: (MonadScoped IO m, MonadIO m,MonadError Log m)
 gpuFrame w h = do
     off <- genOffscreen w h Nearest RGB32F RGB
     return $ GPUFrame (bindFramebuffer (off^.offscreenFB) ReadWrite)
-      (bindTextureAt $ off^.offscreenRender)
+      (GPUTexture . bindTextureAt $ off^.offscreenRender)
