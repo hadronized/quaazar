@@ -12,7 +12,6 @@
 module Quaazar.Render.Forward.Shaded where
 
 import Control.Lens
-import Data.Monoid ( Monoid(..) )
 import Quaazar.Render.Camera ( GPUCamera(..) )
 import Quaazar.Render.Forward.Accumulation ( Accumulation )
 import Quaazar.Render.Forward.Lighting
@@ -28,10 +27,6 @@ data Shaded = Shaded {
              -> GPUCamera
              -> IO ()
   }
-
-instance Monoid Shaded where
-  mempty = Shaded $ \_ _ _ _ -> return ()
-  Shaded f `mappend` Shaded g = Shaded $ \l s a c -> f l s a c >> g l s a c
 
 shade :: GPUProgram mat -> Lit mat -> Shaded
 shade gprog lt = Shaded $ \lighting shadowing accumulation gcam -> do
