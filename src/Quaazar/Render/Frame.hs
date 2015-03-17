@@ -20,6 +20,7 @@ import Quaazar.Render.GL.Framebuffer (Target(..), bindFramebuffer )
 import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
                                  , bindTextureAt )
+import Quaazar.Render.Texture ( GPUTexture(GPUTexture) )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
@@ -27,10 +28,6 @@ data GPUFrame = GPUFrame {
     useFrame :: IO ()
   , asTexture :: GPUTexture
   }
-
-getScreenFrame :: (Monad m) => m GPUFrame
-getScreenFrame =
-  return $ GPUFrame (glBindFramebuffer gl_FRAMEBUFFER 0) (const $ return ())
 
 gpuFrame :: (MonadScoped IO m, MonadIO m,MonadError Log m)
          => Natural
