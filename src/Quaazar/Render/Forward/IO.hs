@@ -26,8 +26,8 @@ import Quaazar.Render.GL.Shader ( useProgram )
 import Quaazar.Render.GL.Texture ( bindTextureAt )
 import Quaazar.Render.GL.VertexArray ( bindVertexArray )
 
-display :: (MonadIO m) => ForwardRenderer -> GPUFrame -> Viewport -> Post -> m GPUTexture
-display (ForwardRenderer lighting shadowing accumulation window) gpuframe screenViewport pst = liftIO $ do
+displayInto :: (MonadIO m) => ForwardRenderer -> GPUFrame -> Viewport -> Post -> m GPUTexture
+displayInto (ForwardRenderer lighting shadowing accumulation window) gpuframe screenViewport pst = liftIO $ do
   setViewport screenViewport
   (finalOff,_) <- unPost pst lighting shadowing accumulation
   useProgram (accumulation^.accumProgram)
