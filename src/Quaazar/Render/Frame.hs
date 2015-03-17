@@ -16,7 +16,8 @@ import Control.Monad.Trans ( MonadIO(..) )
 import Control.Monad.Error.Class ( MonadError )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
-import Quaazar.Render.GL.Framebuffer (Target(..), bindFramebuffer )
+import Quaazar.Render.GL.Framebuffer (Target(..), bindFramebuffer
+                                     , unbindFramebuffer )
 import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
                                  , bindTextureAt )
@@ -28,6 +29,9 @@ data GPUFrame = GPUFrame {
     useFrame :: IO ()
   , asTexture :: GPUTexture
   }
+
+screenFrame :: GPUFrame
+screenFrame = GPUFrame (unbindFramebuffer ReadWrite) (error "screen frame texture")
 
 gpuFrame :: (MonadScoped IO m, MonadIO m,MonadError Log m)
          => Natural
