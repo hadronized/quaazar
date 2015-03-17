@@ -30,7 +30,7 @@ data GPUFrame = GPUFrame {
 
 getScreenFrame :: (Monad m) => m GPUFrame
 getScreenFrame =
-  return $ GPUFrame (glBindFramebuffer gl_FRAMEBUFFER 0) undefined
+  return $ GPUFrame (glBindFramebuffer gl_FRAMEBUFFER 0) (const $ return ())
 
 gpuFrame :: (MonadScoped IO m, MonadIO m,MonadError Log m)
          => Natural
