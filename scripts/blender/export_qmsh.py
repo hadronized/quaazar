@@ -8,7 +8,7 @@
 ############################################################################
 
 bl_info = {
-    "name"     : "Export mesh to Quaazar JSON (.ymsh)"
+    "name"     : "Export mesh to Quaazar JSON (.qmsh)"
   , "author"   : "Dimitri Sabadie"
   , "category" : "Import-Export"
   , "location" : "File > Import-Export"
@@ -26,7 +26,7 @@ class QuaazarMeshExporter(bpy.types.Operator, ExportHelper):
   bl_description = "Export all meshes from the scene into a directory"
   bl_options     = {'REGISTER'}
 
-  filename_ext   = ".ymsh"
+  filename_ext   = ".qmsh"
 
   sparse = BoolProperty (
       name        = "Sparse output"
