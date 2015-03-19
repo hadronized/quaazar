@@ -82,7 +82,8 @@ library
                      , Quaazar.Render.GL.Texture
                      , Quaazar.Render.GL.VertexArray
 
-  default-extensions:  DeriveFunctor
+  default-extensions:  DefaultSignatures
+                     , DeriveFunctor
                      , FlexibleContexts
                      , FlexibleInstances
                      , FunctionalDependencies
