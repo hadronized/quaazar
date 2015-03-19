@@ -13,7 +13,6 @@
 module Quaazar.Core.Loader (
     -- * Loading resources
     Load(..)
-  , load
   , loadJSON
   ) where
 
