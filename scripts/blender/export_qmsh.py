@@ -91,7 +91,7 @@ def createVertex(vertices, vertID, smoothNormals):
   co = [round_(vert.co[0]),round_(vert.co[1]),round_(vert.co[2])]
   no = []
   if smoothNormals:
-    nor = [round_(vert.normal[0]),round_(vert.normal[1]),round_(vert.normal[2])]
+    no = [round_(vert.normal[0]),round_(vert.normal[1]),round_(vert.normal[2])]
   return [co,no,[]]
 
 # Look for a vertex. If it exists, return its ID. Otherwise, return None.
