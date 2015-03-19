@@ -27,18 +27,21 @@ import Quaazar.Utils.Log
 import Quaazar.Utils.TimePoint
 import System.FilePath
 
-class (FromJSON a) => Load a where
+class Load a where
   loadRoot :: a -> String
   loadExt :: a -> String
-
-load :: forall m a. (MonadIO m,MonadLogger m,MonadError Log m,FromJSON a,Load a)
-     => FilePath
-     -> FilePath
-     -> m a
-load rootPath n = loadJSON rootPath $ resRoot </> n <.> resExt
-  where
-    resRoot = loadRoot (undefined :: a) -- TODO: use Proxy instead?
-    resExt = loadExt (undefined :: a) -- TODO: use Proxy instead?
+  load :: (MonadIO m,MonadLogger m,MonadError Log m)
+       => FilePath
+       -> FilePath
+       -> m a
+  default load :: (MonadIO m,MonadLogger m,MonadError Log m,FromJSON a)
+               => FilePath
+               -> FilePath
+               -> m a
+          load rootPath n = loadJSON rootPath $ resRoot </> n <.> resExt
+            where
+              resRoot = loadRoot (undefined :: a)
+              resExt = loadExt (undefined :: a)
 
 loadJSON :: (MonadIO m,MonadLogger m,MonadError Log m,FromJSON a)
          => FilePath
