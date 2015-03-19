@@ -86,13 +86,20 @@ def hasOnlyTris(msh):
   return True
 
 # Build a vertex.
-def createVertex(vertices, vertID, smoothNormals):
-  vert = vertices[vertID]
+def createVertex(msh, loopID, smoothNormals):
+  vertices = msh.vertices
+  loops = msh.loops
+  uv_layers = msh.uv_layers
+  vert = vertices[loops[loopID].vertex_index]
   co = [round_(vert.co[0]),round_(vert.co[1]),round_(vert.co[2])]
   no = []
   if smoothNormals:
     no = [round_(vert.normal[0]),round_(vert.normal[1]),round_(vert.normal[2])]
-  return [co,no,[]]
+  uv = []
+  if len(uv_layers) > 0:
+    uv_ = uv_layers[0].data[loopID].uv
+    uv = [round_(uv_[0]),round_(uv_[1])]
+  return [co,no,uv]
 
 # Look for a vertex. If it exists, return its ID. Otherwise, return None.
 def lookupVertex(vertices, vert):
@@ -117,9 +124,9 @@ def toQuaazarMesh(msh, smoothNormals):
   vertices = []
   indices = []
   while i < vnb:
-    a = createVertex(msh.vertices, msh.loops[i].vertex_index, smoothNormals)
-    b = createVertex(msh.vertices, msh.loops[i+1].vertex_index, smoothNormals)
-    c = createVertex(msh.vertices, msh.loops[i+2].vertex_index, smoothNormals)
+    a = createVertex(msh, i, smoothNormals)
+    b = createVertex(msh, i+1, smoothNormals)
+    c = createVertex(msh, i+2, smoothNormals)
     aID = recordVertex(vertices, indices, a)
     bID = recordVertex(vertices, indices, b)
     cID = recordVertex(vertices, indices, c)
