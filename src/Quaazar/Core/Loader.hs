@@ -37,10 +37,10 @@ class Load a where
                => FilePath
                -> FilePath
                -> m a
-          load rootPath n = loadJSON rootPath $ resRoot </> n <.> resExt
-            where
-              resRoot = loadRoot (undefined :: a)
-              resExt = loadExt (undefined :: a)
+  load rootPath n = loadJSON rootPath $ resRoot </> n <.> resExt
+    where
+      resRoot = loadRoot (undefined :: a)
+      resExt = loadExt (undefined :: a)
 
 loadJSON :: (MonadIO m,MonadLogger m,MonadError Log m,FromJSON a)
          => FilePath
