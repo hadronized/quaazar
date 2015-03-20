@@ -20,7 +20,7 @@ import Control.Monad.Trans ( MonadIO(..) )
 import Numeric.Natural ( Natural )
 import Quaazar.Render.GL.Shader ( buildProgram )
 import qualified Quaazar.Render.GL.Shader as GL ( Uniformable, (@=)
-                                                , useProgram )
+                                                , uniform, useProgram )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
@@ -34,7 +34,7 @@ newtype Semantics a = Semantics { runSemantics :: IO a }
 
 -- |Map a semantic to its value.
 ($=) :: (Uniformable a) => Natural -> a -> Semantics
-s $= a = Semantics $ s @= a
+s $= a = Semantics $ uniform s @= a
 
 -- |A program that lives on the GPU.
 data GPUProgram a = GPUProgram {
