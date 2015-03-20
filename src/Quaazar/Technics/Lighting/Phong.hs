@@ -18,9 +18,10 @@ import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO )
 import Data.Aeson
+import Numeric.Natural ( Natural )
 import Quaazar.Core.Albedo ( Albedo )
 import Quaazar.Core.Loader ( Load(..) )
-import Quaazar.Render.GL.Shader ( (@=), uniform )
+import Quaazar.Render.GL.Shader ( uniform )
 import Quaazar.Render.GLSL
 import Quaazar.Render.Shader
 import Quaazar.Utils.Log
@@ -48,21 +49,17 @@ makeLenses ''PhongMaterial
 phong :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
       => m (GPUProgram PhongMaterial)
 phong = gpuProgram phongVS Nothing Nothing phongFS $ \(PhongMaterial diffAlb specAlb shn) -> do
-    diffAlbSem @= diffAlb
-    specAlbSem @= specAlb
-    shnSem @= shn
-  where
-    diffAlbSem = uniform (fromIntegral phongDiffAlbSem)
-    specAlbSem = uniform (fromIntegral phongSpecAlbSem)
-    shnSem = uniform (fromIntegral phongShnSem)
+    phongDiffAlbSem $= diffAlb
+    phongSpecAlbSem $= specAlb
+    phongShnSem $= shn
 
-phongDiffAlbSem :: Int
+phongDiffAlbSem :: Natural
 phongDiffAlbSem = 10
 
-phongSpecAlbSem :: Int
+phongSpecAlbSem :: Natural
 phongSpecAlbSem = 11
 
-phongShnSem :: Int
+phongShnSem :: Natural
 phongShnSem = 12
 
 phongVS :: String
