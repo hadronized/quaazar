@@ -19,8 +19,8 @@ import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Numeric.Natural ( Natural )
 import Quaazar.Render.GL.Shader ( buildProgram )
-import qualified Quaazar.Render.GL.Shader as GL ( Uniformable, (@=)
-                                                , uniform, useProgram )
+import qualified Quaazar.Render.GL.Shader as GL ( Uniform, Uniformable
+                                                , (@=), useProgram )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
@@ -33,8 +33,8 @@ newtype Semantics a = Semantics { runSemantics :: IO a }
   deriving (Applicative,Functor,Monad)
 
 -- |Map a semantic to its value.
-($=) :: (Uniformable a) => Natural -> a -> Semantics
-s $= a = Semantics $ uniform s @= a
+($=) :: (Uniformable a) => Uniform a -> a -> Semantics
+s $= a = Semantics $ s @= a
 
 -- |A program that lives on the GPU.
 data GPUProgram a = GPUProgram {
