@@ -69,6 +69,6 @@ gpuProgram :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
            -> String
            -> (a -> Semantics b)
            -> m (GPUProgram a)
-gpuProgram vs tcstes gs fs semantics = do
+gpuProgram vs tcstes gs fs semMapper = do
     program <- buildProgram vs tcstes gs fs
-    return $ GPUProgram (GL.useProgram program) (runSemantics semantics)
+    return $ GPUProgram (GL.useProgram program) (runSemantics . semMapper)
