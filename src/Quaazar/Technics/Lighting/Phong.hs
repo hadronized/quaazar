@@ -21,7 +21,6 @@ import Data.Aeson
 import Numeric.Natural ( Natural )
 import Quaazar.Core.Albedo ( Albedo )
 import Quaazar.Core.Loader ( Load(..) )
-import Quaazar.Render.GL.Shader ( uniform )
 import Quaazar.Render.GLSL
 import Quaazar.Render.Shader
 import Quaazar.Utils.Log
