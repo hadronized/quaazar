@@ -12,6 +12,8 @@
 module Quaazar.Render.Shader (
     GPUProgram(useProgram, sendToProgram)
   , gpuProgram
+    -- * Re-exported
+  , uniform
   ) where
 
 import Control.Applicative ( Applicative )
@@ -20,7 +22,7 @@ import Control.Monad.Trans ( MonadIO(..) )
 import Numeric.Natural ( Natural )
 import Quaazar.Render.GL.Shader ( buildProgram )
 import qualified Quaazar.Render.GL.Shader as GL ( Uniform, Uniformable
-                                                , (@=), useProgram )
+                                                , (@=), uniform, useProgram )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
