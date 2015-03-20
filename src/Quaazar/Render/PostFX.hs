@@ -25,10 +25,10 @@ data GPUPostFX a = GPUPostFX { usePostFX :: Texture2D -> a -> IO () }
 
 gpuPostFX :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
           => PostFX
-          -> (a -> IO ())
+          -> (a -> Semantics b)
           -> m (GPUPostFX a)
-gpuPostFX (PostFX src) update = do
-    gpuprogram <- gpuProgram vsSrc Nothing Nothing src update
+gpuPostFX (PostFX src) semMapper = do
+    gpuprogram <- gpuProgram vsSrc Nothing Nothing src semMapper
     return $ GPUPostFX (use gpuprogram)
   where
     use gprog sourceTex a = do
