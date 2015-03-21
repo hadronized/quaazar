@@ -56,9 +56,9 @@ imageToTexture dynim = case dynim of
   ImageYF img -> return $ fromPixelF img
   ImageYA8 img -> return $ fromGreyscaleAlpha imax8 img
   ImageYA16 img -> return $ fromGreyscaleAlpha imax16 img
+  ImageRGB8 img -> return $ fromRGB imax8 img
+  ImageRGB16 img -> return $ fromRGB imax16 img
   {-
-  ImageRGB8 img -> fromPixelRGB8 img
-  ImageRGB16 img -> fromPixelRGB16 img
   ImageRGBA8 img -> fromPixelRGBA8 img
   ImgaeRGBA16 img -> fromPixelRGBA16 img
   -}
@@ -87,6 +87,15 @@ fromGreyscaleAlpha :: (Pixel a,Real (PixelBaseComponent a))
                    -> Texture
 fromGreyscaleAlpha imax (Image w h pixels) =
     Texture (fromIntegral w) (fromIntegral h) RG pixels'
+  where
+    pixels' = fromList . map ((*imax) . realToFrac) $ toList pixels
+
+fromRGB :: (Pixel a,Real (PixelBaseComponent a))
+        => Float
+        -> Image a
+        -> Texture
+fromRGB imax (Image w h pixels) =
+    Texture (fromIntegral w) (fromIntegral h) RGB pixels'
   where
     pixels' = fromList . map ((*imax) . realToFrac) $ toList pixels
 
