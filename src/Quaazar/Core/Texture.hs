@@ -21,6 +21,7 @@ module Quaazar.Core.Texture (
   ) where
 
 import Control.Lens
+import Data.Vector ( Vector )
 import Numeric.Natural ( Natural )
 
 -- |A texture gathers texels (encoded with a specific format). Textures have
@@ -33,7 +34,7 @@ data Texture = Texture {
     -- |Texture format. See 'TexelFormat' for further information.
   , _texFormat :: TexelFormat
     -- |Texels.
-  , _texTexels :: [Float]
+  , _texTexels :: Vector Float
   } deriving (Eq,Show)
 
 -- |Possible format for a texel.
@@ -45,5 +46,3 @@ data TexelFormat
     deriving (Eq,Ord,Show)
 
 makeLenses ''Texture
-
--- TODO: add loader from disk image here

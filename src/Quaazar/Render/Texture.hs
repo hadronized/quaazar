@@ -12,6 +12,7 @@
 module Quaazar.Render.Texture where
 
 import Control.Monad.Trans ( MonadIO(..) )
+import Data.Vector ( toList )
 import Numeric.Natural ( Natural )
 import Quaazar.Core.Texture ( TexelFormat(..), Texture(..) )
 import Quaazar.Render.GL.GLObject
@@ -29,7 +30,7 @@ gpuTexture (Texture width height format texels) wrap flt = do
     GL.bindTextureAt tex 0
     GL.setTextureWrap tex wrap
     GL.setTextureFilters tex flt
-    GL.setTextureImage tex ift width height ft texels
+    GL.setTextureImage tex ift width height ft (toList texels)
     return . GPUTexture $ GL.bindTextureAt tex
   where
     (ft,ift) = case format of
