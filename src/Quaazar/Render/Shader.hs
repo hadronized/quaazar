@@ -10,19 +10,24 @@
 ----------------------------------------------------------------------------
 
 module Quaazar.Render.Shader (
+    -- * GPU shader programs
     GPUProgram(useProgram, sendToProgram)
   , gpuProgram
+    -- * Semantics
+  , Semantics(..)
+  , ($=)
     -- * Re-exported
   , uniform
   ) where
 
 import Control.Applicative ( Applicative )
+import Control.Monad ( void )
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Numeric.Natural ( Natural )
 import Quaazar.Render.GL.Shader ( buildProgram )
-import qualified Quaazar.Render.GL.Shader as GL ( Uniform, Uniformable
-                                                , (@=), uniform, useProgram )
+import Quaazar.Render.GL.Shader ( Uniform, Uniformable, (@=), uniform )
+import qualified Quaazar.Render.GL.Shader as GL ( useProgram )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
@@ -35,7 +40,7 @@ newtype Semantics a = Semantics { runSemantics :: IO a }
   deriving (Applicative,Functor,Monad)
 
 -- |Map a semantic to its value.
-($=) :: (Uniformable a) => Uniform a -> a -> Semantics
+($=) :: (Uniformable a) => Uniform a -> a -> Semantics ()
 s $= a = Semantics $ s @= a
 
 -- |A program that lives on the GPU.
@@ -73,4 +78,4 @@ gpuProgram :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
            -> m (GPUProgram a)
 gpuProgram vs tcstes gs fs semMapper = do
     program <- buildProgram vs tcstes gs fs
-    return $ GPUProgram (GL.useProgram program) (runSemantics . semMapper)
+    return $ GPUProgram (GL.useProgram program) (void . runSemantics . semMapper)

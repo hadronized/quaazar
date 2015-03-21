@@ -18,7 +18,6 @@ import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO )
 import Data.Aeson
-import Numeric.Natural ( Natural )
 import Quaazar.Core.Albedo ( Albedo )
 import Quaazar.Core.Loader ( Load(..) )
 import Quaazar.Render.GLSL
@@ -52,13 +51,13 @@ phong = gpuProgram phongVS Nothing Nothing phongFS $ \(PhongMaterial diffAlb spe
     uniform phongSpecAlbSem $= specAlb
     uniform phongShnSem $= shn
 
-phongDiffAlbSem :: Natural
+phongDiffAlbSem :: Int
 phongDiffAlbSem = 10
 
-phongSpecAlbSem :: Natural
+phongSpecAlbSem :: Int
 phongSpecAlbSem = 11
 
-phongShnSem :: Natural
+phongShnSem :: Int
 phongShnSem = 12
 
 phongVS :: String
