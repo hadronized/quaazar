@@ -58,10 +58,8 @@ imageToTexture dynim = case dynim of
   ImageYA16 img -> return $ fromGreyscaleAlpha imax16 img
   ImageRGB8 img -> return $ fromRGB imax8 img
   ImageRGB16 img -> return $ fromRGB imax16 img
-  {-
-  ImageRGBA8 img -> fromPixelRGBA8 img
-  ImgaeRGBA16 img -> fromPixelRGBA16 img
-  -}
+  ImageRGBA8 img -> return $ fromRGBA imax8 img
+  ImageRGBA16 img -> return $ fromRGBA imax16 img
   _ -> throwError_ "unimplemented image format"
  
 imax8, imax16 :: Float
@@ -96,6 +94,15 @@ fromRGB :: (Pixel a,Real (PixelBaseComponent a))
         -> Texture
 fromRGB imax (Image w h pixels) =
     Texture (fromIntegral w) (fromIntegral h) RGB pixels'
+  where
+    pixels' = fromList . map ((*imax) . realToFrac) $ toList pixels
+
+fromRGBA :: (Pixel a,Real (PixelBaseComponent a))
+         => Float
+         -> Image a
+         -> Texture
+fromRGBA imax (Image w h pixels) =
+    Texture (fromIntegral w) (fromIntegral h) RGBA pixels'
   where
     pixels' = fromList . map ((*imax) . realToFrac) $ toList pixels
 
