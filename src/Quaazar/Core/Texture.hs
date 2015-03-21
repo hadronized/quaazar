@@ -22,11 +22,16 @@ module Quaazar.Core.Texture (
 
 import Codec.Picture
 import Control.Monad.Error.Class ( MonadError(..) )
+import Control.Monad.Trans ( liftIO )
 import Control.Lens
+import Data.Bifunctor ( first )
+import Data.Either.Combinators ( eitherToError )
 import Data.Vector ( Vector, fromList )
 import Data.Vector.Storable ( toList )
 import Numeric.Natural ( Natural )
+import Quaazar.Core.Loader ( Load(..) )
 import Quaazar.Utils.Log
+import System.FilePath ( (</>) )
 
 -- |A texture gathers texels (encoded within a specific format). Textures have a
 -- /width/ and a /height/.
@@ -40,6 +45,15 @@ data Texture = Texture {
     -- |Texels.
   , _texTexels :: Vector Float
   } deriving (Eq,Show)
+
+instance Load Texture where
+  loadRoot = const "textures"
+  loadExt = const "qtex"
+  load rootPath name = do
+      img <- liftIO . fmap (first onError) $ readImage (rootPath </> name)
+      eitherToError img >>= imageToTexture
+    where
+      onError = Log ErrorLog CoreLog
 
 -- |Possible format for a texel.
 data TexelFormat

@@ -109,6 +109,7 @@ library
                      , linear            >= 1.10  && < 1.17
                      , lens              >= 4.2   && < 4.5
                      , either            >= 4.3   && < 4.4
+                     , bifunctors        >= 4.2   && < 4.3
                      , aeson             >= 0.8   && < 0.9
                      , scientific        >= 0.3   && < 0.4
                      , nats              >= 0.1   && < 0.3
