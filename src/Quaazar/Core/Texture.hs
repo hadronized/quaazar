@@ -55,8 +55,8 @@ imageToTexture dynim = case dynim of
   ImageY16 img -> return $ fromGreyscale imax16 img
   ImageYF img -> return $ fromPixelF img
   ImageYA8 img -> return $ fromGreyscaleAlpha imax8 img
+  ImageYA16 img -> return $ fromGreyscaleAlpha imax16 img
   {-
-  ImageYA16 img -> fromPixelYA16 img
   ImageRGB8 img -> fromPixelRGB8 img
   ImageRGB16 img -> fromPixelRGB16 img
   ImageRGBA8 img -> fromPixelRGBA8 img
