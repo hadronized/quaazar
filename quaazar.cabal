@@ -28,7 +28,6 @@ library
                      , Quaazar.Core.Albedo
                      , Quaazar.Core.BoundingVolume
                      , Quaazar.Core.Color
-                     , Quaazar.Core.Entity
                      , Quaazar.Core.Light
                      , Quaazar.Core.Loader
                      , Quaazar.Core.Mesh
@@ -37,6 +36,7 @@ library
                      , Quaazar.Core.PostFX
                      , Quaazar.Core.Projection
                      , Quaazar.Core.Texture
+                     , Quaazar.Core.Transform
                      , Quaazar.Core.VGroup
                      , Quaazar.Core.Vertex
                      , Quaazar.Core.UV
@@ -71,7 +71,6 @@ library
                      , Quaazar.Render.Forward.Lighting
                      , Quaazar.Render.Forward.Shadowing
                      , Quaazar.Render.GL.Buffer
-                     , Quaazar.Render.GL.Entity
                      , Quaazar.Render.GL.Framebuffer
                      , Quaazar.Render.GL.GLObject
                      , Quaazar.Render.GL.Log
@@ -80,6 +79,7 @@ library
                      , Quaazar.Render.GL.Renderbuffer
                      , Quaazar.Render.GL.Shader
                      , Quaazar.Render.GL.Texture
+                     , Quaazar.Render.GL.Transform
                      , Quaazar.Render.GL.VertexArray
 
   default-extensions:  DefaultSignatures

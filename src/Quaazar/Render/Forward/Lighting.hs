@@ -21,7 +21,7 @@ import Linear
 import Numeric.Natural ( Natural )
 import Foreign hiding ( void )
 import Quaazar.Core.Color ( Color(..) )
-import Quaazar.Core.Entity ( Entity, entityPosition )
+import Quaazar.Core.Transform ( Transform, transformPosition )
 import Quaazar.Core.Light ( Omni(..) )
 import Quaazar.Render.GL.Buffer hiding ( MapAccess(..) )
 import qualified Quaazar.Render.GL.Buffer as B ( MapAccess(..) )
@@ -106,7 +106,7 @@ omniBytes =
 
 -- Poke omnidirectional lights at a given pointer. That pointer should be gotten
 -- from the SSBO.
-pokeOmnis :: [(Omni,Entity)] -> Ptr Word8 -> IO Word32
+pokeOmnis :: [(Omni,Transform)] -> Ptr Word8 -> IO Word32
 pokeOmnis omnis ptr = do
     (_,nbLights) <- foldM cache (ptr,0) omnis
     return nbLights
@@ -115,12 +115,12 @@ pokeOmnis omnis ptr = do
       writeAt ptr' omni ent
       return (ptr' `advancePtr` omniBytes,succ nbLights)
     writeAt ptr' (Omni col pw rad _) ent = do
-      pokeByteOff ptr' 0 (ent^.entityPosition)
+      pokeByteOff ptr' 0 (ent^.transformPosition)
       pokeByteOff ptr' 16 (unColor col)
       pokeByteOff ptr' 28 pw
       pokeByteOff ptr' 32 rad
 
-pushOmnis :: [(Omni,Entity)] -> Lighting -> IO ()
+pushOmnis :: [(Omni,Transform)] -> Lighting -> IO ()
 pushOmnis omnis lighting = do
     bindBufferAt (lighting^.lightOmniBuffer) ShaderStorageBuffer ligOmniSSBOBP
     void . withMappedBuffer ShaderStorageBuffer B.Write $ \ptr -> do

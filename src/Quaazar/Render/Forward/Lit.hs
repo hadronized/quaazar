@@ -13,8 +13,8 @@ module Quaazar.Render.Forward.Lit where
 
 import Control.Lens
 import Data.Monoid ( Monoid(..) )
-import Quaazar.Core.Entity
 import Quaazar.Core.Light
+import Quaazar.Core.Transform
 import Quaazar.Render.Forward.Accumulation
 import Quaazar.Render.Forward.Lighting
 import Quaazar.Render.Forward.Rendered ( Rendered(..) )
@@ -29,7 +29,7 @@ newtype Lit mat = Lit {
           -> IO ()
   }
 
-lighten :: Ambient -> [(Omni,Entity)] -> Rendered mat -> Lit mat
+lighten :: Ambient -> [(Omni,Transform)] -> Rendered mat -> Lit mat
 lighten (Ambient ligAmbCol ligAmbPow) omnis shd = Lit lighten_
   where
     lighten_ lighting _ _ sinkMat = do

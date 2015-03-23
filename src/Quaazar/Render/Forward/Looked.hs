@@ -12,7 +12,7 @@
 module Quaazar.Render.Forward.Looked where
 
 import Quaazar.Core.Projection ( Projection )
-import Quaazar.Core.Entity ( Entity )
+import Quaazar.Core.Transform ( Transform )
 import Quaazar.Render.Camera ( gpuCamera )
 import Quaazar.Render.Forward.Accumulation
 import Quaazar.Render.Forward.Lighting
@@ -21,7 +21,7 @@ import Quaazar.Render.Forward.Shadowing
 
 newtype Looked = Looked { unLooked :: Lighting -> Shadowing -> Accumulation -> IO () }
 
-look :: Projection -> Entity -> Shaded -> Looked
+look :: Projection -> Transform -> Shaded -> Looked
 look proj ent shaded = Looked look_
   where
     look_ lighting shadowing accumulation = do

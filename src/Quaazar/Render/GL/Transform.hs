@@ -9,30 +9,29 @@
 --
 ----------------------------------------------------------------------------
 
-module Quaazar.Render.GL.Entity (
+module Quaazar.Render.GL.Transform (
     -- *
-    entityTransform
-  , cameraTransform
+    transformMatrix
+  , cameraMatrix
   ) where
 
 import Control.Lens
 import Linear
-import Quaazar.Core.Entity
+import Quaazar.Core.Transform
 
--- TODO: support scale matrix
-entityTransform :: Entity -> M44 Float
-entityTransform e = mkTransformation o p !*! scaled (V4 sx sy sz 1)
+transformMatrix :: Transform -> M44 Float
+transformMatrix e = mkTransformation o p !*! scaled (V4 sx sy sz 1)
   where
-    p = e^.entityPosition
-    o = e^.entityOrientation
-    Scale sx sy sz = e^.entityScale
+    p = e^.transformPosition
+    o = e^.transformOrientation
+    Scale sx sy sz = e^.transformScale
 
 -- FIXME: cameraTransform is also used with lights; bad name!
-cameraTransform :: Entity -> M44 Float
-cameraTransform e = quaternionMatrix o !*! translationMatrix p
+cameraMatrix :: Transform -> M44 Float
+cameraMatrix e = quaternionMatrix o !*! translationMatrix p
   where
-    p = negate (e^.entityPosition)
-    o = e^.entityOrientation
+    p = negate (e^.transformPosition)
+    o = e^.transformOrientation
 
 translationMatrix :: (Num a) => V3 a -> M44 a
 translationMatrix (V3 x y z) =

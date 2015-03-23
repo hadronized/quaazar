@@ -13,7 +13,7 @@ module Quaazar.Render.Forward.Rendered where
 
 import Data.Monoid ( Monoid(..) )
 import Linear ( M44 )
-import Quaazar.Core.Entity ( Entity )
+import Quaazar.Core.Transform ( Transform )
 import Quaazar.Render.GL.Shader ( Uniform )
 import Quaazar.Render.Mesh ( GPUMesh(..) )
 
@@ -28,7 +28,7 @@ instance Monoid (Rendered mat) where
   Rendered f `mappend` Rendered g =
     Rendered $ \m s -> f m s >> g m s
 
-render :: GPUMesh -> mat -> Entity -> Rendered mat
+render :: GPUMesh -> mat -> Transform -> Rendered mat
 render gmsh mat ent = Rendered $ \modelU sinkMat -> do
     sinkMat mat
     renderMesh gmsh modelU ent

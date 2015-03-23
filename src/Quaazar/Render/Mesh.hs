@@ -19,14 +19,14 @@ import Foreign.Storable ( sizeOf )
 import Linear ( M44, V2, V3 )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
-import Quaazar.Core.Entity ( Entity )
+import Quaazar.Core.Transform ( Transform )
 import Quaazar.Core.Mesh hiding ( Line, Triangle )
 import Quaazar.Core.Normal
 import Quaazar.Core.Position
 import Quaazar.Core.UV
 import Quaazar.Render.GL.Buffer
 import Quaazar.Render.GL.GLObject
-import Quaazar.Render.GL.Entity ( entityTransform )
+import Quaazar.Render.GL.Transform ( transformMatrix )
 import Quaazar.Render.GL.Primitive
 import Quaazar.Render.GL.Shader ( Uniform, (@=) )
 import Quaazar.Render.GL.VertexArray
@@ -35,7 +35,7 @@ data GPUMesh = GPUMesh {
     vertexBuffer :: Buffer
   , indexBuffer  :: Buffer
   , renderMesh   :: Uniform (M44 Float)
-                 -> Entity
+                 -> Transform
                  -> IO ()
   }
 
@@ -94,7 +94,7 @@ gpuMesh msh = case msh^.meshVertices of
       unbindBuffer IndexBuffer
 
       return . GPUMesh vb ib $ \modelSem ent -> do
-        modelSem @= entityTransform ent
+        modelSem @= transformMatrix ent
         bindVertexArray va
         glDrawElements (fromPrimitive prim) (fromIntegral verticesNb) gl_UNSIGNED_INT nullPtr
   where
