@@ -21,11 +21,11 @@ import qualified Quaazar.Render.GL.Texture as GL
 newtype GPUTexture = GPUTexture { bindTextureAt :: Natural -> IO () }
 
 gpuTexture :: (MonadScoped IO m,MonadIO m)
-           => Texture
-           -> GL.Wrap
+           => GL.Wrap
            -> GL.Filter
+           -> Texture
            -> m GPUTexture
-gpuTexture (Texture width height format texels) wrap flt = do
+gpuTexture wrap flt (Texture width height format texels) = do
     tex :: GL.Texture2D <- genObject
     GL.bindTextureAt tex 0
     GL.setTextureWrap tex wrap
