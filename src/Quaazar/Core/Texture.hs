@@ -48,9 +48,10 @@ data Texture = Texture {
 
 instance Load Texture where
   loadRoot = const "textures"
-  loadExt = const "qtex"
+  loadExt = const ""
   load rootPath name = do
-      img <- liftIO . fmap (first onError) $ readImage (rootPath </> name)
+      img <- liftIO . fmap (first onError) $
+        readImage (rootPath </> loadRoot (undefined :: Texture)  </> name)
       eitherToError img >>= imageToTexture
     where
       onError = Log ErrorLog CoreLog
