@@ -98,7 +98,7 @@ def createVertex(msh, loopID, smoothNormals):
   uv = []
   if len(uv_layers) > 0:
     uv_ = uv_layers[0].data[loopID].uv
-    uv = [round_(uv_[0]),round_(uv_[1])]
+    uv = [ [round_(uv_[0]),round_(uv_[1])] ] # only one UV channel
   return [co,no,uv]
 
 # Look for a vertex. If it exists, return its ID. Otherwise, return None.
