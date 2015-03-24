@@ -178,17 +178,14 @@ useProgram :: Program -> IO ()
 useProgram (Program pid) = glUseProgram pid
 
 infixr 1 @=
-data Uniform a = Uniform { uniLoc :: GLint, (@=) :: a -> IO () }
-
-instance Show (Uniform a) where
-  show (Uniform l _) = show l
+newtype Uniform a = Uniform { (@=) :: a -> IO () }
 
 getUniformLocation :: Program -> String -> IO GLint
 getUniformLocation (Program pid) name =
   withCString name (glGetUniformLocation pid)
 
 uniform :: (Uniformable a) => Int -> Uniform a
-uniform l = Uniform l' (sendUniform l')
+uniform l = Uniform (sendUniform l')
   where
     l' = fromIntegral l
 
@@ -197,15 +194,15 @@ getUniform prog name = do
     l <- getUniformLocation prog name
     print . Log InfoLog gllog $ "uniform '" ++ name ++ "': " ++ show l
     if l < 0 then
-      return $ Uniform l (const $ return ())
+      return . Uniform . const $ return ()
       else
-        return $ Uniform l (sendUniform l)
+        return . Uniform $ sendUniform l
 
 (@?=) :: Maybe (Uniform a) -> a -> IO ()
 u @?= a = traverse_ (@= a) u
 
 unused :: (Uniformable a) => Uniform a
-unused = Uniform (-2) (const $ return ())
+unused = Uniform . const $ return ()
 
 class Uniformable a where
   sendUniform :: GLint -> a -> IO ()
