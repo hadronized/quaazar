@@ -9,13 +9,22 @@
 --
 ----------------------------------------------------------------------------
 
-module Quaazar.Render.Texture where
+module Quaazar.Render.Texture (
+    -- * GPU texture
+    GPUTexture(..) -- FIXME: this should be hidden from the user
+  , gpuTexture
+    -- FIXME: we need a Core abstraction for that
+    -- * Re-exported
+  , Filter(..)
+  , Wrap(..)
+  ) where
 
 import Control.Monad.Trans ( MonadIO(..) )
 import Data.Vector ( toList )
 import Numeric.Natural ( Natural )
 import Quaazar.Core.Texture ( TexelFormat(..), Texture(..) )
 import Quaazar.Render.GL.GLObject
+import Quaazar.Render.GL.Texture ( Filter(..), Wrap(..) )
 import qualified Quaazar.Render.GL.Texture as GL
 
 newtype GPUTexture = GPUTexture { bindTextureAt :: Natural -> IO () }

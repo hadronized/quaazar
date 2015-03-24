@@ -27,17 +27,25 @@ import Quaazar.Utils.Scoped
 
 data GPUFrame = GPUFrame {
     useFrame :: IO ()
-  , asTexture :: GPUTexture
+  , colormap :: GPUTexture
+  , depthmap :: GPUTexture
   }
 
 screenFrame :: GPUFrame
-screenFrame = GPUFrame (unbindFramebuffer ReadWrite) (error "screen frame texture")
+screenFrame =
+  GPUFrame
+    (unbindFramebuffer ReadWrite)
+    (error "screen frame colormap")
+    (error "screen frame depthmap")
 
 gpuFrame :: (MonadScoped IO m, MonadIO m,MonadError Log m)
          => Natural
          -> Natural
          -> m GPUFrame
 gpuFrame w h = do
-    off <- genOffscreen w h Nearest RGB32F RGB
-    return $ GPUFrame (bindFramebuffer (off^.offscreenFB) ReadWrite)
+  off <- genOffscreen w h Nearest RGB32F RGB
+  return $
+    GPUFrame
+      (bindFramebuffer (off^.offscreenFB) ReadWrite)
       (GPUTexture . bindTextureAt $ off^.offscreenRender)
+      (GPUTexture . bindTextureAt $ off^.offscreenDepthmap)
