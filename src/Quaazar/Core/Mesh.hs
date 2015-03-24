@@ -44,4 +44,4 @@ instance FromJSON Mesh where
 
 instance Load Mesh where
   loadRoot = const "meshes"
-  loadExt = const "ymsh"
+  loadExt = const "qmsh"

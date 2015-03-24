@@ -40,7 +40,7 @@ instance FromJSON PhongMaterial where
 
 instance Load PhongMaterial where
   loadRoot = const "materials"
-  loadExt = const "ymat"
+  loadExt = const "qmat"
 
 makeLenses ''PhongMaterial
 

@@ -55,4 +55,4 @@ instance FromJSON Omni where
 
 instance Load Omni where
   loadRoot = const "lights"
-  loadExt = const "ylig"
+  loadExt = const "qlig"
