@@ -76,6 +76,7 @@ imageToTexture dynim = case dynim of
   ImageRGBF img -> return $ fromRGBF img
   ImageRGBA8 img -> return $ fromRGBA imax8 img
   ImageRGBA16 img -> return $ fromRGBA imax16 img
+  ImageYCbCr8 img -> return $ fromYCbCr8 img
   _ -> throwError_ "unimplemented image format"
  
 imax8, imax16 :: Float
@@ -125,6 +126,12 @@ fromRGBA imax (Image w h pixels) =
     Texture (fromIntegral w) (fromIntegral h) RGBA pixels'
   where
     pixels' = fromList . map ((*imax) . realToFrac) $ toList pixels
+
+fromYCbCr8 :: Image PixelYCbCr8 -> Texture
+fromYCbCr8 (Image w h pixels) =
+    Texture (fromIntegral w) (fromIntegral h) RGB pixels'
+  where
+    pixels' = fromList . map (toRGB . realToFrac
 
 throwError_ :: (MonadError Log m) => String -> m a
 throwError_ = throwError . Log ErrorLog CoreLog
