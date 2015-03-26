@@ -78,6 +78,21 @@ imageToTexture dynimg = case dynimg of
   ImageYCbCr8 img -> return $ convertImage ycc8Converter img
   _ -> throwError_ "unimplemented image format"
  
+showImageFormat :: DynamicImage -> String
+showImageFormat dynimg = case dynimg of
+  ImageY8{} -> "Y8"
+  ImageY16{} -> "Y16"
+  ImageYF{} -> "F"
+  ImageYA8{} -> "YA8"
+  ImageYA16{} -> "YA16"
+  ImageRGB8{} -> "RGB8"
+  ImageRGB16{} -> "RGB16"
+  ImageRGBF{} -> "RGBF"
+  ImageRGBA8{} -> "RGBA8"
+  ImageRGBA16{} -> "RGBA16"
+  ImageYCbCr8{} -> "YCbCr8"
+  _ -> "unknown format"
+
 imax8, imax16 :: Float
 imax8 = 1 / 255
 imax16 = 1 / realToFrac (maxBound :: Pixel16)
