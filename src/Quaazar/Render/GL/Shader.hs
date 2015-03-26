@@ -26,11 +26,13 @@ import Foreign.Ptr ( castPtr, nullPtr )
 import Foreign.Storable ( peek )
 import Linear
 import Graphics.Rendering.OpenGL.Raw
+import Numeric.Natural ( Natural )
 import Quaazar.Core.Albedo ( Albedo(unAlbedo) )
 import Quaazar.Core.Color ( Color(unColor) )
 import Quaazar.Core.Position ( Position(unPosition) )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Log ( gllog )
+import Quaazar.Render.Texture ( GPUTexture(..) ) 
 import Quaazar.Utils.Log
 
 throwError_ :: (MonadError Log m) => String -> m a
@@ -214,6 +216,9 @@ instance Uniformable [Bool] where
   sendUniform l a =
     withArrayLen a $ \s p -> glUniform1iv l (fromIntegral s) (castPtr p)
 
+instance Uniformable Natural where
+  sendUniform l x = glUniform1i l (fromIntegral x)
+
 instance Uniformable Int32 where
   sendUniform l x = glUniform1i l (fromIntegral x)
 
@@ -359,3 +364,8 @@ instance Uniformable Color where
 
 instance Uniformable Position where
   sendUniform l = sendUniform l . unPosition
+
+instance Uniformable (GPUTexture,Natural) where
+  sendUniform l (tex,texUnit) = do
+    bindTextureAt tex texUnit
+    sendUniform l texUnit
