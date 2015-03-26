@@ -135,6 +135,7 @@ ycc8Converter (PixelYCbCr8 y cb cr) =
     y' = realToFrac y
     cr' = realToFrac cr - 128
     cb' = realToFrac cb - 128
+
 throwError_ :: (MonadError Log m) => String -> m a
 throwError_ = throwError . Log ErrorLog CoreLog
 
