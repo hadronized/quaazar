@@ -64,7 +64,7 @@ data TexelFormat
     deriving (Eq,Ord,Show)
 
 imageToTexture :: (MonadError Log m) => DynamicImage -> m Texture
-imageToTexture dynim = case dynim of
+imageToTexture dynimg = case dynimg of
   ImageY8 img -> return $ convertImage y8Converter img
   ImageY16 img -> return $ convertImage y16Converter img
   ImageYF img -> return $ convertImage yfConverter img
