@@ -49,6 +49,7 @@ instance Load Texture where
   loadRoot = const "textures"
   loadExt = const ""
   load rootPath name = do
+      info CoreLog $ "loading texture " ++ show name
       img <- liftIO . fmap (first onError) $
         readImage (rootPath </> loadRoot (undefined :: Texture)  </> name)
       eitherToError img >>= imageToTexture
@@ -63,20 +64,22 @@ data TexelFormat
   | RGBA
     deriving (Eq,Ord,Show)
 
-imageToTexture :: (MonadError Log m) => DynamicImage -> m Texture
-imageToTexture dynimg = case dynimg of
-  ImageY8 img -> return $ convertImage y8Converter img
-  ImageY16 img -> return $ convertImage y16Converter img
-  ImageYF img -> return $ convertImage yfConverter img
-  ImageYA8 img -> return $ convertImage ya8Converter img
-  ImageYA16 img -> return $ convertImage ya16Converter img
-  ImageRGB8 img -> return $ convertImage rgb8Converter img
-  ImageRGB16 img -> return $ convertImage rgb16Converter img
-  ImageRGBF img -> return $ convertImage rgbfConverter img
-  ImageRGBA8 img -> return $ convertImage rgba8Converter img
-  ImageRGBA16 img -> return $ convertImage rgba16Converter img
-  ImageYCbCr8 img -> return $ convertImage ycc8Converter img
-  _ -> throwError_ "unimplemented image format"
+imageToTexture :: (MonadLogger m,MonadError Log m) => DynamicImage -> m Texture
+imageToTexture dynimg = do
+  info CoreLog $ "texture type is " ++ showImageFormat dynimg
+  case dynimg of
+    ImageY8 img -> return $ convertImage y8Converter img
+    ImageY16 img -> return $ convertImage y16Converter img
+    ImageYF img -> return $ convertImage yfConverter img
+    ImageYA8 img -> return $ convertImage ya8Converter img
+    ImageYA16 img -> return $ convertImage ya16Converter img
+    ImageRGB8 img -> return $ convertImage rgb8Converter img
+    ImageRGB16 img -> return $ convertImage rgb16Converter img
+    ImageRGBF img -> return $ convertImage rgbfConverter img
+    ImageRGBA8 img -> return $ convertImage rgba8Converter img
+    ImageRGBA16 img -> return $ convertImage rgba16Converter img
+    ImageYCbCr8 img -> return $ convertImage ycc8Converter img
+    _ -> throwError_ "unimplemented image format"
  
 showImageFormat :: DynamicImage -> String
 showImageFormat dynimg = case dynimg of
@@ -97,7 +100,10 @@ imax8, imax16 :: Float
 imax8 = 1 / 255
 imax16 = 1 / realToFrac (maxBound :: Pixel16)
 
-convertImage :: forall a. (Pixel a) => (a -> [Float]) -> Image a -> Texture
+convertImage :: forall a. (Pixel a)
+             => (a -> [Float])
+             -> Image a
+             -> Texture
 convertImage converter image@(Image w h _) = Texture w' h' texft pixels'
   where
     w' = fromIntegral w
