@@ -27,9 +27,9 @@ import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
 data PhongMaterial = PhongMaterial {
-    diffuseMap   :: GPUTexture
-  , specularMap  :: GPUTexture
-  , shininessMap :: GPUTexture
+    diffuseMap  :: GPUTexture
+  , specularMap :: GPUTexture
+  , glossMap    :: GPUTexture
   }
 
 -- TODO
@@ -44,7 +44,7 @@ phong :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
 phong = gpuProgram phongVS Nothing Nothing phongFS $ \mat -> do
     uniform phongDiffMapSem $= (diffuseMap mat,0 :: Natural)
     uniform phongSpecMapSem $= (specularMap mat,1 :: Natural)
-    uniform phongShnMapSem $= (shininessMap mat,2 :: Natural)
+    uniform phongGlossMapSem $= (glossMap mat,2 :: Natural)
 
 phongDiffMapSem :: Int
 phongDiffMapSem = 10
@@ -52,8 +52,8 @@ phongDiffMapSem = 10
 phongSpecMapSem :: Int
 phongSpecMapSem = 11
 
-phongShnMapSem :: Int
-phongShnMapSem = 12
+phongGlossMapSem :: Int
+phongGlossMapSem = 12
 
 phongVS :: String
 phongVS = unlines
@@ -91,7 +91,7 @@ phongFS = unlines
   , declUniform eyeSem "vec3 eye"
   , declUniform phongDiffMapSem "sampler2D phongDiffMap"
   , declUniform phongSpecMapSem "sampler2D phongSpecMap"
-  , declUniform phongShnMapSem "sampler2D phongShnMap"
+  , declUniform phongGlossMapSem "sampler2D phongGlossMap"
     -- ambient lighting
   , declUniform ligAmbColSem "vec3 ligAmbCol"
   , declUniform ligAmbPowSem "float ligAmbPow"
@@ -111,7 +111,7 @@ phongFS = unlines
   , "void main() {"
   , "  vec3 phongDiff = texture(phongDiffMap, vuv).rgb;"
   , "  vec3 phongSpec = texture(phongSpecMap, vuv).rgb;"
-  , "  float phongShn = texture(phongShnMap, vuv).r;"
+  , "  float phongGloss = texture(phongGlossMap, vuv).r;"
   , "  vec3 v = normalize(eye - vco);"
 
     -- ambient lighting
@@ -127,7 +127,7 @@ phongFS = unlines
   , "    vec3 ligDir = normalize(ligToVertex);"
   , "    vec3 r = normalize(reflect(-ligDir,vno));"
   , "    vec3 diff = max(0.,dot(vno,ligDir)) * ligCol * phongDiff;"
-  , "    vec3 spec = pow(max(0.,dot(r,v)), 1. + phongShn * 1000.) * ligCol * phongSpec;"
+  , "    vec3 spec = pow(max(0.,dot(r,v)), 1. + phongGloss * 1000.) * ligCol * phongSpec;"
   , "    float atten = ligPow / (pow(1. + length(ligToVertex)/ligRad,2.));"
   , "    omni += atten * (diff + spec);"
   , "  }"
