@@ -127,7 +127,7 @@ phongFS = unlines
   , "    vec3 ligDir = normalize(ligToVertex);"
   , "    vec3 r = normalize(reflect(-ligDir,vno));"
   , "    vec3 diff = max(0.,dot(vno,ligDir)) * ligCol * phongDiff;"
-  , "    vec3 spec = pow(max(0.,dot(r,v)), 0.5 + (1. - phongShn) * 100.) * phongShn * ligCol * phongSpec;"
+  , "    vec3 spec = pow(max(0.,dot(r,v)), 1. + phongShn * 1000.) * ligCol * phongSpec;"
   , "    float atten = ligPow / (pow(1. + length(ligToVertex)/ligRad,2.));"
   , "    omni += atten * (diff + spec);"
   , "  }"
