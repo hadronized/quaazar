@@ -127,12 +127,11 @@ phongFS = unlines
   , "    vec3 ligDir = normalize(ligToVertex);"
   , "    vec3 r = normalize(reflect(-ligDir,vno));"
   , "    vec3 diff = max(0.,dot(vno,ligDir)) * ligCol * phongDiff;"
-  , "    vec3 spec = pow(max(0.,dot(r,v)),phongShn) * ligCol * phongSpec;"
+  , "    vec3 spec = pow(max(0.,dot(r,v)), 0.5 + (1. - phongShn) * 100.) * phongShn * ligCol * phongSpec;"
   , "    float atten = ligPow / (pow(1. + length(ligToVertex)/ligRad,2.));"
   , "    omni += atten * (diff + spec);"
   , "  }"
 
-  , "  //frag = vec4(ambient + omni,1.);"
-  , "  frag = vec4(phongShn,0.,0.,1.);"
+  , "  frag = vec4(ambient + omni,1.);"
   , "}"
   ]

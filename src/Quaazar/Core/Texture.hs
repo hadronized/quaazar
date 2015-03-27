@@ -114,7 +114,7 @@ convertImage_ converter image@(Image w h _) = Texture w' h' texft pixels'
       2 -> RG
       3 -> RGB
       _ -> error "convertImage_: more-than-3-components pixel"
-    pixels' = fromList . concat $ [converter $ pixelAt image x y | x <- [0..h-1], y <- [0..w-1]]
+    pixels' = fromList . concat $ [converter $ pixelAt image x y | y <- [0..h-1], x <- [0..w-1]]
 
 y8Converter :: Pixel8 -> [Float]
 y8Converter y = [imax8 * realToFrac y]
