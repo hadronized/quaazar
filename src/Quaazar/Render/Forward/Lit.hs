@@ -34,9 +34,7 @@ lighten (Ambient ligAmbCol ligAmbPow) omnis shd = Lit lighten_
   where
     lighten_ lighting _ _ sinkMat = do
         purgeLightingFramebuffer lighting
-        lunis^.lightLigAmbCol @= ligAmbCol
-        lunis^.lightLigAmbPow @= ligAmbPow
+        ligAmbColUniform  @= ligAmbCol
+        ligAmbPowUniform @= ligAmbPow
         pushOmnis omnis lighting
-        unRendered shd (lunis^.lightModelU) sinkMat
-      where
-        lunis = lighting^.lightUniforms
+        unRendered shd modelUniform sinkMat

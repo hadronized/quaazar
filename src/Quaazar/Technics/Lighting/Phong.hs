@@ -46,13 +46,13 @@ phong = gpuProgram phongVS Nothing Nothing phongFS $ \mat -> do
     uniform phongSpecMapSem $= (specularMap mat,1 :: Natural)
     uniform phongGlossMapSem $= (glossMap mat,2 :: Natural)
 
-phongDiffMapSem :: Int
+phongDiffMapSem :: Natural
 phongDiffMapSem = 10
 
-phongSpecMapSem :: Int
+phongSpecMapSem :: Natural
 phongSpecMapSem = 11
 
-phongGlossMapSem :: Int
+phongGlossMapSem :: Natural
 phongGlossMapSem = 12
 
 phongVS :: String

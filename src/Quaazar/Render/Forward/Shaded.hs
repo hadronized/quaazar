@@ -30,7 +30,6 @@ data Shaded = Shaded {
 
 shade :: GPUProgram mat -> Lit mat -> Shaded
 shade gprog lt = Shaded $ \lighting shadowing accumulation gcam -> do
-  let unis = lighting^.lightUniforms
   useProgram gprog
-  runCamera gcam (unis^.lightCamProjViewU) unused (unis^.lightEyeU)
+  runCamera gcam camProjViewUniform unused eyeUniform
   unLit lt lighting shadowing accumulation (sendToProgram gprog)

@@ -186,7 +186,7 @@ getUniformLocation :: Program -> String -> IO GLint
 getUniformLocation (Program pid) name =
   withCString name (glGetUniformLocation pid)
 
-uniform :: (Uniformable a) => Int -> Uniform a
+uniform :: (Uniformable a) => Natural -> Uniform a
 uniform l = Uniform (sendUniform l')
   where
     l' = fromIntegral l

@@ -35,22 +35,11 @@ import Quaazar.Utils.Log
 
 -- |'Lighting' gathers information about lighting in the scene.
 data Lighting = Lighting {
-    _lightUniforms    :: LightingUniforms
-  , _lightOff         :: Offscreen
+    _lightOff         :: Offscreen
   , _lightOmniBuffer  :: Buffer
   }
 
-data LightingUniforms = LightingUniforms {
-    _lightCamProjViewU :: Uniform (M44 Float)
-  , _lightModelU       :: Uniform (M44 Float)
-  , _lightEyeU         :: Uniform (V3 Float)
-  , _lightLigAmbCol    :: Uniform Color
-  , _lightLigAmbPow    :: Uniform Float
-  , _lightLigOmniNb    :: Uniform Word32
-  }
-
 makeLenses ''Lighting
-makeLenses ''LightingUniforms
 
 getLighting :: (Applicative m,MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
             => Natural
@@ -61,22 +50,25 @@ getLighting w h nbLights = do
   info CoreLog "generating lighting"
   off <- genOffscreen w h Nearest RGB32F RGB
   omniBuffer <- genOmniBuffer nbLights
-  return (Lighting uniforms off omniBuffer)
-  where
-    uniforms = getLightingUniforms
+  return (Lighting off omniBuffer)
 
-getLightingUniforms :: LightingUniforms
-getLightingUniforms =
-    LightingUniforms
-      (sem camProjViewSem)
-      (sem modelSem)
-      (sem eyeSem)
-      (sem ligAmbColSem)
-      (sem ligAmbPowSem)
-      (sem ligOmniNbSem)
-  where
-    sem :: (Uniformable a) => Int -> Uniform a
-    sem = uniform . fromIntegral
+camProjViewUniform :: Uniform (M44 Float)
+camProjViewUniform = uniform camProjViewSem
+
+modelUniform :: Uniform (M44 Float)
+modelUniform = uniform modelSem
+
+eyeUniform :: Uniform (V3 Float)
+eyeUniform = uniform eyeSem
+
+ligAmbColUniform :: Uniform Color
+ligAmbColUniform = uniform ligAmbColSem
+
+ligAmbPowUniform :: Uniform Float
+ligAmbPowUniform = uniform ligAmbPowSem
+
+ligOmniNbUniform :: Uniform Word32
+ligOmniNbUniform = uniform ligOmniNbSem
 
 purgeLightingFramebuffer :: Lighting -> IO ()
 purgeLightingFramebuffer lighting = do
@@ -125,4 +117,4 @@ pushOmnis omnis lighting = do
     bindBufferAt (lighting^.lightOmniBuffer) ShaderStorageBuffer ligOmniSSBOBP
     void . withMappedBuffer ShaderStorageBuffer B.Write $ \ptr -> do
       nbLights <- pokeOmnis omnis ptr
-      lighting^.lightUniforms.lightLigOmniNb @= nbLights
+      ligOmniNbUniform @= nbLights

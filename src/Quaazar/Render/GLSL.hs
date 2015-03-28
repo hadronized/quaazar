@@ -15,25 +15,25 @@ import Numeric.Natural ( Natural )
 
 --------------------------------------------------------------------------------
 -- GLSL SEMANTICS
-declUniform :: Int -> String -> String
+declUniform :: Natural -> String -> String
 declUniform s n = "layout (location = " ++ show s ++ ") uniform " ++ n ++ ";"
 
-camProjViewSem :: Int
+camProjViewSem :: Natural 
 camProjViewSem = 0
 
-modelSem :: Int
+modelSem :: Natural 
 modelSem = 1
 
-eyeSem :: Int
+eyeSem :: Natural 
 eyeSem = 2
 
-ligAmbColSem :: Int
+ligAmbColSem :: Natural 
 ligAmbColSem = 3
 
-ligAmbPowSem :: Int
+ligAmbPowSem :: Natural 
 ligAmbPowSem = 4
 
-ligOmniNbSem :: Int
+ligOmniNbSem :: Natural 
 ligOmniNbSem = 5
 
 --------------------------------------------------------------------------------
