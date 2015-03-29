@@ -18,12 +18,10 @@ import Quaazar.Core.Transform
 import Quaazar.Render.Forward.Accumulation
 import Quaazar.Render.Forward.Lighting
 import Quaazar.Render.Forward.Rendered ( Rendered(..) )
-import Quaazar.Render.Forward.Shadowing
 import Quaazar.Render.GL.Shader ( (@=) )
 
 newtype Lit mat = Lit {
     unLit :: Lighting
-          -> Shadowing
           -> Accumulation
           -> (mat -> IO ())
           -> IO ()
@@ -32,7 +30,7 @@ newtype Lit mat = Lit {
 lighten :: Ambient -> [(Omni,Transform)] -> Rendered mat -> Lit mat
 lighten (Ambient ligAmbCol ligAmbPow) omnis shd = Lit lighten_
   where
-    lighten_ lighting _ _ sinkMat = do
+    lighten_ lighting _ sinkMat = do
         purgeLightingFramebuffer lighting
         ligAmbColUniform  @= ligAmbCol
         ligAmbPowUniform @= ligAmbPow

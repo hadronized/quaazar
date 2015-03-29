@@ -16,20 +16,18 @@ import Quaazar.Render.Camera ( GPUCamera(..) )
 import Quaazar.Render.Forward.Accumulation ( Accumulation )
 import Quaazar.Render.Forward.Lighting
 import Quaazar.Render.Forward.Lit ( Lit(..) )
-import Quaazar.Render.Forward.Shadowing ( Shadowing )
 import Quaazar.Render.GL.Shader ( unused )
 import Quaazar.Render.Shader ( GPUProgram(..) )
 
 data Shaded = Shaded {
     unShaded :: Lighting
-             -> Shadowing
              -> Accumulation
              -> GPUCamera
              -> IO ()
   }
 
 shade :: GPUProgram mat -> Lit mat -> Shaded
-shade gprog lt = Shaded $ \lighting shadowing accumulation gcam -> do
+shade gprog lt = Shaded $ \lighting accumulation gcam -> do
   useProgram gprog
   runCamera gcam camProjViewUniform unused eyeUniform
-  unLit lt lighting shadowing accumulation (sendToProgram gprog)
+  unLit lt lighting accumulation (sendToProgram gprog)

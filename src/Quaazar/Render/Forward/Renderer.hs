@@ -19,13 +19,11 @@ import Graphics.UI.GLFW ( Window )
 import Numeric.Natural ( Natural )
 import Quaazar.Render.Forward.Accumulation ( Accumulation, getAccumulation )
 import Quaazar.Render.Forward.Lighting ( Lighting, getLighting )
-import Quaazar.Render.Forward.Shadowing ( Shadowing, getShadowing )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
 data ForwardRenderer = ForwardRenderer {
     _frLighting :: Lighting
-  , _frShadowing :: Shadowing
   , _frAccumulation :: Accumulation
   , _frWindow :: Window
   }
@@ -42,6 +40,5 @@ getForwardRenderer :: (Applicative m,MonadScoped IO m,MonadIO m,MonadLogger m,Mo
 getForwardRenderer w h shadowDef lightNb window =
   ForwardRenderer
     <$> getLighting w h lightNb
-    <*> getShadowing w h (256+shadowDef*256)
     <*> getAccumulation w h
     <*> pure window

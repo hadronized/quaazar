@@ -70,7 +70,6 @@ library
 
   other-modules:       Quaazar.Render.Forward.Accumulation
                      , Quaazar.Render.Forward.Lighting
-                     , Quaazar.Render.Forward.Shadowing
                      , Quaazar.Render.GL.Buffer
                      , Quaazar.Render.GL.Framebuffer
                      , Quaazar.Render.GL.GLObject
