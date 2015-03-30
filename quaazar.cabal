@@ -47,9 +47,9 @@ library
                      , Quaazar.Render.Forward
                      , Quaazar.Render.Forward.Lit
                      , Quaazar.Render.Forward.Looked
-                     , Quaazar.Render.Forward.Post
                      , Quaazar.Render.Forward.Rendered
                      , Quaazar.Render.Forward.Renderer
+                     , Quaazar.Render.Forward.RenderLayer
                      , Quaazar.Render.Forward.Shaded
                      , Quaazar.Render.Forward.Viewport
                      , Quaazar.Render.Frame

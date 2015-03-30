@@ -9,7 +9,7 @@
 --
 ----------------------------------------------------------------------------
 
-module Quaazar.Render.Forward.Post where
+module Quaazar.Render.Forward.RenderLayer where
 
 import Control.Lens
 import Graphics.Rendering.OpenGL.Raw
@@ -21,24 +21,26 @@ import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.VertexArray ( bindVertexArray )
 import Quaazar.Render.PostFX ( GPUPostFX(..) )
 
-newtype Post = Post { unPost :: Lighting -> Accumulation -> IO PingPong }
+newtype RenderLayer = RenderLayer {
+    unRenderLayer :: Lighting -> Accumulation -> IO PingPong
+  }
 
 type PingPong = (Offscreen,Offscreen)
 
-fromLooked :: Looked -> Post
-fromLooked lk = Post fromLooked_
+toRenderLayer :: Looked -> RenderLayer
+toRenderLayer lk = RenderLayer fromLooked
   where
-    fromLooked_ lighting accumulation = do
+    fromLooked lighting accumulation = do
       unLooked lk lighting accumulation
       glDisable gl_BLEND
       bindVertexArray (accumulation^.accumVA)
       return (lighting^.lightOff,accumulation^.accumOff)
 
-post :: GPUPostFX a -> a -> Post -> Post
-post  gpupfx a prev = Post post_
+post :: GPUPostFX a -> a -> RenderLayer -> RenderLayer
+post  gpupfx a prev = RenderLayer post_
   where
     post_ lighting accumulation = do
-      (sourceOff,targetOff) <- unPost prev lighting accumulation
+      (sourceOff,targetOff) <- unRenderLayer prev lighting accumulation
       usePostFX gpupfx (sourceOff^.offscreenRender) (sourceOff^.offscreenDepthmap) a
       bindFramebuffer (targetOff^.offscreenFB) ReadWrite
       glClear gl_DEPTH_BUFFER_BIT

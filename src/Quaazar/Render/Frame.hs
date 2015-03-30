@@ -19,8 +19,8 @@ import Graphics.Rendering.OpenGL.Raw
 import qualified Graphics.UI.GLFW as GLFW ( swapBuffers )
 import Numeric.Natural ( Natural )
 import Quaazar.Render.Forward.Accumulation
-import Quaazar.Render.Forward.Post ( Post(..) )
 import Quaazar.Render.Forward.Renderer
+import Quaazar.Render.Forward.RenderLayer ( RenderLayer(..) )
 import Quaazar.Render.Forward.Viewport ( Viewport(..), setViewport )
 import Quaazar.Render.GL.Framebuffer (Target(..), bindFramebuffer
                                      , unbindFramebuffer )
@@ -58,10 +58,10 @@ gpuFrame w h = do
       (GPUTexture . bindTextureAt $ off^.offscreenRender)
       (GPUTexture . bindTextureAt $ off^.offscreenDepthmap)
 
-displayInto :: (MonadIO m) => ForwardRenderer -> GPUFrame -> Viewport -> Post -> m ()
+displayInto :: (MonadIO m) => ForwardRenderer -> GPUFrame -> Viewport -> RenderLayer -> m ()
 displayInto (ForwardRenderer lighting accumulation _) gpuframe screenViewport pst = liftIO $ do
   setViewport screenViewport
-  (finalOff,_) <- unPost pst lighting accumulation
+  (finalOff,_) <- unRenderLayer pst lighting accumulation
   useProgram (accumulation^.accumProgram)
   useFrame gpuframe
   glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
