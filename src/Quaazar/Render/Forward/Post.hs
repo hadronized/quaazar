@@ -39,7 +39,7 @@ post  gpupfx a prev = Post post_
   where
     post_ lighting accumulation = do
       (sourceOff,targetOff) <- unPost prev lighting accumulation
-      usePostFX gpupfx (sourceOff^.offscreenRender) a
+      usePostFX gpupfx (sourceOff^.offscreenRender) (sourceOff^.offscreenDepthmap) a
       bindFramebuffer (targetOff^.offscreenFB) ReadWrite
       glClear gl_DEPTH_BUFFER_BIT
       glDrawArrays gl_TRIANGLE_STRIP 0 4

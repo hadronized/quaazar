@@ -21,7 +21,7 @@ import Quaazar.Render.Shader
 import Quaazar.Utils.Log ( Log, MonadLogger )
 import Quaazar.Utils.Scoped
 
-data GPUPostFX a = GPUPostFX { usePostFX :: Texture2D -> a -> IO () }
+data GPUPostFX a = GPUPostFX { usePostFX :: Texture2D -> Texture2D -> a -> IO () }
 
 gpuPostFX :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
           => PostFX
@@ -31,8 +31,9 @@ gpuPostFX (PostFX src) semMapper = do
     gpuprogram <- gpuProgram vsSrc Nothing Nothing src semMapper
     return $ GPUPostFX (use gpuprogram)
   where
-    use gprog sourceTex a = do
-      bindTextureAt sourceTex 0
+    use gprog colormap depthmap a = do
+      bindTextureAt colormap 0
+      bindTextureAt depthmap 1
       useProgram gprog
       sendToProgram gprog a
 
