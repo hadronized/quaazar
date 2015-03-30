@@ -45,7 +45,6 @@ library
                      , Quaazar.Render
                      , Quaazar.Render.Camera
                      , Quaazar.Render.Forward
-                     , Quaazar.Render.Forward.IO
                      , Quaazar.Render.Forward.Lit
                      , Quaazar.Render.Forward.Looked
                      , Quaazar.Render.Forward.Post
