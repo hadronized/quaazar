@@ -27,7 +27,7 @@ import Quaazar.Render.GL.Framebuffer ( Target(ReadWrite), unbindFramebuffer )
 import Quaazar.Render.GL.Shader ( Program, buildProgram, useProgram )
 import Quaazar.Render.GL.VertexArray ( VertexArray, bindVertexArray
                                      , genAttributelessVertexArray )
-import Quaazar.Render.Texture ( GPUTexture )
+import Quaazar.Render.Texture ( GPUTexture(..) )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
@@ -69,4 +69,5 @@ display rdr a compt = liftIO $ do
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
   bindVertexArray (rdr^.frVA)
   glDrawArrays gl_TRIANGLE_STRIP 0 4
+  bindTextureAt source 0
   liftIO $ swapBuffers (rdr^.frWindow)
