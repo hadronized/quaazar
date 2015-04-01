@@ -74,6 +74,9 @@ instance Monad (Compositor a) where
     x' <- x va b a
     runCompositor (f x') va b a
 
+instance Profunctor Compositor where
+  dimap l r (Compositor f) = Compositor $ \va b a -> fmap r $ f va b (l a)
+
 instance (Semigroup b,Monoid b) => Monoid (Compositor a b) where
   mempty = Compositor $ \_ _ _ -> pure mempty
   mappend = (<>)
