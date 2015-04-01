@@ -16,14 +16,14 @@ import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 
 data Viewport = Viewport {
-    _viewportWidth  :: Natural
-  , _viewportHeight :: Natural
-  , _viewportX      :: Int
+    _viewportX      :: Int
   , _viewportY      :: Int
+  , _viewportWidth  :: Natural
+  , _viewportHeight :: Natural
   }
 
 makeLenses ''Viewport
 
 setViewport :: Viewport -> IO ()
-setViewport (Viewport w h x y) = glViewport (fromIntegral x) (fromIntegral y)
+setViewport (Viewport x y w h) = glViewport (fromIntegral x) (fromIntegral y)
   (fromIntegral w) (fromIntegral h)
