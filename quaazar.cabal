@@ -118,6 +118,6 @@ library
                      , filepath          >= 0.1   && < 1.4
                      , stm               >= 2.4   && < 2.5
                      , clock             >= 0.4   && < 0.5
-                     , profunctors       >= 4.3   && < 4.4
+                     , profunctors       >= 4.3   && < 4.5
 
   default-language:    Haskell2010

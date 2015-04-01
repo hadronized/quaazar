@@ -48,10 +48,10 @@ renderLayer lk = RenderLayer fromLooked
       --glDisable gl_BLEND
       --bindVertexArray (accumulation^.accumVA)
 
-renderLayerNode :: (MonadIO m,MonadScoped IO m,MonadError Log m)
-                => Viewport
-                -> m (Compositor RenderLayer (GPUTexture,GPUTexture))
-renderLayerNode vp = do
+renderLayerCompositor :: (MonadIO m,MonadScoped IO m,MonadError Log m)
+                      => Viewport
+                      -> m (Compositor RenderLayer (GPUTexture,GPUTexture))
+renderLayerCompositor vp = do
     Offscreen nodeColor nodeDepth nodeFB <- genOffscreen w h Nearest RGBA32F RGBA
     return . Compositor $ \compt omniBuffer rl -> do
       setViewport vp
