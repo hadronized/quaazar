@@ -19,9 +19,10 @@ import Data.Bits ( (.|.) )
 import Graphics.Rendering.OpenGL.Raw
 import Graphics.UI.GLFW ( Window, swapBuffers )
 import Numeric.Natural ( Natural )
-import Quaazar.Render.Compositing ( Compositor, copyVS, copyFS )
+import Quaazar.Render.Compositing ( Compositor(..), copyVS, copyFS )
 import Quaazar.Render.Forward.Accumulation ( Accumulation, getAccumulation )
-import Quaazar.Render.Forward.Lighting ( Lighting, getLighting )
+import Quaazar.Render.Forward.Lighting ( Lighting, getLighting
+                                       , lightOmniBuffer )
 import Quaazar.Render.GL.Framebuffer ( Target(ReadWrite), unbindFramebuffer )
 import Quaazar.Render.GL.Shader ( Program, buildProgram, useProgram )
 import Quaazar.Render.GL.VertexArray ( VertexArray, bindVertexArray
@@ -59,8 +60,9 @@ getCopyProgram :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
                => m Program
 getCopyProgram = buildProgram copyVS Nothing Nothing copyFS
 
-display :: (MonadIO m) => ForwardRenderer -> Compositor () GPUTexture -> m ()
-display rdr compt = liftIO $ do
+display :: (MonadIO m) => ForwardRenderer -> a -> Compositor a GPUTexture -> m ()
+display rdr a compt = liftIO $ do
+  source <- runCompositor compt (rdr^.frVA) (rdr^.frLighting.lightOmniBuffer) a
   useProgram (rdr^.frCopyProgram)
   unbindFramebuffer ReadWrite
   glClearColor 0 0 0 0

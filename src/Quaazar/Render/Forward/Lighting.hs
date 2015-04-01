@@ -35,7 +35,7 @@ import Quaazar.Utils.Log
 
 -- |'Lighting' gathers information about lighting in the scene.
 data Lighting = Lighting {
-    _lightOff         :: Offscreen
+    _lightOff         :: Offscreen -- FIXME: destroy that
   , _lightOmniBuffer  :: Buffer
   }
 
