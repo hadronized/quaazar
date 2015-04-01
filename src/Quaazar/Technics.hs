@@ -10,9 +10,9 @@
 ----------------------------------------------------------------------------
 
 module Quaazar.Technics (
-    module Quaazar.Technics.Lighting
-  , module Quaazar.Technics.PostFX
+    module Quaazar.Technics.Compositing
+  , module Quaazar.Technics.Lighting
   ) where
 
+import Quaazar.Technics.Compositing
 import Quaazar.Technics.Lighting
-import Quaazar.Technics.PostFX

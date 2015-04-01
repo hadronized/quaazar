@@ -19,6 +19,7 @@ import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO )
 import Data.Bits ( (.|.) )
 import Data.Monoid ( Monoid(..) ) 
+import Data.Profunctor ( Profunctor(..) ) 
 import Data.Semigroup ( Semigroup(..) ) 
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
@@ -83,12 +84,14 @@ instance (Semigroup b) => Semigroup (Compositor a b) where
     y' <- y va b a
     pure (x' <> y')
 
-compNode :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
-         => Viewport
-         -> String
-         -> (a -> Semantics b)
-         -> m (Compositor a (GPUTexture,GPUTexture))
-compNode vp shaderSrc semMapper = do
+-- |This compositor node passes its input to its shader program and outputs both
+-- color and depth information as textures.
+renderNode :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
+           => Viewport
+           -> String
+           -> (a -> Semantics b)
+           -> m (Compositor a (GPUTexture,GPUTexture))
+renderNode vp shaderSrc semMapper = do
     Offscreen nodeColor nodeDepth nodeFB <- genOffscreen w h Nearest RGBA32F RGBA
     prog <- gpuProgram copyVS Nothing Nothing shaderSrc semMapper
     return . Compositor $ \va _ a -> do

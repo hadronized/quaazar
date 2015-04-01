@@ -17,6 +17,7 @@ module Quaazar.Render.Shader (
   , Semantics(..)
   , ($=)
     -- * Re-exported
+  , Uniform
   , uniform
   ) where
 

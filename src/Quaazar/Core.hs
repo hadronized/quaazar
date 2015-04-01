@@ -17,7 +17,6 @@ module Quaazar.Core (
   , module Quaazar.Core.Mesh
   , module Quaazar.Core.Normal
   , module Quaazar.Core.Position
-  , module Quaazar.Core.PostFX
   , module Quaazar.Core.Projection
   , module Quaazar.Core.Texture
   , module Quaazar.Core.Transform
@@ -33,7 +32,6 @@ import Quaazar.Core.Loader
 import Quaazar.Core.Mesh
 import Quaazar.Core.Normal
 import Quaazar.Core.Position
-import Quaazar.Core.PostFX
 import Quaazar.Core.Projection
 import Quaazar.Core.Texture
 import Quaazar.Core.Transform
