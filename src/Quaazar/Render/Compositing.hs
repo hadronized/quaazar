@@ -129,7 +129,7 @@ copyFS = unlines
   [
     "#version 430 core"
   , "out vec4 frag;"
-  , "uniform sampler2D source;"
+  , "layout (location = 0) uniform sampler2D source;"
   , "void main() {"
   , " frag = texelFetch(source, ivec2(gl_FragCoord.xy), 0);"
   , "}"
