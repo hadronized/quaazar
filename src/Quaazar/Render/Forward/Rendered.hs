@@ -30,5 +30,5 @@ instance Monoid (Rendered mat) where
 
 render :: GPUMesh -> mat -> Transform -> Rendered mat
 render gmsh mat ent = Rendered $ \modelU sinkMat -> do
-    sinkMat mat
-    renderMesh gmsh modelU ent
+  sinkMat mat
+  renderMesh gmsh modelU ent
