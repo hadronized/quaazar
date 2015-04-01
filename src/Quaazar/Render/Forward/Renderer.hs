@@ -17,7 +17,7 @@ import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Data.Bits ( (.|.) )
 import Graphics.Rendering.OpenGL.Raw
-import Graphics.UI.GLFW ( Window )
+import Graphics.UI.GLFW ( Window, swapBuffers )
 import Numeric.Natural ( Natural )
 import Quaazar.Render.Compositing ( Compositor, copyVS, copyFS )
 import Quaazar.Render.Forward.Accumulation ( Accumulation, getAccumulation )
@@ -67,3 +67,4 @@ display rdr compt = liftIO $ do
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
   bindVertexArray (rdr^.frVA)
   glDrawArrays gl_TRIANGLE_STRIP 0 4
+  liftIO $ swapBuffers (rdr^.frWindow)
