@@ -31,8 +31,8 @@ lighten :: Ambient -> [(Omni,Transform)] -> Rendered mat -> Lit mat
 lighten (Ambient ligAmbCol ligAmbPow) omnis shd = Lit lighten_
   where
     lighten_ lighting _ sinkMat = do
-        purgeLightingFramebuffer lighting
-        ligAmbColUniform  @= ligAmbCol
-        ligAmbPowUniform @= ligAmbPow
-        pushOmnis omnis lighting
-        unRendered shd modelUniform sinkMat
+      purgeLightingFramebuffer lighting
+      ligAmbColUniform  @= ligAmbCol
+      ligAmbPowUniform @= ligAmbPow
+      pushOmnis omnis lighting
+      unRendered shd modelUniform sinkMat
