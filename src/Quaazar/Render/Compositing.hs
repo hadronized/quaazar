@@ -43,17 +43,17 @@ getCompositor = do
   va <- genAttributelessVertexArray
   return $ Compositor va
 
-newtype CompNode a = CompNode {
+newtype CompNode a b = CompNode {
     runCompNode :: Compositor
                 -> Buffer -- ^ lighting buffer -- FIXME
                 -> a
-                -> IO (GPUTexture,GPUTexture)
+                -> IO b
   }
 
 compNode :: (MonadIO m,MonadScoped IO m,MonadError Log m)
          => Viewport
          -> GPUProgram a
-         -> m (CompNode a)
+         -> m (CompNode a (GPUTexture,GPUTexture))
 compNode vp prog = do
     Offscreen nodeColor nodeDepth nodeFB <- genOffscreen w h Nearest RGBA32F RGBA
     return . CompNode $ \compt _ a -> do
@@ -70,3 +70,29 @@ compNode vp prog = do
       return (GPUTexture $ bindTextureAt nodeColor,GPUTexture $ bindTextureAt nodeDepth)
   where
     Viewport _ _ w h = vp
+
+copyVS :: String
+copyVS = unlines
+  [
+    "#version 430 core"
+  , "vec2[4] v = vec2[]("
+  , " vec2(-1, 1)"
+  , " , vec2( 1, 1)"
+  , " , vec2(-1, -1)"
+  , " , vec2( 1, -1)"
+  , " );"
+  , "void main() {"
+  , " gl_Position = vec4(v[gl_VertexID], 0., 1.);"
+  , "}"
+  ]
+
+copyFS :: String
+copyFS = unlines
+  [
+    "#version 430 core"
+  , "out vec4 frag;"
+  , "uniform sampler2D source;"
+  , "void main() {"
+  , " frag = texelFetch(source, ivec2(gl_FragCoord.xy), 0);"
+  , "}"
+  ]
