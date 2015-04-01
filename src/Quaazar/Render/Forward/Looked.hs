@@ -21,8 +21,5 @@ import Quaazar.Render.Forward.Shaded ( Shaded(..) )
 newtype Looked = Looked { unLooked :: Lighting -> Accumulation -> IO () }
 
 look :: Projection -> Transform -> Shaded -> Looked
-look proj ent shaded = Looked look_
-  where
-    look_ lighting accumulation = do
-      purgeAccumulationFramebuffer accumulation
-      unShaded shaded lighting accumulation (gpuCamera proj ent)
+look proj ent shaded = Looked $ \lighting accumulation ->
+  unShaded shaded lighting accumulation (gpuCamera proj ent)

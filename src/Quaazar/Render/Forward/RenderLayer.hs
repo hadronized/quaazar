@@ -31,6 +31,7 @@ toRenderLayer :: Looked -> RenderLayer
 toRenderLayer lk = RenderLayer fromLooked
   where
     fromLooked lighting accumulation = do
+      purgeAccumulationFramebuffer accumulation
       unLooked lk lighting accumulation
       glDisable gl_BLEND
       bindVertexArray (accumulation^.accumVA)
