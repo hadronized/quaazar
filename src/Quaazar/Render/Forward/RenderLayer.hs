@@ -27,8 +27,8 @@ newtype RenderLayer = RenderLayer {
 
 type PingPong = (Offscreen,Offscreen)
 
-toRenderLayer :: Looked -> RenderLayer
-toRenderLayer lk = RenderLayer fromLooked
+renderLayer :: Looked -> RenderLayer
+renderLayer lk = RenderLayer fromLooked
   where
     fromLooked lighting accumulation = do
       purgeAccumulationFramebuffer accumulation
