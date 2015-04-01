@@ -50,10 +50,10 @@ renderLayer lk = RenderLayer fromLooked
 
 renderLayerNode :: (MonadIO m,MonadScoped IO m,MonadError Log m)
                 => Viewport
-                -> m (CompNode RenderLayer (GPUTexture,GPUTexture))
+                -> m (Compositor RenderLayer (GPUTexture,GPUTexture))
 renderLayerNode vp = do
     Offscreen nodeColor nodeDepth nodeFB <- genOffscreen w h Nearest RGBA32F RGBA
-    return . CompNode $ \compt omniBuffer rl -> do
+    return . Compositor $ \compt omniBuffer rl -> do
       setViewport vp
       unRenderLayer rl nodeFB omniBuffer
       return (GPUTexture $ bindTextureAt nodeColor,GPUTexture $ bindTextureAt nodeDepth)

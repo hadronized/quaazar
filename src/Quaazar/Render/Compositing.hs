@@ -11,10 +11,15 @@
 
 module Quaazar.Render.Compositing where
 
+import Control.Arrow ( Arrow(..) )
+import Control.Category ( Category(..) ) 
 import Control.Lens
+import Control.Applicative ( Applicative(..) )
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO )
 import Data.Bits ( (.|.) )
+import Data.Monoid ( Monoid(..) ) 
+import Data.Semigroup ( Semigroup(..) ) 
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Quaazar.Render.Forward.Viewport ( Viewport(Viewport), setViewport )
@@ -30,38 +35,66 @@ import Quaazar.Render.Texture ( GPUTexture(GPUTexture) )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
-data Compositor = Compositor {
-    _comptVA :: VertexArray -- ^ attributeless vertex array
+import Prelude hiding ( (.), id )
+
+newtype Compositor a b = Compositor {
+    runCompositor :: VertexArray -- attribute-less vertex array
+                  -> Buffer -- ^ lighting buffer -- FIXME
+                  -> a
+                  -> IO b
   }
 
-makeLenses ''Compositor
+instance Applicative (Compositor a) where
+  pure x = Compositor $ \_ _ _ -> pure x
+  Compositor f <*> Compositor x = Compositor $ \va b a -> do
+    f' <- f va b a
+    x' <- x va b a
+    pure (f' x')
 
-getCompositor :: (MonadIO m,MonadScoped IO m,MonadLogger m)
-              => m Compositor
-getCompositor = do
-  info RendererLog "generating compositor"
-  va <- genAttributelessVertexArray
-  return $ Compositor va
+instance Arrow Compositor where
+  arr f = Compositor $ \_ _ a -> pure (f a)
+  first (Compositor f) = Compositor $ \va b (x,y) -> do
+    x' <- f va b x
+    pure (x',y)
+  second (Compositor s) = Compositor $ \va b (x,y) -> do
+    y' <- s va b y
+    pure (x,y')
 
-newtype CompNode a b = CompNode {
-    runCompNode :: Compositor
-                -> Buffer -- ^ lighting buffer -- FIXME
-                -> a
-                -> IO b
-  }
+instance Category Compositor where
+  id = Compositor $ \_ _ a -> pure a
+  Compositor f . Compositor g = Compositor $ \va b a -> g va b a >>= f va b
+
+instance Functor (Compositor a) where
+  fmap f (Compositor g) = Compositor $ \va b a -> fmap f (g va b a)
+
+instance Monad (Compositor a) where
+  return = pure
+  Compositor x >>= f = Compositor $ \va b a -> do
+    x' <- x va b a
+    runCompositor (f x') va b a
+
+instance (Semigroup b,Monoid b) => Monoid (Compositor a b) where
+  mempty = Compositor $ \_ _ _ -> pure mempty
+  mappend = (<>)
+
+instance (Semigroup b) => Semigroup (Compositor a b) where
+  Compositor x <> Compositor y = Compositor $ \va b a -> do
+    x' <- x va b a
+    y' <- y va b a
+    pure (x' <> y')
 
 compNode :: (MonadIO m,MonadScoped IO m,MonadError Log m)
          => Viewport
          -> GPUProgram a
-         -> m (CompNode a (GPUTexture,GPUTexture))
+         -> m (Compositor a (GPUTexture,GPUTexture))
 compNode vp prog = do
     Offscreen nodeColor nodeDepth nodeFB <- genOffscreen w h Nearest RGBA32F RGBA
-    return . CompNode $ \compt _ a -> do
+    return . Compositor $ \va _ a -> do
       -- use the node’s program and send input
       useProgram prog
       sendToProgram prog a
       -- bind the VA
-      bindVertexArray (compt^.comptVA)
+      bindVertexArray va
       -- bind the node’s framebuffer
       bindFramebuffer nodeFB ReadWrite
       glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT

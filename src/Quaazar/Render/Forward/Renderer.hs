@@ -19,13 +19,13 @@ import Data.Bits ( (.|.) )
 import Graphics.Rendering.OpenGL.Raw
 import Graphics.UI.GLFW ( Window )
 import Numeric.Natural ( Natural )
-import Quaazar.Render.Compositing ( Compositor, comptVA, copyVS, copyFS
-                                  , getCompositor )
+import Quaazar.Render.Compositing ( Compositor, copyVS, copyFS )
 import Quaazar.Render.Forward.Accumulation ( Accumulation, getAccumulation )
 import Quaazar.Render.Forward.Lighting ( Lighting, getLighting )
 import Quaazar.Render.GL.Framebuffer ( Target(ReadWrite), unbindFramebuffer )
 import Quaazar.Render.GL.Shader ( Program, buildProgram, useProgram )
-import Quaazar.Render.GL.VertexArray ( bindVertexArray )
+import Quaazar.Render.GL.VertexArray ( VertexArray, bindVertexArray
+                                     , genAttributelessVertexArray )
 import Quaazar.Render.Texture ( GPUTexture )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
@@ -34,7 +34,7 @@ data ForwardRenderer = ForwardRenderer {
     _frCopyProgram :: Program
   , _frLighting    :: Lighting
   , _frAccumulation :: Accumulation
-  , _frCompositor  :: Compositor
+  , _frVA          :: VertexArray
   , _frWindow      :: Window
   }
 
@@ -52,18 +52,18 @@ getRenderer w h shadowDef lightNb window =
     <$> getCopyProgram
     <*> getLighting w h lightNb
     <*> getAccumulation w h
-    <*> getCompositor
+    <*> genAttributelessVertexArray
     <*> pure window
 
 getCopyProgram :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
                => m Program
 getCopyProgram = buildProgram copyVS Nothing Nothing copyFS
 
-display :: (MonadIO m) => ForwardRenderer -> GPUTexture -> m ()
-display rdr tex = liftIO $ do
+display :: (MonadIO m) => ForwardRenderer -> Compositor () GPUTexture -> m ()
+display rdr compt = liftIO $ do
   useProgram (rdr^.frCopyProgram)
   unbindFramebuffer ReadWrite
   glClearColor 0 0 0 0
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
-  bindVertexArray (rdr^.frCompositor.comptVA)
+  bindVertexArray (rdr^.frVA)
   glDrawArrays gl_TRIANGLE_STRIP 0 4
