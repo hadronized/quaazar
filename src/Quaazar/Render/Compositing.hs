@@ -30,7 +30,7 @@ import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
                                  , bindTextureAt )
 import Quaazar.Render.GL.VertexArray ( VertexArray, bindVertexArray
                                      , genAttributelessVertexArray )
-import Quaazar.Render.Shader ( GPUProgram(..) )
+import Quaazar.Render.Shader
 import Quaazar.Render.Texture ( GPUTexture(GPUTexture) )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
@@ -83,12 +83,14 @@ instance (Semigroup b) => Semigroup (Compositor a b) where
     y' <- y va b a
     pure (x' <> y')
 
-compNode :: (MonadIO m,MonadScoped IO m,MonadError Log m)
+compNode :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
          => Viewport
-         -> GPUProgram a
+         -> String
+         -> (a -> Semantics b)
          -> m (Compositor a (GPUTexture,GPUTexture))
-compNode vp prog = do
+compNode vp shaderSrc semMapper = do
     Offscreen nodeColor nodeDepth nodeFB <- genOffscreen w h Nearest RGBA32F RGBA
+    prog <- gpuProgram copyVS Nothing Nothing shaderSrc semMapper
     return . Compositor $ \va _ a -> do
       -- use the node’s program and send input
       useProgram prog
