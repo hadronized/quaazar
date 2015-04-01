@@ -12,38 +12,50 @@
 module Quaazar.Render.Forward.RenderLayer where
 
 import Control.Lens
+import Control.Monad.Error.Class ( MonadError )
+import Control.Monad.Trans ( MonadIO )
 import Graphics.Rendering.OpenGL.Raw
+import Numeric.Natural ( Natural )
+import Quaazar.Render.Compositing
 import Quaazar.Render.Forward.Accumulation
 import Quaazar.Render.Forward.Lighting
 import Quaazar.Render.Forward.Looked ( Looked(..) )
-import Quaazar.Render.GL.Framebuffer ( Target(..), bindFramebuffer )
+import Quaazar.Render.Forward.Viewport ( Viewport(Viewport), setViewport )
+import Quaazar.Render.GL.Buffer ( Buffer )
+import Quaazar.Render.GL.Framebuffer ( Framebuffer, Target(..)
+                                     , bindFramebuffer )
 import Quaazar.Render.GL.Offscreen
+import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
+                                 , bindTextureAt )
 import Quaazar.Render.GL.VertexArray ( bindVertexArray )
 import Quaazar.Render.PostFX ( GPUPostFX(..) )
+import Quaazar.Render.Texture ( GPUTexture(GPUTexture) ) 
+import Quaazar.Utils.Log
+import Quaazar.Utils.Scoped
 
 newtype RenderLayer = RenderLayer {
-    unRenderLayer :: Lighting -> Accumulation -> IO PingPong
+    unRenderLayer :: Framebuffer -- ^ lighting framebuffer
+                  -> Buffer      -- ^ omni light buffer
+                  -> IO ()
   }
-
-type PingPong = (Offscreen,Offscreen)
 
 renderLayer :: Looked -> RenderLayer
 renderLayer lk = RenderLayer fromLooked
   where
-    fromLooked lighting accumulation = do
-      purgeAccumulationFramebuffer accumulation
-      unLooked lk lighting accumulation
-      glDisable gl_BLEND
-      bindVertexArray (accumulation^.accumVA)
-      return (lighting^.lightOff,accumulation^.accumOff)
+    fromLooked lightingFB omniBuffer = do
+      -- purge accum framebuffer
+      unLooked lk lightingFB omniBuffer
+      --glDisable gl_BLEND
+      --bindVertexArray (accumulation^.accumVA)
 
-post :: GPUPostFX a -> a -> RenderLayer -> RenderLayer
-post  gpupfx a prev = RenderLayer post_
+renderLayerNode :: (MonadIO m,MonadScoped IO m,MonadError Log m)
+                => Viewport
+                -> m (CompNode RenderLayer)
+renderLayerNode vp = do
+    Offscreen nodeColor nodeDepth nodeFB <- genOffscreen w h Nearest RGBA32F RGBA
+    return . CompNode $ \compt omniBuffer rl -> do
+      setViewport vp
+      unRenderLayer rl nodeFB omniBuffer
+      return (GPUTexture $ bindTextureAt nodeColor,GPUTexture $ bindTextureAt nodeDepth)
   where
-    post_ lighting accumulation = do
-      (sourceOff,targetOff) <- unRenderLayer prev lighting accumulation
-      usePostFX gpupfx (sourceOff^.offscreenRender) (sourceOff^.offscreenDepthmap) a
-      bindFramebuffer (targetOff^.offscreenFB) ReadWrite
-      glClear gl_DEPTH_BUFFER_BIT
-      glDrawArrays gl_TRIANGLE_STRIP 0 4
-      return (targetOff,sourceOff) -- pingpong ! \o/
+    Viewport _ _ w h = vp

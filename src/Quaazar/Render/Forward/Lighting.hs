@@ -70,12 +70,6 @@ ligAmbPowUniform = uniform ligAmbPowSem
 ligOmniNbUniform :: Uniform Word32
 ligOmniNbUniform = uniform ligOmniNbSem
 
-purgeLightingFramebuffer :: Lighting -> IO ()
-purgeLightingFramebuffer lighting = do
-  bindFramebuffer (lighting^.lightOff.offscreenFB) FB.ReadWrite
-  glClearColor 0 0 0 0
-  glClear $ gl_DEPTH_BUFFER_BIT .|. gl_COLOR_BUFFER_BIT
-
 genOmniBuffer :: (MonadScoped IO m,MonadIO m) => Natural -> m Buffer
 genOmniBuffer nbLights = do
     buffer <- genObject
@@ -112,9 +106,9 @@ pokeOmnis omnis ptr = do
       pokeByteOff ptr' 28 pw
       pokeByteOff ptr' 32 rad
 
-pushOmnis :: [(Omni,Transform)] -> Lighting -> IO ()
-pushOmnis omnis lighting = do
-    bindBufferAt (lighting^.lightOmniBuffer) ShaderStorageBuffer ligOmniSSBOBP
-    void . withMappedBuffer ShaderStorageBuffer B.Write $ \ptr -> do
-      nbLights <- pokeOmnis omnis ptr
-      ligOmniNbUniform @= nbLights
+pushOmnis :: [(Omni,Transform)] -> Buffer -> IO ()
+pushOmnis omnis omniBuffer = do
+  bindBufferAt omniBuffer ShaderStorageBuffer ligOmniSSBOBP
+  void . withMappedBuffer ShaderStorageBuffer B.Write $ \ptr -> do
+    nbLights <- pokeOmnis omnis ptr
+    ligOmniNbUniform @= nbLights

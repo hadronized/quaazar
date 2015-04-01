@@ -83,6 +83,7 @@ data LogType
 -- |Committer of a log.
 data LogCommitter
   = CoreLog           -- Core committer
+  | RendererLog         -- Renderer committer
   | BackendLog String -- Specific backend committer
   | UserLog           -- User committer
     deriving (Eq)
@@ -100,6 +101,7 @@ instance Show LogType where
 instance Show LogCommitter where
   show c = case c of
     CoreLog         -> "core"
+    RendererLog     -> "rndr"
     BackendLog impl -> take 4 $ impl ++ repeat ' '
     UserLog         -> "user"
 
