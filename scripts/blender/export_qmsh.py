@@ -19,6 +19,9 @@ from bpy_extras.io_utils import ExportHelper
 from bpy.props import BoolProperty
 import json
 
+def round_(x):
+  return round(x,6)
+
 class QuaazarMeshExporter(bpy.types.Operator, ExportHelper):
   """Quaazar Mesh Exporter Script"""
   bl_idname      = "object.quaazar_mesh_exporter"
@@ -86,20 +89,21 @@ def hasOnlyTris(msh):
   return True
 
 # Build a vertex.
-def createVertex(msh, loopID, smoothNormals):
-  vertices = msh.vertices
-  loops = msh.loops
-  uv_layers = msh.uv_layers
-  vert = vertices[loops[loopID].vertex_index]
-  co = [round_(vert.co[0]),round_(vert.co[1]),round_(vert.co[2])]
-  no = []
+def createVertex(msh, vertID, triID, loopID, smoothNormals):
+  co = list(msh.vertices[vertID].co)
+
   if smoothNormals:
-    no = [round_(vert.normal[0]),round_(vert.normal[1]),round_(vert.normal[2])]
-  uv = []
-  if len(uv_layers) > 0:
-    uv_ = uv_layers[0].data[loopID].uv
-    uv = [ [round_(uv_[0]),round_(uv_[1])] ] # only one UV channel
-  return [co,no,uv]
+    no = list(msh.vertices[vertID].normal)
+  else:
+    no = list(msh.polygons[triID].normal)
+
+  uv_layers = msh.uv_layers
+  if len(uv_layers) == 1:
+    uv = list(uv_layers[0].data[loopID].uv)
+  else:
+    uv = []
+
+  return [co,no,[uv]]
 
 # Look for a vertex. If it exists, return its ID. Otherwise, return None.
 def lookupVertex(vertices, vert):
@@ -119,22 +123,21 @@ def recordVertex(vertices, indices, vert):
   return vid
   
 def toQuaazarMesh(msh, smoothNormals):
-  i = 0
-  vnb = len(msh.loops)
+  tris = msh.polygons
   vertices = []
   indices = []
-  while i < vnb:
-    a = createVertex(msh, i, smoothNormals)
-    b = createVertex(msh, i+1, smoothNormals)
-    c = createVertex(msh, i+2, smoothNormals)
-    aID = recordVertex(vertices, indices, a)
-    bID = recordVertex(vertices, indices, b)
-    cID = recordVertex(vertices, indices, c)
+
+  for tri in tris:
+    triID = tri.index
+    loopIDs = list(tri.loop_indices)
+    [a,b,c] = tri.vertices
+    a_ = createVertex(msh, a, triID, loopIDs[0], smoothNormals)
+    b_ = createVertex(msh, b, triID, loopIDs[1], smoothNormals)
+    c_ = createVertex(msh, c, triID, loopIDs[2], smoothNormals)
+      
+    aID = recordVertex(vertices, indices, a_)
+    bID = recordVertex(vertices, indices, b_)
+    cID = recordVertex(vertices, indices, c_)
     indices.append([aID,bID,cID])
 
-    i += 3
-
   return QuaazarMesh(vertices,indices)
-
-def round_(x):
-  return round(x,6)
