@@ -83,6 +83,7 @@ initGL :: IO ()
 initGL = do
   glEnable gl_DEPTH_TEST
   glEnable gl_TEXTURE_CUBE_MAP_SEAMLESS
+  glEnable gl_FRAMEBUFFER_SRGB
   glClearColor 0 0 0 0
 
 setWindowTitle :: Window -> String -> IO ()

@@ -132,6 +132,6 @@ phongFS = unlines
   , "    omni += atten * (diff + spec);"
   , "  }"
 
-  , "  frag = vec4(ambient + omni,1.);"
+  , "  frag = clamp(vec4(ambient + omni,1.), vec4(0.,0.,0.,0.), vec4(1.,1.,1.,1.));"
   , "}"
   ]
