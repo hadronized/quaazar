@@ -68,6 +68,6 @@ display rdr a compt = liftIO $ do
   glClearColor 0 0 0 0
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
   bindVertexArray (rdr^.frVA)
-  glDrawArrays gl_TRIANGLE_STRIP 0 4
   bindTextureAt source 0
+  glDrawArrays gl_TRIANGLE_STRIP 0 4
   liftIO $ swapBuffers (rdr^.frWindow)
