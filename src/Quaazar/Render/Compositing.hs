@@ -75,8 +75,8 @@ instance Monad (Compositor a) where
     runCompositor (f x') va b a
 
 instance Profunctor Compositor where
-  dimap l r (Compositor f) = Compositor $ \va b a -> fmap r $ f va b (l a)
-
+  dimap l r (Compositor f) = Compositor $ \va b a -> do
+    fmap r $ f va b (l a)
 instance (Semigroup b,Monoid b) => Monoid (Compositor a b) where
   mempty = Compositor $ \_ _ _ -> pure mempty
   mappend = (<>)
@@ -117,7 +117,7 @@ copyVS = unlines
   [
     "#version 430 core"
   , "vec2[4] v = vec2[]("
-  , " vec2(-1, 1)"
+  , "   vec2(-1, 1)"
   , " , vec2( 1, 1)"
   , " , vec2(-1, -1)"
   , " , vec2( 1, -1)"
