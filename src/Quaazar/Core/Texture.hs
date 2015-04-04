@@ -30,6 +30,7 @@ import Data.Either.Combinators ( eitherToError )
 import Data.Vector ( Vector, fromList )
 import Numeric.Natural ( Natural )
 import Quaazar.Core.Loader ( Load(..) )
+import Quaazar.Core.Resource ( Resource )
 import Quaazar.Utils.Log
 import System.FilePath ( (</>) )
 
@@ -57,6 +58,8 @@ instance Load Texture where
     where
       onError = Log ErrorLog CoreLog
   load_ = load ""
+
+instance Resource () Texture
 
 -- |Possible format for a texel.
 data TexelFormat
