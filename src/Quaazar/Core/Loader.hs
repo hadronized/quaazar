@@ -27,8 +27,15 @@ import Quaazar.Utils.TimePoint
 import System.FilePath
 
 class Load a where
+  -- |Root directory for the given 'a' resource.
   loadRoot :: a -> String
+  -- |Extension found at the end of the file hosting the 'a' resource.
   loadExt :: a -> String
+  -- |@load root name@ loads the resource 'name' by looking in the 'root' tree.
+  -- Then, @root/subroot/*.ext@ is the common search tree where 'subroot' refers to
+  -- 'loadRoot' and 'ext' refers to 'loadExt'.
+  --
+  -- Note that a default implementation exists for @(FromJSON a) => a@.
   load :: (MonadIO m,MonadLogger m,MonadError Log m)
        => FilePath
        -> FilePath
@@ -41,6 +48,9 @@ class Load a where
     where
       resRoot = loadRoot (undefined :: a)
       resExt = loadExt (undefined :: a)
+  -- |@load_ path@ explicitely loads a resource at the given path.
+  --
+  -- Note that a default implementation exists for @(FromJSON a) => a@.
   load_ :: (MonadIO m,MonadLogger m,MonadError Log m)
         => FilePath
         -> m a
