@@ -20,6 +20,7 @@ import Control.Applicative
 import Data.Aeson
 import Quaazar.Core.Color ( Color )
 import Quaazar.Core.Loader ( Load(..) )
+import Quaazar.Core.Resource ( Resource )
 
 data Ambient = Ambient Color Float deriving (Eq,Show)
 
@@ -35,6 +36,8 @@ instance FromJSON Ambient where
 instance Load Ambient where
   loadRoot = const "lights"
   loadExt = const "ylig"
+
+instance Resource () Ambient
 
 -- |'Omni col pow rad'.
 data Omni = Omni Color Float Float Bool deriving (Eq,Show)
@@ -56,3 +59,5 @@ instance FromJSON Omni where
 instance Load Omni where
   loadRoot = const "lights"
   loadExt = const "qlig"
+
+instance Resource () Omni
