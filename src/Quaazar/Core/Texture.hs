@@ -50,12 +50,13 @@ instance Load Texture where
   loadRoot = const "textures"
   loadExt = const ""
   load rootPath name = do
-      info CoreLog $ "loading texture " ++ show name
+      info CoreLog $ "loading texture " ++ name
       img <- liftIO . fmap (first onError) $
         readImage (rootPath </> loadRoot (undefined :: Texture)  </> name)
       eitherToError img >>= imageToTexture
     where
       onError = Log ErrorLog CoreLog
+  load_ = load ""
 
 -- |Possible format for a texel.
 data TexelFormat

@@ -121,3 +121,19 @@ library
                      , profunctors       >= 4.3   && < 4.5
 
   default-language:    Haskell2010
+
+executable qzr-mat-sdbx
+  ghc-options:         -O3 -W -Wall -funbox-strict-fields
+
+  ghc-prof-options:    -prof -fprof-auto -rtsopts
+
+  hs-source-dirs:      sdk/material_sandbox/src
+
+  main-is:             Main.hs
+
+  default-language:    Haskell2010
+
+  build-depends:       base >= 4.6 && < 5.0
+                     , mtl >= 2.2.1 && < 2.3
+                     , fsnotify >= 0.1 && < 0.2
+                     , quaazar >= 0.1 && < 0.2

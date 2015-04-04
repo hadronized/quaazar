@@ -41,6 +41,13 @@ class Load a where
     where
       resRoot = loadRoot (undefined :: a)
       resExt = loadExt (undefined :: a)
+  load_ :: (MonadIO m,MonadLogger m,MonadError Log m)
+        => FilePath
+        -> m a
+  default load_ :: (MonadIO m,MonadLogger m,MonadError Log m,FromJSON a)
+                => FilePath
+                -> m a
+  load_ = loadJSON ""
 
 loadJSON :: (MonadIO m,MonadLogger m,MonadError Log m,FromJSON a)
          => FilePath
