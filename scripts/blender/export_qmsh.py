@@ -17,6 +17,7 @@ bl_info = {
 import bpy
 from bpy_extras.io_utils import ExportHelper
 from bpy.props import BoolProperty
+from math import pi
 import json
 
 def round_(x):
@@ -67,6 +68,8 @@ class QuaazarMeshExporter(bpy.types.Operator, ExportHelper):
         fp = open(self.filepath, "w")
         fp.write(phmsh.toJSON(self.sparse))
         fp.close()
+    if self.yUp:
+      bpy.ops.transform.rotate(value=-pi/2, axis(1,0,0))
     print("-- ----------------------- --")
     return {'FINISHED'}
 
