@@ -13,13 +13,16 @@
 
 module Quaazar.Technics.Lighting.Phong where
 
-import Control.Applicative
+import Control.Applicative hiding ( empty )
 import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
-import Control.Monad.Trans ( MonadIO )
+import Control.Monad.Trans ( MonadIO(..) )
 import Data.Aeson
+import Data.IORef ( modifyIORef, newIORef, readIORef, writeIORef )
+import Data.Map as M ( delete, empty, insert, lookup )
 import Numeric.Natural ( Natural )
 import Quaazar.Core.Loader ( Load(..) )
+import Quaazar.Core.Resource ( Manager(..), Resource(..) )
 import Quaazar.Render.GLSL
 import Quaazar.Render.Shader
 import Quaazar.Render.Texture ( GPUTexture )
@@ -32,12 +35,38 @@ data PhongMaterial = PhongMaterial {
   , glossMap    :: GPUTexture
   }
 
--- TODO
-{-
-instance Load PhongMaterial where
+data PhongMaterialManifest = PhongMaterialManifest String String String
+
+instance FromJSON PhongMaterialManifest where
+  parseJSON = withObject "phong material" $ \o ->
+    PhongMaterialManifest
+      <$> o .: "diffuse"
+      <*> o .: "specular"
+      <*> o .: "gloss"
+
+instance Load PhongMaterialManifest where
   loadRoot = const "materials"
   loadExt = const "qmat"
--}
+
+instance Resource (Manager () GPUTexture) PhongMaterial where
+  manager root = do
+      ref <- liftIO $ newIORef empty
+      return $ Manager (retrieve_ ref) (release_ ref)
+    where
+      retrieve_ ref texMgr name = do
+        mp <- liftIO $ readIORef ref
+        case M.lookup name mp of
+          Just mat -> return mat
+          Nothing -> do
+            mat <- do
+              PhongMaterialManifest dp sp gp <- load root name
+              PhongMaterial
+                <$> retrieve texMgr () dp
+                <*> retrieve texMgr () sp
+                <*> retrieve texMgr () gp
+            liftIO . writeIORef ref $ insert name mat mp
+            return mat
+      release_ ref name = liftIO . modifyIORef ref $ delete name
 
 phong :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
       => m (GPUProgram PhongMaterial)

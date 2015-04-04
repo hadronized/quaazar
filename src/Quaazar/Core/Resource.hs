@@ -13,13 +13,16 @@
 
 module Quaazar.Core.Resource (
     -- * Resource manager
-    Manager
+    Manager(Manager)
   , Resource(..)
     -- * Retrieving and releasing resources
   , retrieve
   , release
+    -- * Miscellaneous
+  , lookupInsert
   ) where
 
+import Control.Applicative ( Applicative )
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Data.IORef ( modifyIORef, newIORef, readIORef, writeIORef )
@@ -28,7 +31,7 @@ import Quaazar.Core.Loader ( Load(load) )
 import Quaazar.Utils.Log
 
 data Manager deps r = Manager {
-    retrieve :: (MonadIO m,MonadError Log m,MonadLogger m) => deps -> String -> m r
+    retrieve :: (Applicative m,MonadIO m,MonadError Log m,MonadLogger m) => deps -> String -> m r
   , release :: (MonadIO m) => String -> m ()
   }
 
