@@ -43,6 +43,12 @@ class QuaazarMeshExporter(bpy.types.Operator, ExportHelper):
     , default     = True
     , )
 
+  yUp = BoolProperty (
+      name        = "Y axis as up"
+    , description = "Rotate the object so that Y is up"
+    , default     = True
+    , )
+
   def execute(self, context):
     print("-- ----------------------- --")
     print("-- Quaazar Mesh JSON Export --")
@@ -50,6 +56,8 @@ class QuaazarMeshExporter(bpy.types.Operator, ExportHelper):
     if o == None:
       print("E: no mesh selected")
     else:
+      if self.yUp:
+        bpy.ops.transform.rotate(value=pi/2, axis=(1,0,0))
       msh = o.data
       if not hasOnlyTris(msh):
         print("W: '" + msh.name + "' is not elegible to export, please convert quadrangles to triangles")
@@ -100,6 +108,7 @@ def createVertex(msh, vertID, triID, loopID, smoothNormals):
   uv_layers = msh.uv_layers
   if len(uv_layers) == 1:
     uv = list(uv_layers[0].data[loopID].uv)
+    uv[1] = 1 - uv[1]
   else:
     uv = []
 
