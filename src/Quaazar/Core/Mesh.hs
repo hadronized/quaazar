@@ -27,6 +27,7 @@ import Control.Applicative
 import Control.Lens
 import Data.Aeson
 import Quaazar.Core.Loader ( Load(..) )
+import Quaazar.Core.Resource ( Resource )
 import Quaazar.Core.Vertex
 import Quaazar.Core.VGroup
 
@@ -45,3 +46,5 @@ instance FromJSON Mesh where
 instance Load Mesh where
   loadRoot = const "meshes"
   loadExt = const "qmsh"
+
+instance Resource () Mesh
