@@ -14,7 +14,7 @@
 module Quaazar.Core.Resource (
     -- * Resource manager
     Manager
-  , manager
+  , Resource(..)
     -- * Retrieving and releasing resources
   , retrieve
   , release
