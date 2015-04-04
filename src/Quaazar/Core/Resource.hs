@@ -28,12 +28,12 @@ import Quaazar.Core.Loader ( Load(load) )
 import Quaazar.Utils.Log
 
 data Manager deps r = Manager {
-    retrieve :: (MonadIO m,MonadError Log m,MonadLogger m,Load r) => deps -> String -> m r
+    retrieve :: (MonadIO m,MonadError Log m,MonadLogger m) => deps -> String -> m r
   , release :: (MonadIO m) => String -> m ()
   }
 
 class Resource dep r | r -> dep where
-  manager :: (MonadIO m,Load r) => FilePath -> m (Manager dep r)
+  manager :: (MonadIO m) => FilePath -> m (Manager dep r)
   default manager :: (MonadIO m,Load r) => FilePath -> m (Manager () r)
   manager root = do
       ref <- liftIO $ newIORef empty
