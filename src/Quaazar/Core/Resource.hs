@@ -31,8 +31,8 @@ import Quaazar.Core.Loader ( Load(load) )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
-data Manager deps r = Manager {
-    retrieve :: (Applicative m,MonadIO m,MonadScoped IO m,MonadError Log m,MonadLogger m) => deps -> String -> m r
+data Manager dep r = Manager {
+    retrieve :: (Applicative m,MonadIO m,MonadScoped IO m,MonadError Log m,MonadLogger m) => dep -> String -> m r
   , release :: (MonadIO m) => String -> m ()
   }
 
