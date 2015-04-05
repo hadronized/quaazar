@@ -44,7 +44,9 @@ data GPUMesh = GPUMesh {
 
 makeLenses ''GPUMesh
 
-instance Resource (Manager () Mesh) GPUMesh where
+type GPUMeshDepManager = Manager () Mesh
+
+instance Resource GPUMeshDepManager GPUMesh where
   manager _ = do
       ref <- liftIO $ newIORef empty
       return $ Manager (retrieve_ ref) (release_ ref)
