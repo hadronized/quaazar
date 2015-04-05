@@ -20,14 +20,33 @@ module Quaazar.Render.Texture (
   ) where
 
 import Control.Monad.Trans ( MonadIO(..) )
+import Data.IORef ( modifyIORef, newIORef, readIORef, writeIORef )
+import Data.Map as M ( delete, empty, insert, lookup )
 import Data.Vector ( toList )
 import Numeric.Natural ( Natural )
+import Quaazar.Core.Resource ( Manager(..), Resource(..) )
 import Quaazar.Core.Texture ( TexelFormat(..), Texture(..) )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Texture ( Filter(..), Wrap(..) )
 import qualified Quaazar.Render.GL.Texture as GL
 
 newtype GPUTexture = GPUTexture { bindTextureAt :: Natural -> IO () }
+
+instance Resource (Manager () Texture,GL.Wrap,GL.Filter) GPUTexture where
+  manager _ = do
+      ref <- liftIO $ newIORef empty
+      return $ Manager (retrieve_ ref) (release_ ref)
+    where
+      retrieve_ ref (texMgr,wrap,flt) name = do
+        mp <- liftIO $ readIORef ref
+        case M.lookup name mp of
+          Just r -> return r
+          Nothing -> do
+            tex <- retrieve texMgr () name
+            r <- gpuTexture wrap flt tex
+            liftIO . writeIORef ref $ insert name r mp
+            return r
+      release_ ref name = liftIO . modifyIORef ref $ delete name
 
 gpuTexture :: (MonadScoped IO m,MonadIO m)
            => GL.Wrap

@@ -29,9 +29,10 @@ import Data.IORef ( modifyIORef, newIORef, readIORef, writeIORef )
 import Data.Map as M ( Map, delete, empty, insert, lookup )
 import Quaazar.Core.Loader ( Load(load) )
 import Quaazar.Utils.Log
+import Quaazar.Utils.Scoped
 
 data Manager deps r = Manager {
-    retrieve :: (Applicative m,MonadIO m,MonadError Log m,MonadLogger m) => deps -> String -> m r
+    retrieve :: (Applicative m,MonadIO m,MonadScoped IO m,MonadError Log m,MonadLogger m) => deps -> String -> m r
   , release :: (MonadIO m) => String -> m ()
   }
 
