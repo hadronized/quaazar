@@ -32,7 +32,9 @@ import qualified Quaazar.Render.GL.Texture as GL
 
 newtype GPUTexture = GPUTexture { bindTextureAt :: Natural -> IO () }
 
-instance Resource (Manager () Texture,GL.Wrap,GL.Filter) GPUTexture where
+type GPUTextureDepManager = (Manager () Texture,GL.Wrap,GL.Filter)
+
+instance Resource GPUTextureDepManager GPUTexture where
   manager _ = do
       ref <- liftIO $ newIORef empty
       return $ Manager (retrieve_ ref) (release_ ref)
