@@ -18,6 +18,8 @@ module Quaazar.Core.Texture (
   , texTexels
     -- * Texel format
   , TexelFormat(..)
+    -- * Resource
+  , TextureManager
   ) where
 
 import Codec.Picture
@@ -30,7 +32,7 @@ import Data.Either.Combinators ( eitherToError )
 import Data.Vector ( Vector, fromList )
 import Numeric.Natural ( Natural )
 import Quaazar.Core.Loader ( Load(..) )
-import Quaazar.Core.Resource ( Resource )
+import Quaazar.Core.Resource ( Manager, Resource )
 import Quaazar.Utils.Log
 import System.FilePath ( (</>) )
 
@@ -60,6 +62,8 @@ instance Load Texture where
   load_ = load ""
 
 instance Resource () Texture
+
+type TextureManager = Manager () Texture
 
 -- |Possible format for a texel.
 data TexelFormat

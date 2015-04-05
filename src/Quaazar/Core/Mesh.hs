@@ -18,6 +18,8 @@ module Quaazar.Core.Mesh (
     Mesh(Mesh)
   , meshVertices
   , meshVGroup
+    -- * Resource
+  , MeshManager
     -- * Re-exported modules
   , module Quaazar.Core.Vertex
   , module Quaazar.Core.VGroup
@@ -27,7 +29,7 @@ import Control.Applicative
 import Control.Lens
 import Data.Aeson
 import Quaazar.Core.Loader ( Load(..) )
-import Quaazar.Core.Resource ( Resource )
+import Quaazar.Core.Resource ( Manager, Resource )
 import Quaazar.Core.Vertex
 import Quaazar.Core.VGroup
 
@@ -48,3 +50,5 @@ instance Load Mesh where
   loadExt = const "qmsh"
 
 instance Resource () Mesh
+
+type MeshManager = Manager () Mesh

@@ -14,13 +14,16 @@ module Quaazar.Core.Light (
     -- * Lights
     Ambient(..)
   , Omni(..)
+    -- * Resources
+  , AmbientManager
+  , OmniManager
   ) where
 
 import Control.Applicative
 import Data.Aeson
 import Quaazar.Core.Color ( Color )
 import Quaazar.Core.Loader ( Load(..) )
-import Quaazar.Core.Resource ( Resource )
+import Quaazar.Core.Resource ( Manager, Resource )
 
 data Ambient = Ambient Color Float deriving (Eq,Show)
 
@@ -38,6 +41,8 @@ instance Load Ambient where
   loadExt = const "ylig"
 
 instance Resource () Ambient
+
+type AmbientManager = Manager () Ambient
 
 -- |'Omni col pow rad'.
 data Omni = Omni Color Float Float Bool deriving (Eq,Show)
@@ -61,3 +66,5 @@ instance Load Omni where
   loadExt = const "qlig"
 
 instance Resource () Omni
+
+type OmniManager = Manager () Omni

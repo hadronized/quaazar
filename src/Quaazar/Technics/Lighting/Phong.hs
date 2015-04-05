@@ -23,10 +23,11 @@ import Data.Map as M ( delete, empty, insert, lookup )
 import Numeric.Natural ( Natural )
 import Quaazar.Core.Loader ( Load(..) )
 import Quaazar.Core.Resource ( Manager(..), Resource(..) )
-import Quaazar.Core.Texture ( Texture )
+import Quaazar.Core.Texture ( Texture, TextureManager )
+import Quaazar.Render.GL.Texture as GL ( Filter, Wrap )
 import Quaazar.Render.GLSL
 import Quaazar.Render.Shader
-import Quaazar.Render.Texture ( GPUTexture )
+import Quaazar.Render.Texture ( GPUTexture, GPUTextureManager )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
@@ -49,12 +50,12 @@ instance Load PhongMaterialManifest where
   loadRoot = const "materials"
   loadExt = const "qmat"
 
-instance Resource (Manager () Texture,Manager (Manager () Texture) GPUTexture) PhongMaterial where
+instance Resource (TextureManager,GPUTextureManager,GL.Wrap,GL.Filter) PhongMaterial where
   manager root = do
       ref <- liftIO $ newIORef empty
       return $ Manager (retrieve_ ref) (release_ ref)
     where
-      retrieve_ ref (texMgr,gtexMgr) name = do
+      retrieve_ ref (texMgr,gtexMgr,wrap,flt) name = do
         mp <- liftIO $ readIORef ref
         case M.lookup name mp of
           Just mat -> return mat
@@ -62,9 +63,9 @@ instance Resource (Manager () Texture,Manager (Manager () Texture) GPUTexture) P
             mat <- do
               PhongMaterialManifest dp sp gp <- load root name
               PhongMaterial
-                <$> retrieve gtexMgr texMgr dp
-                <*> retrieve gtexMgr texMgr sp
-                <*> retrieve gtexMgr texMgr gp
+                <$> retrieve gtexMgr (texMgr,wrap,flt) dp
+                <*> retrieve gtexMgr (texMgr,wrap,flt) sp
+                <*> retrieve gtexMgr (texMgr,wrap,flt) gp
             liftIO . writeIORef ref $ insert name mat mp
             return mat
       release_ ref name = liftIO . modifyIORef ref $ delete name
