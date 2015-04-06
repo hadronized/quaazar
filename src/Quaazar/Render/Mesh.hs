@@ -44,9 +44,7 @@ data GPUMesh = GPUMesh {
 
 makeLenses ''GPUMesh
 
-type GPUMeshDepManager = Manager () Mesh
-
-instance Resource GPUMeshDepManager GPUMesh where
+instance Resource MeshManager GPUMesh where
   manager _ = do
       ref <- liftIO $ newIORef empty
       return $ Manager (retrieve_ ref) (release_ ref)
@@ -62,6 +60,7 @@ instance Resource GPUMeshDepManager GPUMesh where
             return r
       release_ ref name = liftIO . modifyIORef ref $ delete name
       
+type GPUMeshManager = Manager MeshManager GPUMesh
 
 -- |OpenGL 'Mesh' representation.
 gpuMesh :: (MonadScoped IO m,MonadIO m) => Mesh -> m GPUMesh
