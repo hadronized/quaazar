@@ -75,6 +75,8 @@ class TextureLike t where
   -- |
   setTextureCompareFunc :: (MonadIO m) => t -> Maybe CompareFunc -> m ()
   -- |
+  setTextureBaseLevel :: (MonadIO m) => t -> Int -> m ()
+  -- |
   setTextureMaxLevel :: (MonadIO m) => t -> Int -> m ()
 
 newtype Texture2D = Texture2D { unTexture2D :: GLuint } deriving (Eq,Ord,Show)
@@ -94,6 +96,7 @@ instance TextureLike Texture2D where
       ift' = fromIntegral (fromInternalFormat ift)
   transferPixels _ = transferPixels_ gl_TEXTURE_2D
   setTextureCompareFunc _ = setTextureCompareFunc_ gl_TEXTURE_2D
+  setTextureBaseLevel _ = setTextureBaseLevel_ gl_TEXTURE_2D
   setTextureMaxLevel _ = setTextureMaxLevel_ gl_TEXTURE_2D
 
 newtype Cubemap = Cubemap { unCubemap :: GLuint } deriving (Eq,Ord,Show)
@@ -122,6 +125,7 @@ instance TextureLike Cubemap where
         glTexStorage2D target 1 ift' (fromIntegral w) (fromIntegral h)
   transferPixels = error "cubemap pixels transfer not implemented yet"
   setTextureCompareFunc _ = setTextureCompareFunc_ gl_TEXTURE_CUBE_MAP
+  setTextureBaseLevel _ = setTextureBaseLevel_ gl_TEXTURE_CUBE_MAP
   setTextureMaxLevel _ = setTextureMaxLevel_ gl_TEXTURE_CUBE_MAP
 
 bindTextureAt :: (MonadIO m,TextureLike t) => t -> Natural -> m ()
@@ -148,7 +152,7 @@ transferPixels_ :: (MonadIO m,Storable a) => GLenum -> Natural -> Natural -> For
 transferPixels_ t w h ft texels = liftIO $ do
     withArray texels (glTexSubImage2D t 0 0 0 (fromIntegral w) (fromIntegral h) ft' gl_FLOAT)
   where
-    ft'    = fromFormat ft
+    ft' = fromFormat ft
 
 setTextureCompareFunc_ :: (MonadIO m) => GLenum -> Maybe CompareFunc -> m ()
 setTextureCompareFunc_ t = maybe compareNothing compareRefToTexture
@@ -158,6 +162,10 @@ setTextureCompareFunc_ t = maybe compareNothing compareRefToTexture
     compareRefToTexture func = liftIO $ do
       glTexParameteri t gl_TEXTURE_COMPARE_MODE (fromIntegral gl_COMPARE_REF_TO_TEXTURE)
       glTexParameteri t gl_TEXTURE_COMPARE_FUNC (fromIntegral $ fromCompareFunc func)
+
+setTextureBaseLevel_ :: (MonadIO m) => GLenum -> Int -> m ()
+setTextureBaseLevel_ t l = liftIO $
+    glTexParameteri t gl_TEXTURE_MAX_LEVEL (fromIntegral l)
 
 setTextureMaxLevel_ :: (MonadIO m) => GLenum -> Int -> m ()
 setTextureMaxLevel_ t l = liftIO $
