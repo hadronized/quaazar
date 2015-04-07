@@ -47,6 +47,8 @@ genericGenShader shaderType wrapper = do
   scoped $ glDeleteShader s
   return $ wrapper s
 
+--------------------------------------------------------------------------------
+-- Shader stages
 newtype VertexShader = VertexShader { unVertexShader :: GLuint } deriving (Eq,Show)
 
 instance GLObject VertexShader where
@@ -105,23 +107,6 @@ instance ShaderLike ComputeShader where
   shaderID = unComputeShader
   compile = genericCompile "compute"
 
---------------------------------------------------------------------------------
--- Compute shader
-dispatchCompute :: (MonadIO m) => Natural -> Natural -> Natural -> m ()
-dispatchCompute wx wy wz = liftIO $ glDispatchCompute wx' wy' wz'
-  where
-    wx' = fromIntegral wx
-    wy' = fromIntegral wy
-    wz' = fromIntegral wz
-
-newtype Program = Program { unProgram :: GLuint } deriving (Eq,Show)
-
-instance GLObject Program where
-  genObject = do
-    p <- liftBase $ glCreateProgram
-    scoped $ glDeleteProgram p
-    return $ Program p
-
 genericCompile :: (MonadIO m,MonadLogger m,MonadError Log m,ShaderLike s)
                => String
                -> s
@@ -147,6 +132,25 @@ genericCompile sname shdr src = do
         alloca $ liftA2 (*>) (glGetShaderiv s gl_INFO_LOG_LENGTH) peek
     clog l s     = allocaArray l $
         liftA2 (*>) (glGetShaderInfoLog s (fromIntegral l) nullPtr) (peekCString . castPtr)
+
+--------------------------------------------------------------------------------
+-- Compute shader
+dispatchCompute :: (MonadIO m) => Natural -> Natural -> Natural -> m ()
+dispatchCompute wx wy wz = liftIO $ glDispatchCompute wx' wy' wz'
+  where
+    wx' = fromIntegral wx
+    wy' = fromIntegral wy
+    wz' = fromIntegral wz
+
+--------------------------------------------------------------------------------
+-- Shader program
+newtype Program = Program { unProgram :: GLuint } deriving (Eq,Show)
+
+instance GLObject Program where
+  genObject = do
+    p <- liftBase $ glCreateProgram
+    scoped $ glDeleteProgram p
+    return $ Program p
 
 attach :: (MonadIO m,ShaderLike s) => Program -> s -> m ()
 attach (Program pid) shdr = liftIO $ glAttachShader pid (shaderID shdr)
@@ -197,6 +201,8 @@ buildProgram vsSrc tcstesSrc gsSrc fsSrc = do
 useProgram :: Program -> IO ()
 useProgram (Program pid) = glUseProgram pid
 
+--------------------------------------------------------------------------------
+-- Uniforms
 infixr 1 @=
 newtype Uniform a = Uniform { (@=) :: a -> IO () }
 
