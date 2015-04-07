@@ -127,7 +127,7 @@ genericCompile sname shdr src = do
   where
     sid = shaderID shdr
     isCompiled s = fmap ((==gl_TRUE) . fromIntegral) .
-        alloca $ liftA2 (*>) (glGetShaderiv s gl_genericCompileSTATUS) peek
+        alloca $ liftA2 (*>) (glGetShaderiv s gl_COMPILE_STATUS) peek
     clogLength s = fmap fromIntegral .
         alloca $ liftA2 (*>) (glGetShaderiv s gl_INFO_LOG_LENGTH) peek
     clog l s     = allocaArray l $
