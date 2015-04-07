@@ -75,8 +75,8 @@ library
                      , Quaazar.Render.GL.Renderbuffer
                      , Quaazar.Render.GL.Shader
                      , Quaazar.Render.GL.Texture
-                     , Quaazar.Render.GL.Transform
                      , Quaazar.Render.GL.VertexArray
+                     , Quaazar.Render.Transform
 
   default-extensions:  DefaultSignatures
                      , DeriveFunctor

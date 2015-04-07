@@ -9,7 +9,7 @@
 --
 ----------------------------------------------------------------------------
 
-module Quaazar.Render.GL.Transform (
+module Quaazar.Render.Transform (
     -- *
     transformMatrix
   , cameraMatrix
