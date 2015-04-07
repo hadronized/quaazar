@@ -32,7 +32,7 @@ import Quaazar.Core.Color ( Color(unColor) )
 import Quaazar.Core.Position ( Position(unPosition) )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Log ( gllog )
-import Quaazar.Render.Texture ( GPUTexture(..) ) 
+import Quaazar.Render.Texture ( GPUTexture(..) )
 import Quaazar.Utils.Log
 
 throwError_ :: (MonadError Log m) => String -> m a
@@ -72,29 +72,47 @@ newtype FragmentShader = FragmentShader { unFragmentShader :: GLuint } deriving 
 instance GLObject FragmentShader where
   genObject = genericGenShader gl_FRAGMENT_SHADER FragmentShader
 
+newtype ComputeShader = ComputeShader { unComputeShader :: GLuint } deriving (Eq,Show)
+
+instance GLObject ComputeShader where
+  genObject = genericGenShader gl_COMPUTE_SHADER ComputeShader
+
 class ShaderLike s where
   shaderID :: s -> GLuint
   compile :: (MonadIO m,MonadLogger m,MonadError Log m) => s -> String -> m ()
 
 instance ShaderLike VertexShader where
   shaderID = unVertexShader
-  compile = compile_ "vertex"
+  compile = genericCompile "vertex"
 
 instance ShaderLike TessCtrlShader where
   shaderID = unTessCtrlShader
-  compile = compile_ "tessellation control"
+  compile = genericCompile "tessellation control"
 
 instance ShaderLike TessEvalShader where
   shaderID = unTessEvalShader
-  compile = compile_ "tessellation evaluation"
+  compile = genericCompile "tessellation evaluation"
 
 instance ShaderLike GeometryShader where
   shaderID = unGeometryShader
-  compile = compile_ "geometry"
+  compile = genericCompile "geometry"
 
 instance ShaderLike FragmentShader where
   shaderID = unFragmentShader
-  compile = compile_ "fragment"
+  compile = genericCompile "fragment"
+
+instance ShaderLike ComputeShader where
+  shaderID = unComputeShader
+  compile = genericCompile "compute"
+
+--------------------------------------------------------------------------------
+-- Compute shader
+dispatchCompute :: (MonadIO m) => Natural -> Natural -> Natural -> m ()
+dispatchCompute wx wy wz = liftIO $ glDispatchCompute wx' wy' wz'
+  where
+    wx' = fromIntegral wx
+    wy' = fromIntegral wy
+    wz' = fromIntegral wz
 
 newtype Program = Program { unProgram :: GLuint } deriving (Eq,Show)
 
@@ -104,12 +122,12 @@ instance GLObject Program where
     scoped $ glDeleteProgram p
     return $ Program p
 
-compile_ :: (MonadIO m,MonadLogger m,MonadError Log m,ShaderLike s)
-         => String
-         -> s
-         -> String
-         -> m ()
-compile_ sname shdr src = do
+genericCompile :: (MonadIO m,MonadLogger m,MonadError Log m,ShaderLike s)
+               => String
+               -> s
+               -> String
+               -> m ()
+genericCompile sname shdr src = do
     deb gllog "shader source is:"
     deb gllog src
     info gllog $ "compiling " ++ sname ++ " shader source..."
@@ -124,7 +142,7 @@ compile_ sname shdr src = do
   where
     sid = shaderID shdr
     isCompiled s = fmap ((==gl_TRUE) . fromIntegral) .
-        alloca $ liftA2 (*>) (glGetShaderiv s gl_COMPILE_STATUS) peek
+        alloca $ liftA2 (*>) (glGetShaderiv s gl_genericCompileSTATUS) peek
     clogLength s = fmap fromIntegral .
         alloca $ liftA2 (*>) (glGetShaderiv s gl_INFO_LOG_LENGTH) peek
     clog l s     = allocaArray l $
