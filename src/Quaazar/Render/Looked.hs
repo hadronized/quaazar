@@ -9,13 +9,13 @@
 --
 ----------------------------------------------------------------------------
 
-module Quaazar.Render.Forward.Looked where
+module Quaazar.Render.Looked where
 
 import Quaazar.Core.Projection ( Projection )
 import Quaazar.Core.Transform ( Transform )
 import Quaazar.Render.Camera ( gpuCamera )
-import Quaazar.Render.Forward.Lighting
-import Quaazar.Render.Forward.Shaded ( Shaded(..) )
+import Quaazar.Render.Lighting
+import Quaazar.Render.Shaded ( Shaded(..) )
 import Quaazar.Render.GL.Buffer ( Buffer )
 import Quaazar.Render.GL.Framebuffer ( Framebuffer )
 
