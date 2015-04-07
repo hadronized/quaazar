@@ -62,11 +62,11 @@ gpuTexture wrap flt (Texture width height format texels) = do
     GL.bindTextureAt tex 0
     GL.setTextureWrap tex wrap
     GL.setTextureFilters tex flt
-    GL.setTextureImage tex ift width height ft (toList texels)
+    GL.transferPixels tex width height ft (toList texels)
     return . GPUTexture $ GL.bindTextureAt tex
   where
-    (ft,ift) = case format of
-      R -> (GL.R,GL.R32F)
-      RG -> (GL.RG,GL.RG32F)
-      RGB -> (GL.RGB,GL.RGB32F)
-      RGBA -> (GL.RGBA,GL.RGBA32F)
+    ft = case format of
+      R -> GL.R
+      RG -> GL.RG
+      RGB -> GL.RGB
+      RGBA -> GL.RGBA
