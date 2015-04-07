@@ -9,7 +9,7 @@
 --
 ----------------------------------------------------------------------------
 
-module Quaazar.Render.Forward.Lit where
+module Quaazar.Render.Lit where
 
 import Control.Lens
 import Data.Bits ( (.|.) )
@@ -17,8 +17,8 @@ import Data.Monoid ( Monoid(..) )
 import Graphics.Rendering.OpenGL.Raw
 import Quaazar.Core.Light
 import Quaazar.Core.Transform
-import Quaazar.Render.Forward.Lighting
-import Quaazar.Render.Forward.Rendered ( Rendered(..) )
+import Quaazar.Render.Lighting
+import Quaazar.Render.Rendered ( Rendered(..) )
 import Quaazar.Render.GL.Buffer ( Buffer )
 import Quaazar.Render.GL.Framebuffer ( Framebuffer, Target(..)
                                      , bindFramebuffer )

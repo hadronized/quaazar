@@ -45,7 +45,6 @@ library
                      , Quaazar.Render
                      , Quaazar.Render.Camera
                      , Quaazar.Render.Compositing
-                     , Quaazar.Render.Forward.Lit
                      , Quaazar.Render.Forward.Looked
                      , Quaazar.Render.Forward.Rendered
                      , Quaazar.Render.Forward.Renderer
@@ -53,6 +52,7 @@ library
                      , Quaazar.Render.Forward.Shaded
                      , Quaazar.Render.Forward.Viewport
                      , Quaazar.Render.GLSL
+                     , Quaazar.Render.Lit
                      , Quaazar.Render.Mesh
                      , Quaazar.Render.Shader
                      , Quaazar.Render.Texture
