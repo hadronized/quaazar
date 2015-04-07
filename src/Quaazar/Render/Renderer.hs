@@ -43,13 +43,12 @@ getRenderer :: (Applicative m,MonadScoped IO m,MonadIO m,MonadLogger m,MonadErro
             => Natural
             -> Natural
             -> Natural
-            -> Natural
             -> Window
             -> m Renderer
-getRenderer w h shadowDef lightNb window =
+getRenderer w h lightMaxNb window =
   Renderer
     <$> getCopyProgram
-    <*> getLighting w h lightNb
+    <*> getLighting w h lightMaxNb
     <*> genAttributelessVertexArray
     <*> pure window
 

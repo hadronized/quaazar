@@ -41,15 +41,26 @@ data Lighting = Lighting {
 
 makeLenses ''Lighting
 
+data ShadowConf = ShadowConf {
+    _lowShadowMaxNb    :: Natural
+  , _lowShadowRes      :: (Natural,Natural)
+  , _mediumShadowMaxNb :: Natural
+  , _mediumShadowRes   :: (Natural,Natural)
+  , _highShadowMaxNb   :: Natural
+  , _highShadowRes     :: (Natural,Natural)
+  }
+
+makeLenses ''ShadowConf
+
 getLighting :: (Applicative m,MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
             => Natural
             -> Natural
             -> Natural
             -> m Lighting
-getLighting w h nbLights = do
+getLighting w h nbMaxLights = do
   info CoreLog "generating lighting"
   off <- genOffscreen w h Nearest RGB32F RGB
-  omniBuffer <- genOmniBuffer nbLights
+  omniBuffer <- genOmniBuffer nbMaxLights
   return (Lighting off omniBuffer)
 
 camProjViewUniform :: Uniform (M44 Float)
