@@ -43,13 +43,13 @@ genOffscreen w h flt texift texft = do
     bindTexture colormap
     setTextureWrap colormap ClampToEdge
     setTextureFilters colormap flt
-    setTextureNoImage colormap texift w h texft
+    setTextureStorage colormap texift w h
     unbindTexture colormap
     depthmap <- genObject
     bindTexture depthmap
     setTextureWrap depthmap ClampToEdge
     setTextureFilters depthmap flt
-    setTextureNoImage depthmap Depth32F w h Depth
+    setTextureStorage depthmap Depth32F w h
     unbindTexture depthmap
     fb <- buildFramebuffer ReadWrite . const $ do
       attachTexture ReadWrite colormap (ColorAttachment 0)
@@ -75,7 +75,7 @@ genDepthOffscreen w h flt = do
   bindTexture tex
   setTextureWrap tex ClampToEdge
   setTextureFilters tex flt
-  setTextureNoImage tex Depth32F w h Depth
+  setTextureStorage tex Depth32F w h
   unbindTexture tex
   fb' <- buildFramebuffer ReadWrite . const $ do
     attachTexture ReadWrite tex DepthAttachment
@@ -108,14 +108,14 @@ genCubeOffscreen cubeSize flt colift colft colap depthift depthft depthap = do
     bindTexture colormap
     setTextureWrap colormap ClampToEdge
     setTextureFilters colormap flt
-    setTextureNoImage colormap colift cubeSize cubeSize colft
+    setTextureStorage colormap colift cubeSize cubeSize
     unbindTexture colormap
     -- depth cubemap
     depthmap <- genObject
     bindTexture depthmap
     setTextureWrap depthmap ClampToEdge
     setTextureFilters depthmap flt
-    setTextureNoImage depthmap depthift cubeSize cubeSize depthft
+    setTextureStorage depthmap depthift cubeSize cubeSize
     --setTextureCompareFunc depthmap (Just LessOrEqual)
     unbindTexture depthmap
     -- framebuffer

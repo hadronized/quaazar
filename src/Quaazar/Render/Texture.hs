@@ -57,12 +57,13 @@ gpuTexture :: (MonadScoped IO m,MonadIO m)
            -> GL.Filter
            -> Texture
            -> m GPUTexture
-gpuTexture wrap flt (Texture width height format texels) = do
+gpuTexture wrap flt (Texture w h format texels) = do
     tex :: GL.Texture2D <- genObject
     GL.bindTextureAt tex 0
     GL.setTextureWrap tex wrap
     GL.setTextureFilters tex flt
-    GL.setTextureImage tex ift width height ft (toList texels)
+    GL.setTextureStorage tex ift w h
+    GL.transferPixels tex w h ft (toList texels)
     return . GPUTexture $ GL.bindTextureAt tex
   where
     (ft,ift) = case format of
