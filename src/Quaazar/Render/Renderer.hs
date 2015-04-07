@@ -20,7 +20,7 @@ import Graphics.Rendering.OpenGL.Raw
 import Graphics.UI.GLFW ( Window, swapBuffers )
 import Numeric.Natural ( Natural )
 import Quaazar.Render.Compositing ( Compositor(..), copyVS, copyFS )
-import Quaazar.Render.Lighting ( Lighting, getLighting
+import Quaazar.Render.Lighting ( Lighting, ShadowConf, getLighting
                                , lightOmniBuffer )
 import Quaazar.Render.GL.Framebuffer ( Target(ReadWrite), unbindFramebuffer )
 import Quaazar.Render.GL.Shader ( Program, buildProgram, useProgram )
@@ -43,12 +43,13 @@ getRenderer :: (Applicative m,MonadScoped IO m,MonadIO m,MonadLogger m,MonadErro
             => Natural
             -> Natural
             -> Natural
+            -> Maybe ShadowConf
             -> Window
             -> m Renderer
-getRenderer w h lightMaxNb window =
+getRenderer w h lightMaxNb shadowConf window =
   Renderer
     <$> getCopyProgram
-    <*> getLighting w h lightMaxNb
+    <*> getLighting w h lightMaxNb shadowConf
     <*> genAttributelessVertexArray
     <*> pure window
 

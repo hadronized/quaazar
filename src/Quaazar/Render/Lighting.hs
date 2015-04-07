@@ -29,18 +29,24 @@ import Quaazar.Render.GL.Framebuffer as FB ( Target(..), bindFramebuffer )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Shader ( Uniform, Uniformable, (@=), uniform )
-import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)  )
+import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
+                                 , Texture2DArray )
 import Quaazar.Render.GLSL
 import Quaazar.Utils.Log
 
 -- |'Lighting' gathers information about lighting in the scene.
 data Lighting = Lighting {
-    _lightOff         :: Offscreen -- FIXME: destroy that
-  , _lightOmniBuffer  :: Buffer
+    _lightOff           :: Offscreen -- FIXME: destroy that
+  , _lightOmniBuffer    :: Buffer
+  , _shaddowConf        :: Maybe ShadowConf
+  , _lightLowShadows    :: Texture2DArray
+  , _lightMediumShadows :: Texture2DArray
+  , _lightHighShadows   :: Texture2DArray
   }
 
-makeLenses ''Lighting
 
+-- |Shadow configuration. Holds for each shadow level of detail the available
+-- textures number and their resolutions.
 data ShadowConf = ShadowConf {
     _lowShadowMaxNb    :: Natural
   , _lowShadowRes      :: (Natural,Natural)
@@ -50,18 +56,26 @@ data ShadowConf = ShadowConf {
   , _highShadowRes     :: (Natural,Natural)
   }
 
+makeLenses ''Lighting
 makeLenses ''ShadowConf
 
+-- |@getLighting w h nbMaxLights shadowConf@ creates a 'Lighting' object that
+-- can be used later in conjuction with lighting shaders. 'w' and 'h' define
+-- the resolution of the render frame. 'nbMaxLights' is a limit used to
 getLighting :: (Applicative m,MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
             => Natural
             -> Natural
             -> Natural
+            -> Maybe ShadowConf
             -> m Lighting
-getLighting w h nbMaxLights = do
+getLighting w h nbMaxLights shadowConf = do
   info CoreLog "generating lighting"
   off <- genOffscreen w h Nearest RGB32F RGB
   omniBuffer <- genOmniBuffer nbMaxLights
-  return (Lighting off omniBuffer)
+  lowShadowmaps <- genObject
+  mediumShadowmaps <- genObject
+  highShadowmaps <- genObject
+  return (Lighting off omniBuffer shadowConf lowShadowmaps mediumShadowmaps highShadowmaps)
 
 camProjViewUniform :: Uniform (M44 Float)
 camProjViewUniform = uniform camProjViewSem
