@@ -57,7 +57,7 @@ data CompareFunc
   | Always
     deriving (Eq,Show)
 
-class TextureLike t where
+class IsTexture t where
   -- |
   textureID :: t -> GLuint
   -- |
@@ -69,47 +69,83 @@ class TextureLike t where
   -- |
   setTextureFilters :: (MonadIO m) => t -> Filter -> m ()
   -- |
-  setTextureStorage :: (MonadIO m) => t -> InternalFormat -> Natural -> Natural -> m ()
-  -- |
-  transferPixels :: (MonadIO m,Storable a) => t -> Natural -> Natural -> Format -> [a] -> m ()
-  -- |
   setTextureCompareFunc :: (MonadIO m) => t -> Maybe CompareFunc -> m ()
   -- |
   setTextureBaseLevel :: (MonadIO m) => t -> Int -> m ()
   -- |
   setTextureMaxLevel :: (MonadIO m) => t -> Int -> m ()
 
+class Unidimensional t where
+  -- |
+  setTextureStorage :: (MonadIO m) => t -> InternalFormat -> Natural -> Natural -> m ()
+  -- |
+  transferPixels :: (MonadIO m,Storable a) => t -> Natural -> Natural -> Format -> [a] -> m ()
+
+class Multidimensional t where
+  -- |
+  setTextureArrayStorage :: (MonadIO m) => t -> InternalFormat -> Natural -> Natural -> Natural -> m ()
+  -- |
+  transferArrayPixels :: (MonadIO m,Storable a) => t -> Natural -> Natural -> Natural -> Format -> [a] -> m ()
+
 newtype Texture2D = Texture2D { unTexture2D :: GLuint } deriving (Eq,Ord,Show)
 
 instance GLObject Texture2D where
   genObjects n = genericGenObjects n glGenTextures glDeleteTextures Texture2D
 
-instance TextureLike Texture2D where
+instance IsTexture Texture2D where
   textureID = unTexture2D
   bindTexture (Texture2D t) = liftIO $ glBindTexture gl_TEXTURE_2D t
   unbindTexture _ = liftIO $ glBindTexture gl_TEXTURE_2D 0
   setTextureWrap _ = setTextureWrap_ gl_TEXTURE_2D
   setTextureFilters _ = setTextureFilters_ gl_TEXTURE_2D
+  setTextureCompareFunc _ = setTextureCompareFunc_ gl_TEXTURE_2D
+  setTextureBaseLevel _ = setTextureBaseLevel_ gl_TEXTURE_2D
+  setTextureMaxLevel _ = setTextureMaxLevel_ gl_TEXTURE_2D
+
+instance Unidimensional Texture2D where
   setTextureStorage _ ift w h = liftIO $
       glTexStorage2D gl_TEXTURE_2D 1 ift' (fromIntegral w) (fromIntegral h)
     where
       ift' = fromIntegral (fromInternalFormat ift)
   transferPixels _ = transferPixels_ gl_TEXTURE_2D
-  setTextureCompareFunc _ = setTextureCompareFunc_ gl_TEXTURE_2D
-  setTextureBaseLevel _ = setTextureBaseLevel_ gl_TEXTURE_2D
-  setTextureMaxLevel _ = setTextureMaxLevel_ gl_TEXTURE_2D
+
+newtype Texture2DArray = Texture2DArray { unTexture2DArray :: GLuint } deriving (Eq,Ord,Show)
+
+instance GLObject Texture2DArray where
+  genObjects n = genericGenObjects n glGenTextures glDeleteTextures Texture2DArray
+
+instance IsTexture Texture2DArray where
+  textureID = unTexture2DArray
+  bindTexture (Texture2DArray t) = liftIO $ glBindTexture gl_TEXTURE_2D_ARRAY t
+  unbindTexture _ = liftIO $ glBindTexture gl_TEXTURE_2D_ARRAY 0
+  setTextureWrap _ = setTextureWrap_ gl_TEXTURE_2D_ARRAY
+  setTextureFilters _ = setTextureFilters_ gl_TEXTURE_2D_ARRAY
+  setTextureCompareFunc _ = setTextureCompareFunc_ gl_TEXTURE_2D_ARRAY
+  setTextureBaseLevel _ = setTextureBaseLevel_ gl_TEXTURE_2D_ARRAY
+  setTextureMaxLevel _ = setTextureMaxLevel_ gl_TEXTURE_2D_ARRAY
+
+instance Multidimensional Texture2DArray where
+  setTextureArrayStorage _ ift w h n = liftIO $
+      glTexStorage3D gl_TEXTURE_2D_ARRAY 1 ift' (fromIntegral w) (fromIntegral h) (fromIntegral n)
+    where
+        ift' = fromIntegral (fromInternalFormat ift)
 
 newtype Cubemap = Cubemap { unCubemap :: GLuint } deriving (Eq,Ord,Show)
 
 instance GLObject Cubemap where
   genObjects n = genericGenObjects n glGenTextures glDeleteTextures Cubemap
 
-instance TextureLike Cubemap where
+instance IsTexture Cubemap where
   textureID = unCubemap
   bindTexture (Cubemap t) = liftIO $ glBindTexture gl_TEXTURE_CUBE_MAP t
   unbindTexture _ = liftIO $ glBindTexture gl_TEXTURE_CUBE_MAP 0
   setTextureWrap _ = setTextureWrap_ gl_TEXTURE_CUBE_MAP
   setTextureFilters _ = setTextureFilters_ gl_TEXTURE_CUBE_MAP
+  setTextureCompareFunc _ = setTextureCompareFunc_ gl_TEXTURE_CUBE_MAP
+  setTextureBaseLevel _ = setTextureBaseLevel_ gl_TEXTURE_CUBE_MAP
+  setTextureMaxLevel _ = setTextureMaxLevel_ gl_TEXTURE_CUBE_MAP
+
+instance Unidimensional Cubemap where
   setTextureStorage _ ift w h = liftIO $ mapM_ texImage2D
       [
         gl_TEXTURE_CUBE_MAP_POSITIVE_X
@@ -124,11 +160,8 @@ instance TextureLike Cubemap where
       texImage2D target =
         glTexStorage2D target 1 ift' (fromIntegral w) (fromIntegral h)
   transferPixels = error "cubemap pixels transfer not implemented yet"
-  setTextureCompareFunc _ = setTextureCompareFunc_ gl_TEXTURE_CUBE_MAP
-  setTextureBaseLevel _ = setTextureBaseLevel_ gl_TEXTURE_CUBE_MAP
-  setTextureMaxLevel _ = setTextureMaxLevel_ gl_TEXTURE_CUBE_MAP
 
-bindTextureAt :: (MonadIO m,TextureLike t) => t -> Natural -> m ()
+bindTextureAt :: (MonadIO m,IsTexture t) => t -> Natural -> m ()
 bindTextureAt tex unit = do
   liftIO $ glActiveTexture (gl_TEXTURE0 + fromIntegral unit)
   bindTexture tex

@@ -19,7 +19,7 @@ import Numeric.Natural ( Natural )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Log
 import Quaazar.Render.GL.Renderbuffer ( Renderbuffer(..) )
-import Quaazar.Render.GL.Texture ( TextureLike(textureID) )
+import Quaazar.Render.GL.Texture ( IsTexture(textureID) )
 import Quaazar.Utils.Log
 
 newtype Framebuffer = Framebuffer { unFramebuffer :: GLuint } deriving (Eq,Show)
@@ -63,7 +63,7 @@ checkFramebufferStatus = liftIO $ fmap treatStatus (glCheckFramebufferStatus gl_
         | status == gl_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS = Just "layer targets"
         | otherwise = Just "unknown error"
 
-attachTextureAt :: (MonadIO m,TextureLike t)
+attachTextureAt :: (MonadIO m,IsTexture t)
                 => Target
                 -> t
                 -> AttachmentPoint
@@ -76,7 +76,7 @@ attachTextureAt target tex ap level = liftIO $ glFramebufferTexture target' ap' 
     tid = textureID tex
     lvl = fromIntegral level
 
-attachTexture :: (MonadIO m,TextureLike t) => Target -> t -> AttachmentPoint -> m ()
+attachTexture :: (MonadIO m,IsTexture t) => Target -> t -> AttachmentPoint -> m ()
 attachTexture target tex ap = attachTextureAt target tex ap 0
 
 attachRenderbuffer :: (MonadIO m) => Target -> Renderbuffer -> AttachmentPoint -> m ()
