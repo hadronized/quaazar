@@ -27,6 +27,7 @@ import Quaazar.Core.Color ( Color )
 import Quaazar.Core.Loader ( Load(..) )
 import Quaazar.Core.Resource ( Manager, Resource )
 
+-- |'Ambient col pow'.
 data Ambient = Ambient Color Float deriving (Eq,Show)
 
 instance FromJSON Ambient where
