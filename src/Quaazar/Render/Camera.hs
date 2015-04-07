@@ -16,7 +16,7 @@ import Data.Maybe ( fromJust )
 import Linear ( M44, V3, (!*!), inv44 )
 import Quaazar.Core.Transform ( Transform, transformPosition )
 import Quaazar.Core.Projection ( Projection, projectionMatrix )
-import Quaazar.Render.GL.Transform ( cameraMatrix )
+import Quaazar.Render.Transform ( cameraMatrix )
 import Quaazar.Render.GL.Shader ( Uniform, (@=) )
 
 data GPUCamera = GPUCamera {

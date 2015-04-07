@@ -23,7 +23,7 @@ import Data.Profunctor ( Profunctor(..) )
 import Data.Semigroup ( Semigroup(..) ) 
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
-import Quaazar.Render.Forward.Viewport ( Viewport(Viewport), setViewport )
+import Quaazar.Render.Viewport ( Viewport(Viewport), setViewport )
 import Quaazar.Render.GL.Buffer ( Buffer )
 import Quaazar.Render.GL.Framebuffer ( Target(..), bindFramebuffer ) 
 import Quaazar.Render.GL.Offscreen ( Offscreen(Offscreen), genOffscreen )

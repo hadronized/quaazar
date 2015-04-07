@@ -29,10 +29,10 @@ import Quaazar.Core.Resource ( Manager(..), Resource(..) )
 import Quaazar.Core.UV
 import Quaazar.Render.GL.Buffer
 import Quaazar.Render.GL.GLObject
-import Quaazar.Render.GL.Transform ( transformMatrix )
 import Quaazar.Render.GL.Primitive
 import Quaazar.Render.GL.Shader ( Uniform, (@=) )
 import Quaazar.Render.GL.VertexArray
+import Quaazar.Render.Transform ( transformMatrix )
 
 data GPUMesh = GPUMesh {
     vertexBuffer :: Buffer

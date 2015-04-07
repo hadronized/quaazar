@@ -18,7 +18,7 @@ import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO )
 import Numeric.Natural ( Natural )
 import Quaazar.Render.Compositing ( Compositor, renderNode )
-import Quaazar.Render.Forward.Viewport ( Viewport )
+import Quaazar.Render.Viewport ( Viewport )
 import Quaazar.Render.Shader ( Uniform, ($=), uniform )
 import Quaazar.Render.Texture ( GPUTexture )
 import Quaazar.Utils.Log
