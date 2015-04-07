@@ -55,5 +55,7 @@ below t = Hierarchy . local (<> t) . unHierarchy
 -- value.
 data Instance a = Instance a Transform deriving (Eq,Functor,Show)
 
+-- |Instantiate a value in the current 'Hierarchy'. That function is the only
+-- way to get instances – i.e. @Instance a@.
 instantiate :: a -> Transform -> Hierarchy (Instance a)
 instantiate a t = fmap (Instance a . (<> t)) above
