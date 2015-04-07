@@ -20,7 +20,6 @@ import Graphics.Rendering.OpenGL.Raw
 import Graphics.UI.GLFW ( Window, swapBuffers )
 import Numeric.Natural ( Natural )
 import Quaazar.Render.Compositing ( Compositor(..), copyVS, copyFS )
-import Quaazar.Render.Forward.Accumulation ( Accumulation, getAccumulation )
 import Quaazar.Render.Forward.Lighting ( Lighting, getLighting
                                        , lightOmniBuffer )
 import Quaazar.Render.GL.Framebuffer ( Target(ReadWrite), unbindFramebuffer )
@@ -34,7 +33,6 @@ import Quaazar.Utils.Scoped
 data ForwardRenderer = ForwardRenderer {
     _frCopyProgram :: Program
   , _frLighting    :: Lighting
-  , _frAccumulation :: Accumulation
   , _frVA          :: VertexArray
   , _frWindow      :: Window
   }
@@ -52,7 +50,6 @@ getRenderer w h shadowDef lightNb window =
   ForwardRenderer
     <$> getCopyProgram
     <*> getLighting w h lightNb
-    <*> getAccumulation w h
     <*> genAttributelessVertexArray
     <*> pure window
 

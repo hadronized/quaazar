@@ -17,7 +17,6 @@ import Control.Monad.Trans ( MonadIO )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Quaazar.Render.Compositing
-import Quaazar.Render.Forward.Accumulation
 import Quaazar.Render.Forward.Lighting
 import Quaazar.Render.Forward.Looked ( Looked(..) )
 import Quaazar.Render.Forward.Viewport ( Viewport(Viewport), setViewport )

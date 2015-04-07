@@ -45,7 +45,6 @@ library
                      , Quaazar.Render
                      , Quaazar.Render.Camera
                      , Quaazar.Render.Compositing
-                     , Quaazar.Render.Forward
                      , Quaazar.Render.Forward.Lit
                      , Quaazar.Render.Forward.Looked
                      , Quaazar.Render.Forward.Rendered
@@ -66,8 +65,7 @@ library
                      , Quaazar.Utils.Scoped
                      , Quaazar.Utils.TimePoint
 
-  other-modules:       Quaazar.Render.Forward.Accumulation
-                     , Quaazar.Render.Forward.Lighting
+  other-modules:       Quaazar.Render.Forward.Lighting
                      , Quaazar.Render.GL.Buffer
                      , Quaazar.Render.GL.Framebuffer
                      , Quaazar.Render.GL.GLObject
