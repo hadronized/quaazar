@@ -9,7 +9,7 @@
 --
 ----------------------------------------------------------------------------
 
-module Quaazar.Render.Forward.Lighting where
+module Quaazar.Render.Lighting where
 
 import Control.Applicative
 import Control.Monad ( foldM, void )
