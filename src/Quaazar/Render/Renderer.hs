@@ -9,7 +9,7 @@
 --
 ----------------------------------------------------------------------------
 
-module Quaazar.Render.Forward.Renderer where
+module Quaazar.Render.Renderer where
 
 import Control.Applicative
 import Control.Lens
@@ -20,8 +20,8 @@ import Graphics.Rendering.OpenGL.Raw
 import Graphics.UI.GLFW ( Window, swapBuffers )
 import Numeric.Natural ( Natural )
 import Quaazar.Render.Compositing ( Compositor(..), copyVS, copyFS )
-import Quaazar.Render.Forward.Lighting ( Lighting, getLighting
-                                       , lightOmniBuffer )
+import Quaazar.Render.Lighting ( Lighting, getLighting
+                               , lightOmniBuffer )
 import Quaazar.Render.GL.Framebuffer ( Target(ReadWrite), unbindFramebuffer )
 import Quaazar.Render.GL.Shader ( Program, buildProgram, useProgram )
 import Quaazar.Render.GL.VertexArray ( VertexArray, bindVertexArray
@@ -30,14 +30,14 @@ import Quaazar.Render.Texture ( GPUTexture(..) )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
-data ForwardRenderer = ForwardRenderer {
+data Renderer = Renderer {
     _frCopyProgram :: Program
   , _frLighting    :: Lighting
   , _frVA          :: VertexArray
   , _frWindow      :: Window
   }
 
-makeLenses ''ForwardRenderer
+makeLenses ''Renderer
 
 getRenderer :: (Applicative m,MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
             => Natural
@@ -45,9 +45,9 @@ getRenderer :: (Applicative m,MonadScoped IO m,MonadIO m,MonadLogger m,MonadErro
             -> Natural
             -> Natural
             -> Window
-            -> m ForwardRenderer
+            -> m Renderer
 getRenderer w h shadowDef lightNb window =
-  ForwardRenderer
+  Renderer
     <$> getCopyProgram
     <*> getLighting w h lightNb
     <*> genAttributelessVertexArray
@@ -57,7 +57,7 @@ getCopyProgram :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
                => m Program
 getCopyProgram = buildProgram copyVS Nothing Nothing copyFS
 
-display :: (MonadIO m) => ForwardRenderer -> a -> Compositor a GPUTexture -> m ()
+display :: (MonadIO m) => Renderer -> a -> Compositor a GPUTexture -> m ()
 display rdr a compt = liftIO $ do
   source <- runCompositor compt (rdr^.frVA) (rdr^.frLighting.lightOmniBuffer) a
   useProgram (rdr^.frCopyProgram)

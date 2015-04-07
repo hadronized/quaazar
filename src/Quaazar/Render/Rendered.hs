@@ -9,7 +9,7 @@
 --
 ----------------------------------------------------------------------------
 
-module Quaazar.Render.Forward.Rendered where
+module Quaazar.Render.Rendered where
 
 import Data.Monoid ( Monoid(..) )
 import Linear ( M44 )

@@ -9,7 +9,7 @@
 --
 ----------------------------------------------------------------------------
 
-module Quaazar.Render.Forward.Viewport where
+module Quaazar.Render.Viewport where
 
 import Control.Lens ( makeLenses )
 import Graphics.Rendering.OpenGL.Raw

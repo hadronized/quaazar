@@ -9,7 +9,7 @@
 --
 ----------------------------------------------------------------------------
 
-module Quaazar.Render.Forward.RenderLayer where
+module Quaazar.Render.RenderLayer where
 
 import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
@@ -17,9 +17,9 @@ import Control.Monad.Trans ( MonadIO )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Quaazar.Render.Compositing
-import Quaazar.Render.Forward.Lighting
-import Quaazar.Render.Forward.Looked ( Looked(..) )
-import Quaazar.Render.Forward.Viewport ( Viewport(Viewport), setViewport )
+import Quaazar.Render.Lighting
+import Quaazar.Render.Looked ( Looked(..) )
+import Quaazar.Render.Viewport ( Viewport(Viewport), setViewport )
 import Quaazar.Render.GL.Buffer ( Buffer )
 import Quaazar.Render.GL.Framebuffer ( Framebuffer, Target(..)
                                      , bindFramebuffer )

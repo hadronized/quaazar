@@ -9,12 +9,12 @@
 --
 ----------------------------------------------------------------------------
 
-module Quaazar.Render.Forward.Shaded where
+module Quaazar.Render.Shaded where
 
 import Control.Lens
 import Quaazar.Render.Camera ( GPUCamera(..) )
-import Quaazar.Render.Forward.Lighting
-import Quaazar.Render.Forward.Lit ( Lit(..) )
+import Quaazar.Render.Lighting
+import Quaazar.Render.Lit ( Lit(..) )
 import Quaazar.Render.GL.Buffer ( Buffer )
 import Quaazar.Render.GL.Framebuffer ( Framebuffer )
 import Quaazar.Render.GL.Shader ( unused )

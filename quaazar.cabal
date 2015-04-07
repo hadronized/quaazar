@@ -45,17 +45,17 @@ library
                      , Quaazar.Render
                      , Quaazar.Render.Camera
                      , Quaazar.Render.Compositing
-                     , Quaazar.Render.Forward.Rendered
-                     , Quaazar.Render.Forward.Renderer
-                     , Quaazar.Render.Forward.RenderLayer
-                     , Quaazar.Render.Forward.Shaded
-                     , Quaazar.Render.Forward.Viewport
+                     , Quaazar.Render.Shaded
                      , Quaazar.Render.GLSL
                      , Quaazar.Render.Lit
                      , Quaazar.Render.Looked
                      , Quaazar.Render.Mesh
+                     , Quaazar.Render.RenderLayer
+                     , Quaazar.Render.Rendered
+                     , Quaazar.Render.Renderer
                      , Quaazar.Render.Shader
                      , Quaazar.Render.Texture
+                     , Quaazar.Render.Viewport
                      , Quaazar.Technics
                      , Quaazar.Technics.Compositing
                      , Quaazar.Technics.Lighting.Phong
