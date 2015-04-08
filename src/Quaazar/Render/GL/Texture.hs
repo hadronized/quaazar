@@ -161,6 +161,23 @@ instance Unidimensional Cubemap where
         glTexStorage2D target 1 ift' (fromIntegral w) (fromIntegral h)
   transferPixels = error "cubemap pixels transfer not implemented yet"
 
+newtype CubemapArray = CubemapArray { unCubemapArray :: GLuint } deriving (Eq,Ord,Show)
+
+instance GLObject CubemapArray where
+  genObjects n = genericGenObjects n glGenTextures glDeleteTextures CubemapArray
+
+instance IsTexture CubemapArray where
+  textureID = unCubemapArray
+  bindTexture (CubemapArray t) = liftIO $ glBindTexture gl_TEXTURE_CUBE_MAP_ARRAY t
+  unbindTexture _ = liftIO $ glBindTexture gl_TEXTURE_CUBE_MAP_ARRAY 0
+  setTextureWrap _ = setTextureWrap_ gl_TEXTURE_CUBE_MAP_ARRAY
+  setTextureFilters _ = setTextureFilters_ gl_TEXTURE_CUBE_MAP_ARRAY
+  setTextureCompareFunc _ = setTextureCompareFunc_ gl_TEXTURE_CUBE_MAP_ARRAY
+  setTextureBaseLevel _ = setTextureBaseLevel_ gl_TEXTURE_CUBE_MAP_ARRAY
+  setTextureMaxLevel _ = setTextureMaxLevel_ gl_TEXTURE_CUBE_MAP_ARRAY
+
+
+
 bindTextureAt :: (MonadIO m,IsTexture t) => t -> Natural -> m ()
 bindTextureAt tex unit = do
   liftIO $ glActiveTexture (gl_TEXTURE0 + fromIntegral unit)
