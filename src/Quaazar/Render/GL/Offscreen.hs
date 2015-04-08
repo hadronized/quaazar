@@ -169,8 +169,44 @@ genCubeOffscreen cubeSize flt colift colft colap depthift depthft depthap = do
   fb <- eitherToError fb'
   return (CubeOffscreen colormap depthmap fb)
 
-{-
 data CubeOffscreenArray = CubeOffscreenArray {
     _cubeOffscreenArrayColormaps :: CubemapArray
+  , _cubeOffscreenArrayDepthmaps :: CubemapArray
+  , _cubeOffscreenArrayFB        :: Framebuffer
   }
--}
+
+genCubeOffscreenArray :: (MonadIO m,MonadScoped IO m,MonadError Log m)
+                      => Natural
+                      -> Natural
+                      -> Filter
+                      -> InternalFormat
+                      -> Format
+                      -> AttachmentPoint
+                      -> InternalFormat
+                      -> Format
+                      -> AttachmentPoint
+                      -> m CubeOffscreenArray
+genCubeOffscreenArray cubeSize n flt colift colft colap depthift depthft depthap = do
+  (colormaps,depthmaps,fb') <- do
+    -- color cubemaps
+    colormaps <- genObject
+    bindTexture colormaps
+    setTextureWrap colormaps ClampToEdge
+    setTextureFilters colormaps flt
+    setTextureArrayStorage colormaps colift cubeSize cubeSize n
+    unbindTexture colormaps
+    -- depth cubemaps
+    depthmaps <- genObject
+    bindTexture depthmaps
+    setTextureWrap depthmaps ClampToEdge
+    setTextureFilters depthmaps flt
+    setTextureArrayStorage depthmaps depthift cubeSize cubeSize n
+    --setTextureCompareFunc depthmaps (Just LessOrEqual)
+    unbindTexture depthmaps
+    -- framebuffer
+    fb <- buildFramebuffer ReadWrite . const $ do
+      attachTexture ReadWrite colormaps colap
+      attachTexture ReadWrite depthmaps depthap
+    return (colormaps,depthmaps,fb)
+  fb <- eitherToError fb'
+  return (CubeOffscreenArray colormaps depthmaps fb)
