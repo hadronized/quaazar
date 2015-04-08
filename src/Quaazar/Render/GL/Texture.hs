@@ -146,19 +146,10 @@ instance IsTexture Cubemap where
   setTextureMaxLevel _ = setTextureMaxLevel_ gl_TEXTURE_CUBE_MAP
 
 instance Unidimensional Cubemap where
-  setTextureStorage _ ift w h = liftIO $ mapM_ texImage2D
-      [
-        gl_TEXTURE_CUBE_MAP_POSITIVE_X
-      , gl_TEXTURE_CUBE_MAP_NEGATIVE_X
-      , gl_TEXTURE_CUBE_MAP_POSITIVE_Y
-      , gl_TEXTURE_CUBE_MAP_NEGATIVE_Y
-      , gl_TEXTURE_CUBE_MAP_POSITIVE_Z
-      , gl_TEXTURE_CUBE_MAP_NEGATIVE_Z
-      ]
+  setTextureStorage _ ift w h = liftIO $
+      glTexStorage2D gl_TEXTURE_CUBE_MAP 1 ift' (fromIntegral w) (fromIntegral h)
     where
       ift' = fromIntegral (fromInternalFormat ift)
-      texImage2D target =
-        glTexStorage2D target 1 ift' (fromIntegral w) (fromIntegral h)
   transferPixels = error "cubemap pixels transfer not implemented yet"
 
 newtype CubemapArray = CubemapArray { unCubemapArray :: GLuint } deriving (Eq,Ord,Show)
@@ -176,7 +167,13 @@ instance IsTexture CubemapArray where
   setTextureBaseLevel _ = setTextureBaseLevel_ gl_TEXTURE_CUBE_MAP_ARRAY
   setTextureMaxLevel _ = setTextureMaxLevel_ gl_TEXTURE_CUBE_MAP_ARRAY
 
-
+instance Multidimensional CubemapArray where
+  setTextureArrayStorage _ ift w h n = liftIO $
+      glTexStorage3D gl_TEXTURE_CUBE_MAP_ARRAY 1 ift' (fromIntegral w)
+        (fromIntegral h) (fromIntegral $ 6*n)
+    where
+      ift' = fromIntegral (fromInternalFormat ift)
+  transferArrayPixels = error "cubemap array pixels transfer not implemented yet"
 
 bindTextureAt :: (MonadIO m,IsTexture t) => t -> Natural -> m ()
 bindTextureAt tex unit = do
