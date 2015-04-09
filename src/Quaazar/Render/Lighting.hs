@@ -17,6 +17,7 @@ import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Graphics.Rendering.OpenGL.Raw
+import Data.Traversable ( for )
 import Linear
 import Numeric.Natural ( Natural )
 import Foreign hiding ( void )
@@ -25,39 +26,42 @@ import Quaazar.Core.Transform ( Transform, transformPosition )
 import Quaazar.Core.Light ( Omni(..) )
 import Quaazar.Render.GL.Buffer hiding ( MapAccess(..) )
 import qualified Quaazar.Render.GL.Buffer as B ( MapAccess(..) )
-import Quaazar.Render.GL.Framebuffer as FB ( Target(..), bindFramebuffer )
+import Quaazar.Render.GL.Framebuffer as FB ( AttachmentPoint(..), Target(..)
+                                           , bindFramebuffer )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Shader ( Uniform, Uniformable, (@=), uniform )
-import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
-                                 , Texture2DArray )
+import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..) )
 import Quaazar.Render.GLSL
 import Quaazar.Utils.Log
 
 -- |'Lighting' gathers information about lighting in the scene.
 data Lighting = Lighting {
-    _lightOff           :: Offscreen -- FIXME: destroy that
-  , _lightOmniBuffer    :: Buffer
-  , _shaddowConf        :: Maybe ShadowConf
-  , _lightLowShadows    :: Texture2DArray
-  , _lightMediumShadows :: Texture2DArray
-  , _lightHighShadows   :: Texture2DArray
+    _lightOff        :: Offscreen -- FIXME: destroy that
+  , _lightOmniBuffer :: Buffer
+  , _shadows         :: Maybe (ShadowConf,Shadows)
   }
-
 
 -- |Shadow configuration. Holds for each shadow level of detail the available
 -- textures number and their resolutions.
 data ShadowConf = ShadowConf {
     _lowShadowMaxNb    :: Natural
-  , _lowShadowRes      :: (Natural,Natural)
+  , _lowShadowSize     :: Natural
   , _mediumShadowMaxNb :: Natural
-  , _mediumShadowRes   :: (Natural,Natural)
+  , _mediumShadowSize  :: Natural
   , _highShadowMaxNb   :: Natural
-  , _highShadowRes     :: (Natural,Natural)
+  , _highShadowSize    :: Natural
+  }
+
+data Shadows = Shadows {
+    _lowShadows    :: CubeOffscreenArray
+  , _mediumShadows :: CubeOffscreenArray
+  , _highShadows   :: CubeOffscreenArray
   }
 
 makeLenses ''Lighting
 makeLenses ''ShadowConf
+makeLenses ''Shadows
 
 -- |@getLighting w h nbMaxLights shadowConf@ creates a 'Lighting' object that
 -- can be used later in conjuction with lighting shaders. 'w' and 'h' define
@@ -72,10 +76,18 @@ getLighting w h nbMaxLights shadowConf = do
   info CoreLog "generating lighting"
   off <- genOffscreen w h Nearest RGB32F RGB
   omniBuffer <- genOmniBuffer nbMaxLights
-  lowShadowmaps <- genObject
-  mediumShadowmaps <- genObject
-  highShadowmaps <- genObject
-  return (Lighting off omniBuffer shadowConf lowShadowmaps mediumShadowmaps highShadowmaps)
+  shadows <- for shadowConf $ \conf -> do
+    lowShadows <- getShadows (conf^.lowShadowSize) (conf^.lowShadowMaxNb)
+    mediumShadows <- getShadows (conf^.mediumShadowSize) (conf^.mediumShadowMaxNb)
+    highShadows <- getShadows (conf^.highShadowSize) (conf^.highShadowMaxNb)
+    return (conf,Shadows lowShadows mediumShadows highShadows)
+  return (Lighting off omniBuffer shadows)
+
+getShadows :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
+           => Natural
+           -> Natural
+           -> m CubeOffscreenArray
+getShadows cubeSize d = genCubeOffscreenArray cubeSize d Nearest RGB32F RGB (ColorAttachment 0) Depth32F Depth DepthAttachment
 
 camProjViewUniform :: Uniform (M44 Float)
 camProjViewUniform = uniform camProjViewSem
