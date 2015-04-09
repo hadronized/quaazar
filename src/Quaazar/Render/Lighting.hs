@@ -16,6 +16,7 @@ import Control.Monad ( foldM, void )
 import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
+import Control.Monad.Trans.State ( StateT )
 import Graphics.Rendering.OpenGL.Raw
 import Data.Traversable ( for )
 import Linear
@@ -122,27 +123,59 @@ omniBytes :: Int
 omniBytes =
     sizeOf (undefined :: V3 Float) -- transform
     + sizeOf (undefined :: Float) -- float padding
-  + sizeOf (undefined :: Color)
+  + sizeOf (undefined :: Color) -- color
   + sizeOf (undefined :: Float) -- power
   + sizeOf (undefined :: Float) -- radius
-    + sizeOf (undefined :: V3 Float) -- vec2 padding
+  + sizeOf (undefined :: Word32) -- shadow lod
+  + sizeOf (undefined :: Word32) -- shadowmap index
+    + sizeOf (undefined :: Float) -- float padding
 
 -- Poke omnidirectional lights at a given pointer. That pointer should be gotten
 -- from the SSBO.
-pokeOmnis :: [(Omni,Transform)] -> Ptr Word8 -> IO Word32
+pokeOmnis :: [(Omni,Transform)] -> Ptr Word8 -> StateT (Natural,Natural,Natural) IO Word32
 pokeOmnis omnis ptr = do
     (_,nbLights) <- foldM cache (ptr,0) omnis
     return nbLights
   where
     cache (ptr',nbLights) (omni,ent) = do
-      writeAt ptr' omni ent
+      (shadowLOD,shadowIndex) <- getShadowInfo omni
+      writeAt ptr' (omni,shadowIndex) ent
       return (ptr' `advancePtr` omniBytes,succ nbLights)
-    writeAt ptr' (Omni col pw rad _) ent = do
+    writeAt ptr' (Omni col pw rad shadowLOD,shadowIndex) ent = liftIO $ do
       pokeByteOff ptr' 0 (ent^.transformPosition)
       pokeByteOff ptr' 16 (unColor col)
       pokeByteOff ptr' 28 pw
       pokeByteOff ptr' 32 rad
+      pokeByteOff ptr' 36 $ case shadowLOD of
+        Nothing -> 0
+        Just lod -> case lod of
+          LowShadow    -> 1
+          MediumShadow -> 2
+          HighShadow   -> 3
+      pokeByteOff ptr' 40 (fromIntegral shadowIndex :: Word32)
 
+-- TODO: add priority switch.
+-- |Extract from an omnidirectional light and the current shadowmaps pool the
+-- level of detail to use and the shadowmap index.
+getShadowInfo :: Omni -> StateT (Natural,Natural,Natural) m (Natural,Natural)
+getShadowInfo (Omni _ _ _ lod) = case lod of
+    Nothing -> noShadows
+    Just lod' -> do
+      (l,m,h) <- get
+      case lod' of
+        LowShadow
+          | l < lmax -> put (succ l,m,h) >> return (1,l)
+          | otherwise -> noShadows
+        MediumShadow
+          | m < mmax -> put (l,succ m,h) >> return (2,m)
+          | otherwise -> noShadows
+        HighShadow
+          | h < hmax -> put (l,m,succ h) >> return (3,h)
+          | otherwise -> noShadows
+  where
+    noShadows = return (0,0)
+  
+-- |Send omnidirectional lights to the GPU.
 pushOmnis :: [(Omni,Transform)] -> Buffer -> IO ()
 pushOmnis omnis omniBuffer = do
   bindBufferAt omniBuffer ShaderStorageBuffer ligOmniSSBOBP
