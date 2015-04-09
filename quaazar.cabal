@@ -47,6 +47,7 @@ library
                      , Quaazar.Render.Compositing
                      , Quaazar.Render.Shaded
                      , Quaazar.Render.GLSL
+                     , Quaazar.Render.Light
                      , Quaazar.Render.Lit
                      , Quaazar.Render.Looked
                      , Quaazar.Render.Mesh
