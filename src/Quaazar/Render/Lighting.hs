@@ -145,8 +145,8 @@ pokeOmnis omnis ptr = do
 --   - the shadow LOD (0 if the light doesn’t cast shadows);
 --   - the shadowmap index (whatever if the light doesn’t cast shadows);
 --   - the transform of the light.
-pushOmnis :: (Natural,Natural,Natural) -> [(Omni,Natural,Natural,Transform)] -> Buffer -> IO ()
-pushOmnis shadowmapsPoolLimits omnis omniBuffer = do
+pushOmnis :: [(Omni,Natural,Natural,Transform)] -> Buffer -> IO ()
+pushOmnis omnis omniBuffer = do
   bindBufferAt omniBuffer ShaderStorageBuffer ligOmniSSBOBP
   void . withMappedBuffer ShaderStorageBuffer B.Write $ \ptr -> do
     nbLights <- pokeOmnis omnis ptr
