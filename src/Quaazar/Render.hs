@@ -13,6 +13,7 @@ module Quaazar.Render (
     module Quaazar.Render.Camera
   , module Quaazar.Render.Compositing
   , module Quaazar.Render.GLSL
+  , module Quaazar.Render.Light
   , module Quaazar.Render.Lighting
   , module Quaazar.Render.Lit
   , module Quaazar.Render.Looked
@@ -30,6 +31,7 @@ module Quaazar.Render (
 import Quaazar.Render.Camera
 import Quaazar.Render.Compositing
 import Quaazar.Render.GLSL
+import Quaazar.Render.Light
 import Quaazar.Render.Lighting
 import Quaazar.Render.Lit
 import Quaazar.Render.Looked
