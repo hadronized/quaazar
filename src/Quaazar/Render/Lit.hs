@@ -28,7 +28,7 @@ import Quaazar.Render.GL.Shader ( (@=) )
 import Quaazar.Render.Light
 
 newtype Lit mat = Lit {
-    unLit :: Framebuffer                -- ^ lighting framebuffer
+    unLit :: Framebuffer                -- ^ framebuffer
           -> Buffer                     -- ^ omni light buffer
           -> Maybe (ShadowConf,Shadows) -- ^ shadows configuration
           -> (mat -> IO ())             -- ^ material sink
@@ -38,7 +38,7 @@ newtype Lit mat = Lit {
 lighten :: Ambient -> [(Omni,Transform)] -> Rendered mat -> Lit mat
 lighten (Ambient ligAmbCol ligAmbPow) omnis shd = Lit lighten_
   where
-    lighten_ lightingFB omniBuffer shadowsConf sinkMat = do
+    lighten_ fb omniBuffer shadowsConf sinkMat = do
       omnisWithShadows <- case shadowsConf of
         Just (conf,_) -> do 
           let
