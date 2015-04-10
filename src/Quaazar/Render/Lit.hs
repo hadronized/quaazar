@@ -49,7 +49,7 @@ lighten (Ambient ligAmbCol ligAmbPow) omnis shd = Lit lighten_
           -- TODO: create shadowmaps
           return omnisWithShadows
         Nothing -> return $ map addNoShadows omnis
-      purgeLightingFramebuffer lightingFB
+      purgeLightingFramebuffer fb
       ligAmbColUniform @= ligAmbCol
       ligAmbPowUniform @= ligAmbPow
       pushOmnis omnisWithShadows omniBuffer
