@@ -27,34 +27,31 @@ import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
                                  , bindTextureAt )
 import Quaazar.Render.GL.VertexArray ( bindVertexArray )
+import Quaazar.Render.Light ( ShadowConf )
+import Quaazar.Render.Lighting ( Shadows )
 import Quaazar.Render.PostFX ( GPUPostFX(..) )
 import Quaazar.Render.Texture ( GPUTexture(GPUTexture) ) 
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
 newtype RenderLayer = RenderLayer {
-    unRenderLayer :: Framebuffer -- ^ lighting framebuffer
-                  -> Buffer      -- ^ omni light buffer
+    unRenderLayer :: Framebuffer                -- ^ lighting framebuffer
+                  -> Buffer                     -- ^ omni light buffer
+                  -> Maybe (ShadowConf,Shadows) -- ^ shadows configuration
                   -> IO ()
   }
 
 renderLayer :: Looked -> RenderLayer
-renderLayer lk = RenderLayer fromLooked
-  where
-    fromLooked lightingFB omniBuffer = do
-      -- purge accum framebuffer
-      unLooked lk lightingFB omniBuffer
-      --glDisable gl_BLEND
-      --bindVertexArray (accumulation^.accumVA)
+renderLayer lk = RenderLayer $ unLooked lk
 
 renderLayerCompositor :: (MonadIO m,MonadScoped IO m,MonadError Log m)
                       => Viewport
                       -> m (Compositor RenderLayer (GPUTexture,GPUTexture))
 renderLayerCompositor vp = do
     Offscreen nodeColor nodeDepth nodeFB <- genOffscreen w h Nearest RGBA32F RGBA
-    return . Compositor $ \_ omniBuffer rl -> do
+    return . Compositor $ \_ omniBuffer shadowsConf rl -> do
       setViewport vp
-      unRenderLayer rl nodeFB omniBuffer
+      unRenderLayer rl nodeFB omniBuffer shadowsConf
       return (GPUTexture $ bindTextureAt nodeColor,GPUTexture $ bindTextureAt nodeDepth)
   where
     Viewport _ _ w h = vp

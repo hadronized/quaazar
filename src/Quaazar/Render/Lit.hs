@@ -40,15 +40,15 @@ lighten (Ambient ligAmbCol ligAmbPow) omnis shd = Lit lighten_
   where
     lighten_ lightingFB omniBuffer shadowsConf sinkMat = do
       omnisWithShadows <- case shadowsConf of
-        Just (conf,shadows) -> do 
+        Just (conf,_) -> do 
           let
             omnisWithShadows = flip evalState (0,0,0) $ mapM (addShadowInfo_ lmax mmax hmax) omnis
-            lmax = lowShadowMaxNb conf
-            mmax = mediumShadowMaxNb conf
-            hmax = highShadowMaxNb conf
+            lmax = conf^.lowShadowMaxNb
+            mmax = conf^.mediumShadowMaxNb
+            hmax = conf^.highShadowMaxNb
           -- TODO: create shadowmaps
           return omnisWithShadows
-        Nothing -> map addNoShadows omnis
+        Nothing -> return $ map addNoShadows omnis
       purgeLightingFramebuffer lightingFB
       ligAmbColUniform @= ligAmbCol
       ligAmbPowUniform @= ligAmbPow

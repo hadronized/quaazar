@@ -31,6 +31,8 @@ import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
                                  , bindTextureAt )
 import Quaazar.Render.GL.VertexArray ( VertexArray, bindVertexArray
                                      , genAttributelessVertexArray )
+import Quaazar.Render.Light ( ShadowConf )
+import Quaazar.Render.Lighting ( Shadows )
 import Quaazar.Render.Shader
 import Quaazar.Render.Texture ( GPUTexture(GPUTexture) )
 import Quaazar.Utils.Log
@@ -41,50 +43,52 @@ import Prelude hiding ( (.), id )
 newtype Compositor a b = Compositor {
     runCompositor :: VertexArray -- attribute-less vertex array
                   -> Buffer -- ^ lighting buffer -- FIXME
+                  -> Maybe (ShadowConf,Shadows) -- FIXME
                   -> a
                   -> IO b
   }
 
 instance Applicative (Compositor a) where
-  pure x = Compositor $ \_ _ _ -> pure x
-  Compositor f <*> Compositor x = Compositor $ \va b a -> do
-    f' <- f va b a
-    x' <- x va b a
+  pure x = Compositor $ \_ _ _ _ -> pure x
+  Compositor f <*> Compositor x = Compositor $ \va b s a -> do
+    f' <- f va b s a
+    x' <- x va b s a
     pure (f' x')
 
 instance Arrow Compositor where
-  arr f = Compositor $ \_ _ a -> pure (f a)
-  first (Compositor f) = Compositor $ \va b (x,y) -> do
-    x' <- f va b x
+  arr f = Compositor $ \_ _ _ a -> pure (f a)
+  first (Compositor f) = Compositor $ \va b s (x,y) -> do
+    x' <- f va b s x
     pure (x',y)
-  second (Compositor s) = Compositor $ \va b (x,y) -> do
-    y' <- s va b y
+  second (Compositor s) = Compositor $ \va b shdw (x,y) -> do
+    y' <- s va b shdw y
     pure (x,y')
 
 instance Category Compositor where
-  id = Compositor $ \_ _ a -> pure a
-  Compositor f . Compositor g = Compositor $ \va b a -> g va b a >>= f va b
+  id = Compositor $ \_ _ _ a -> pure a
+  Compositor f . Compositor g = Compositor $ \va b s a -> g va b s a >>= f va b s
 
 instance Functor (Compositor a) where
-  fmap f (Compositor g) = Compositor $ \va b a -> fmap f (g va b a)
+  fmap f (Compositor g) = Compositor $ \va b s a -> fmap f (g va b s a)
 
 instance Monad (Compositor a) where
   return = pure
-  Compositor x >>= f = Compositor $ \va b a -> do
-    x' <- x va b a
-    runCompositor (f x') va b a
+  Compositor x >>= f = Compositor $ \va b s a -> do
+    x' <- x va b s a
+    runCompositor (f x') va b s a
 
 instance Profunctor Compositor where
-  dimap l r (Compositor f) = Compositor $ \va b a -> do
-    fmap r $ f va b (l a)
+  dimap l r (Compositor f) = Compositor $ \va b s a -> do
+    fmap r $ f va b s (l a)
+
 instance (Semigroup b,Monoid b) => Monoid (Compositor a b) where
-  mempty = Compositor $ \_ _ _ -> pure mempty
+  mempty = Compositor $ \_ _ _ _ -> pure mempty
   mappend = (<>)
 
 instance (Semigroup b) => Semigroup (Compositor a b) where
-  Compositor x <> Compositor y = Compositor $ \va b a -> do
-    x' <- x va b a
-    y' <- y va b a
+  Compositor x <> Compositor y = Compositor $ \va b s a -> do
+    x' <- x va b s a
+    y' <- y va b s a
     pure (x' <> y')
 
 -- |This compositor node passes its input to its shader program and outputs both
@@ -97,7 +101,7 @@ renderNode :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
 renderNode vp shaderSrc semMapper = do
     Offscreen nodeColor nodeDepth nodeFB <- genOffscreen w h Nearest RGBA32F RGBA
     prog <- gpuProgram copyVS Nothing Nothing shaderSrc semMapper
-    return . Compositor $ \va _ a -> do
+    return . Compositor $ \va _ _ a -> do
       -- use the node’s program and send input
       useProgram prog
       sendToProgram prog a
