@@ -36,7 +36,7 @@ newtype Lit mat = Lit {
   }
 
 lighten :: Ambient -> [(Omni,Transform)] -> Rendered mat -> Lit mat
-lighten (Ambient ligAmbCol ligAmbPow) omnis shd = Lit lighten_
+lighten (Ambient ligAmbCol ligAmbPow) omnis rdrd = Lit lighten_
   where
     lighten_ fb omniBuffer shadowsConf sinkMat = do
       omnisWithShadows <- case shadowsConf of
@@ -53,7 +53,7 @@ lighten (Ambient ligAmbCol ligAmbPow) omnis shd = Lit lighten_
       ligAmbColUniform @= ligAmbCol
       ligAmbPowUniform @= ligAmbPow
       pushOmnis omnisWithShadows omniBuffer
-      unRendered shd modelUniform sinkMat
+      unRendered rdrd modelUniform sinkMat
     addShadowInfo_ lmax mmax hmax (omni,transform) = do
       (omni',lod,index) <- addShadowInfo lmax mmax hmax omni
       return (omni',lod,index,transform)
