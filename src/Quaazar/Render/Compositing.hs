@@ -103,7 +103,7 @@ renderNode vp shaderSrc semMapper = do
     prog <- gpuProgram copyVS Nothing Nothing shaderSrc semMapper
     return . Compositor $ \va _ _ a -> do
       -- use the node’s program and send input
-      useProgram prog CommonShading
+      useProgram prog
       sendToProgram prog a
       -- bind the VA
       bindVertexArray va

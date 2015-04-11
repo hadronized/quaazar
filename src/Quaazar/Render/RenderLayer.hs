@@ -29,6 +29,7 @@ import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
 import Quaazar.Render.GL.VertexArray ( bindVertexArray )
 import Quaazar.Render.Light ( ShadowConf )
 import Quaazar.Render.Lighting ( Shadows )
+import Quaazar.Render.PostFX ( GPUPostFX(..) )
 import Quaazar.Render.Texture ( GPUTexture(GPUTexture) ) 
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped

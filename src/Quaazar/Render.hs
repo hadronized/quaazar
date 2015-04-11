@@ -18,6 +18,7 @@ module Quaazar.Render (
   , module Quaazar.Render.Lit
   , module Quaazar.Render.Looked
   , module Quaazar.Render.Mesh
+  , module Quaazar.Render.PostFX
   , module Quaazar.Render.Rendered
   , module Quaazar.Render.Renderer
   , module Quaazar.Render.RenderLayer
@@ -35,6 +36,7 @@ import Quaazar.Render.Lighting
 import Quaazar.Render.Lit
 import Quaazar.Render.Looked
 import Quaazar.Render.Mesh
+import Quaazar.Render.PostFX
 import Quaazar.Render.Rendered
 import Quaazar.Render.Renderer
 import Quaazar.Render.RenderLayer
