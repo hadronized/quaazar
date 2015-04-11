@@ -28,7 +28,7 @@ instance Monoid (Rendered mat) where
   Rendered f `mappend` Rendered g =
     Rendered $ \m s -> f m s >> g m s
 
-render :: GPUMesh -> mat -> Transform -> Rendered mat
-render gmsh mat ent = Rendered $ \modelU sinkMat -> do
+render :: GPUMesh -> Transform -> mat -> Rendered mat
+render gmsh trsf mat = Rendered $ \modelU sinkMat -> do
   sinkMat mat
-  renderMesh gmsh modelU ent
+  renderMesh gmsh modelU trsf
