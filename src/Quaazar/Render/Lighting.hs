@@ -25,7 +25,7 @@ import Foreign hiding ( void )
 import Quaazar.Core.Color ( Color(..) )
 import Quaazar.Core.Projection ( Projection(Perspective), projectionMatrix )
 import Quaazar.Core.Transform
-import Quaazar.Core.Light ( Omni(..) )
+import Quaazar.Core.Light ( Omni(..), ShadowLOD(..) )
 import Quaazar.Render.GL.Buffer hiding ( MapAccess(..) )
 import qualified Quaazar.Render.GL.Buffer as B ( MapAccess(..) )
 import Quaazar.Render.GL.Framebuffer as FB ( AttachmentPoint(..), Target(..)
@@ -33,10 +33,11 @@ import Quaazar.Render.GL.Framebuffer as FB ( AttachmentPoint(..), Target(..)
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Shader ( Program, Uniform, Uniformable, (@=)
-                                , buildProgram, uniform )
+                                , buildProgram, uniform, useProgram )
 import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..) )
 import Quaazar.Render.GLSL
 import Quaazar.Render.Light
+import Quaazar.Render.Rendered ( Rendered(..) )
 import Quaazar.Utils.Log
 
 -- |'Lighting' gathers information about lighting in the scene.
@@ -48,7 +49,6 @@ data Lighting = Lighting {
 
 data Shadows = Shadows {
     _shadowProgram   :: Program
-  , _shadowProjViews :: [M44 Float]
   , _lowShadows      :: CubeOffscreenArray
   , _mediumShadows   :: CubeOffscreenArray
   , _highShadows     :: CubeOffscreenArray
@@ -60,7 +60,7 @@ makeLenses ''Shadows
 -- |@getLighting w h nbMaxLights shadowConf@ creates a 'Lighting' object that
 -- can be used later in conjuction with lighting shaders. 'w' and 'h' define
 -- the resolution of the render frame. 'nbMaxLights' is a limit used to
-getLighting :: (Applicative m,MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
+getLighting :: (Applicative m,MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
             => Float
             -> Float
             -> Natural
@@ -73,13 +73,23 @@ getLighting znear zfar w h nbMaxLights shadowConf = do
   off <- genOffscreen w h Nearest RGB32F RGB
   omniBuffer <- genOmniBuffer nbMaxLights
   shadows <- for shadowConf $ \conf -> do
-    shadowProg <- buildProgram genShadowmapVS Nothing (Just genShadowmapGS)
-      genShadowmapFS
+    shadowProg <- genShadowProgram znear zfar
     low <- getShadows (conf^.lowShadowSize) (conf^.lowShadowMaxNb)
     medium <- getShadows (conf^.mediumShadowSize) (conf^.mediumShadowMaxNb)
     high <- getShadows (conf^.highShadowSize) (conf^.highShadowMaxNb)
-    return (conf,Shadows shadowProg (omniProjViews znear zfar) low medium high)
+    return (conf,Shadows shadowProg low medium high)
   return (Lighting off omniBuffer shadows)
+
+genShadowProgram :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
+                 => Float
+                 -> Float
+                 -> m Program
+genShadowProgram znear zfar = do
+  program <- buildProgram genShadowmapVS Nothing (Just genShadowmapGS) genShadowmapFS
+  liftIO $ do
+    useProgram program
+    ligProjViewsUniform @= omniProjViews znear zfar
+  return program
 
 getShadows :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
            => Natural
@@ -170,11 +180,11 @@ pokeOmnis omnis ptr = do
     (_,nbLights) <- foldM cache (ptr,0) omnis
     return nbLights
   where
-    cache (ptr',nbLights) (omni,shadowLOD,shadowIndex,ent) = do
-      writeAt ptr' omni shadowLOD shadowIndex  ent
+    cache (ptr',nbLights) (omni,shadowLOD,shadowIndex,trsf) = do
+      writeAt ptr' omni shadowLOD shadowIndex  trsf
       return (ptr' `advancePtr` omniBytes,succ nbLights)
-    writeAt ptr' (Omni col pw rad _) shadowLOD shadowIndex ent = do
-      pokeByteOff ptr' 0 (ent^.transformPosition)
+    writeAt ptr' (Omni col pw rad _) shadowLOD shadowIndex trsf = do
+      pokeByteOff ptr' 0 (trsf^.transformPosition)
       pokeByteOff ptr' 16 (unColor col)
       pokeByteOff ptr' 28 pw
       pokeByteOff ptr' 32 rad
@@ -196,6 +206,25 @@ pushOmnis omnis omniBuffer = do
     nbLights <- pokeOmnis omnis ptr
     ligOmniNbUniform @= nbLights
 
+-- |Generate the shadowmap for a given light and given objects to render. If the
+-- light doesn’t cast shadows, do nothing.
+genShadowmap :: Omni -> Natural -> Transform -> Rendered mat -> Shadows -> IO ()
+genShadowmap (Omni col pow rad shadowLOD) shadowmapIndex trsf rdrd shadows =
+  case shadowLOD of
+    Nothing -> return ()
+    Just lod -> do
+      let
+        shadowFB = case lod of
+          LowShadow -> shadows^.lowShadows.cubeOffscreenArrayFB
+          MediumShadow -> shadows^.mediumShadows.cubeOffscreenArrayFB
+          HighShadow -> shadows^.highShadows.cubeOffscreenArrayFB
+      bindFramebuffer shadowFB ReadWrite
+      useProgram (shadows^.shadowProgram)
+      ligPosUniform @= trsf^.transformPosition
+      ligIRadUniform @= 1 / rad
+      shadowmapIndexUniform @= (fromIntegral shadowmapIndex :: Word32)
+      unRendered rdrd modelUniform (const $ return ())
+
 -- |Shadowmap generation vertex shader.
 genShadowmapVS :: String
 genShadowmapVS = unlines
@@ -205,7 +234,7 @@ genShadowmapVS = unlines
   , "layout (location = 0) in vec3 co;"
   , "layout (location = 1) in vec3 no;"
 
-  , "uniform mat4 model;"
+  , declUniform modelSem "mat4 model"
 
   , "void main() {"
   , "  gl_Position = model * vec4(co,1.);"
@@ -228,15 +257,18 @@ genShadowmapGS = unlines
 
   , "out vec3 gco;"
 
-  , "uniform mat4 ligProjViews[6];" -- 6 views
-  , "uniform vec3 ligPos;"
+  , declUniform ligProjViewsSem "mat4 ligProjViews[6]"
+  , declUniform ligPosSem "vec3 ligPos"
+  , declUniform shadowmapIndexSem "uint shadowmapIndex"
 
   , "void main() {"
-  , "  for (int i = 0; i < 6; ++i) {"
-  , "    for (int j = 0; j < 3; ++j) {"
-  , "      gl_Layer = i;"
-  , "      gco = gl_in[j].gl_Position.xyz;"
-  , "      gl_Position = ligProjViews[i] * vec4(gl_in[j].gl_Position.xyz - ligPos,1.);"
+  , "  uint firstLayerFace = shadowmapIndex*6;"
+  , "  uint lastLayerFace = firstLayerFace + 5;"
+  , "  for (uint layerFaceID = firstLayerFace; layerFaceID <= lastLayerFace; ++layerFaceID) {"
+  , "    for (uint i = 0u; i < 3u; ++i) {"
+  , "      gl_Layer = int(layerFaceID);"
+  , "      gco = gl_in[i].gl_Position.xyz;"
+  , "      gl_Position = ligProjViews[layerFaceID] * vec4(gl_in[i].gl_Position.xyz - ligPos,1.);"
   , "      EmitVertex();"
   , "    }"
   , "    EndPrimitive();"

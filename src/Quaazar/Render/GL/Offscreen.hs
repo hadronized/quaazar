@@ -64,6 +64,8 @@ data OffscreenArray = OffscreenArray {
   , _offscreenArrayFB        :: Framebuffer
   }
 
+makeLenses ''OffscreenArray
+
 genOffscreenArray :: (MonadScoped IO m,MonadIO m,MonadError Log m)
                   => Natural
                   -> Natural
@@ -174,6 +176,8 @@ data CubeOffscreenArray = CubeOffscreenArray {
   , _cubeOffscreenArrayDepthmaps :: CubemapArray
   , _cubeOffscreenArrayFB        :: Framebuffer
   }
+
+makeLenses ''CubeOffscreenArray
 
 genCubeOffscreenArray :: (MonadIO m,MonadScoped IO m,MonadError Log m)
                       => Natural

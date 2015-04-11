@@ -47,7 +47,7 @@ instance Resource () Ambient
 
 type AmbientManager = Manager () Ambient
 
--- |'Omni col pow rad'.
+-- |'Omni col pow rad shadowLOD'.
 data Omni = Omni Color Float Float (Maybe ShadowLOD) deriving (Eq,Show)
 
 instance FromJSON Omni where
