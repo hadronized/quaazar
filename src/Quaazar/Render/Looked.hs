@@ -14,12 +14,11 @@ module Quaazar.Render.Looked where
 import Quaazar.Core.Projection ( Projection )
 import Quaazar.Core.Transform ( Transform )
 import Quaazar.Render.Camera ( gpuCamera )
-import Quaazar.Render.Lighting
-import Quaazar.Render.Shaded ( Shaded(..) )
 import Quaazar.Render.GL.Buffer ( Buffer )
 import Quaazar.Render.GL.Framebuffer ( Framebuffer )
 import Quaazar.Render.Light ( ShadowConf )
 import Quaazar.Render.Lighting ( Shadows )
+import Quaazar.Render.Lit ( Lit(..) )
 
 newtype Looked = Looked {
     unLooked :: Framebuffer                -- ^ lighting framebuffer
@@ -28,6 +27,6 @@ newtype Looked = Looked {
              -> IO ()
   }
 
-look :: Projection -> Transform -> Shaded -> Looked
-look proj ent shaded = Looked $ \lightingFB omniBuffer shadowsConf ->
-  unShaded shaded lightingFB omniBuffer shadowsConf (gpuCamera proj ent)
+look :: Projection -> Transform -> Lit -> Looked
+look proj ent lt = Looked $ \fb omniBuffer shadowsConf ->
+  unLit lt fb omniBuffer shadowsConf (gpuCamera proj ent)
