@@ -37,7 +37,6 @@ import Quaazar.Render.GL.Shader ( Program, Uniform, Uniformable, (@=)
 import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..) )
 import Quaazar.Render.GLSL
 import Quaazar.Render.Light
-import Quaazar.Render.Rendered ( Rendered(..) )
 import Quaazar.Utils.Log
 
 -- |'Lighting' gathers information about lighting in the scene.
@@ -208,6 +207,7 @@ pushOmnis omnis omniBuffer = do
 
 -- |Generate the shadowmap for a given light and given objects to render. If the
 -- light doesn’t cast shadows, do nothing.
+{-
 genShadowmap :: Omni -> Natural -> Transform -> Rendered mat -> Shadows -> IO ()
 genShadowmap (Omni col pow rad shadowLOD) shadowmapIndex trsf rdrd shadows =
   case shadowLOD of
@@ -224,6 +224,7 @@ genShadowmap (Omni col pow rad shadowLOD) shadowmapIndex trsf rdrd shadows =
       ligIRadUniform @= 1 / rad
       shadowmapIndexUniform @= (fromIntegral shadowmapIndex :: Word32)
       unRendered rdrd modelUniform (const $ return ())
+-}
 
 -- |Shadowmap generation vertex shader.
 genShadowmapVS :: String

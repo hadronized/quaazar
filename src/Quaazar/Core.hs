@@ -12,6 +12,7 @@
 module Quaazar.Core (
     module Quaazar.Core.Albedo
   , module Quaazar.Core.Color
+  , module Quaazar.Core.Hierarchy
   , module Quaazar.Core.Light
   , module Quaazar.Core.Loader
   , module Quaazar.Core.Mesh
@@ -28,6 +29,7 @@ module Quaazar.Core (
 
 import Quaazar.Core.Albedo
 import Quaazar.Core.Color
+import Quaazar.Core.Hierarchy
 import Quaazar.Core.Light
 import Quaazar.Core.Loader
 import Quaazar.Core.Mesh

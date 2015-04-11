@@ -17,6 +17,8 @@ module Quaazar.Core.Hierarchy (
   , below 
     -- * Instances
   , Instance
+  , instCarried
+  , instTransform
   , instantiate
   ) where
 
@@ -53,7 +55,10 @@ below t = Hierarchy . local (<> t) . unHierarchy
 --
 -- An 'Instance' simply makes a link between the hierarchy and a given 'a'
 -- value.
-data Instance a = Instance a Transform deriving (Eq,Functor,Show)
+data Instance a = Instance {
+    instCarried   :: a
+  , instTransform :: Transform
+  } deriving (Eq,Functor,Show)
 
 -- |Instantiate a value in the current 'Hierarchy'. That function is the only
 -- way to get instances – i.e. @Instance a@.

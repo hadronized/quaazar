@@ -14,6 +14,7 @@ module Quaazar.Render.Camera where
 import Control.Lens
 import Data.Maybe ( fromJust )
 import Linear ( M44, V3, (!*!), inv44 )
+import Quaazar.Core.Hierarchy ( Instance(..) )
 import Quaazar.Core.Transform ( Transform, transformPosition )
 import Quaazar.Core.Projection ( Projection, projectionMatrix )
 import Quaazar.Render.Transform ( cameraMatrix )
@@ -27,12 +28,13 @@ data GPUCamera = GPUCamera {
   , cameraProjection :: M44 Float
   }
 
-gpuCamera :: Projection -> Transform -> GPUCamera
-gpuCamera proj ent = GPUCamera sendCamera proj'
+gpuCamera :: Instance Projection -> GPUCamera
+gpuCamera inst = GPUCamera sendCamera proj'
   where
     sendCamera projViewU iProjViewU eyeU = do
         projViewU @= projView
         iProjViewU @= fromJust (inv44 projView)
-        eyeU @= ent^.transformPosition
-    projView = proj' !*! cameraMatrix ent
-    proj' = projectionMatrix proj
+        eyeU @= trsf^.transformPosition
+    projView = proj' !*! cameraMatrix trsf
+    proj' = projectionMatrix $ instCarried inst
+    trsf = instTransform inst

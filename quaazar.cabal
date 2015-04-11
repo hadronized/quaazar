@@ -45,14 +45,10 @@ library
                      , Quaazar.Render
                      , Quaazar.Render.Camera
                      , Quaazar.Render.Compositing
-                     , Quaazar.Render.Shaded
                      , Quaazar.Render.GLSL
                      , Quaazar.Render.Light
-                     , Quaazar.Render.Lit
-                     , Quaazar.Render.Looked
                      , Quaazar.Render.Mesh
                      , Quaazar.Render.RenderLayer
-                     , Quaazar.Render.Rendered
                      , Quaazar.Render.Renderer
                      , Quaazar.Render.Shader
                      , Quaazar.Render.Texture

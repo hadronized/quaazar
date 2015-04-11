@@ -1,3 +1,5 @@
+{-# LANGUAGE ExistentialQuantification #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   : (C) 2015 Dimitri Sabadie
@@ -13,23 +15,32 @@ module Quaazar.Render.RenderLayer where
 
 import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
+import Control.Monad.State ( evalState )
 import Control.Monad.Trans ( MonadIO )
+import Data.Bits ( (.|.) )
+import Data.Foldable ( for_, traverse_ )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
+import Quaazar.Core.Hierarchy ( Instance, instCarried, instTransform )
+import Quaazar.Core.Light
+import Quaazar.Core.Projection ( Projection )
+import Quaazar.Render.Camera ( GPUCamera(..), gpuCamera )
 import Quaazar.Render.Compositing
 import Quaazar.Render.Lighting
-import Quaazar.Render.Looked ( Looked(..) )
 import Quaazar.Render.Viewport ( Viewport(Viewport), setViewport )
 import Quaazar.Render.GL.Buffer ( Buffer )
 import Quaazar.Render.GL.Framebuffer ( Framebuffer, Target(..)
                                      , bindFramebuffer )
 import Quaazar.Render.GL.Offscreen
+import Quaazar.Render.GL.Shader ( (@=), unused )
 import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
                                  , bindTextureAt )
 import Quaazar.Render.GL.VertexArray ( bindVertexArray )
-import Quaazar.Render.Light ( ShadowConf )
-import Quaazar.Render.Lighting ( Shadows )
+import Quaazar.Render.Light
+import Quaazar.Render.Lighting
+import Quaazar.Render.Mesh ( GPUMesh, renderMesh )
 import Quaazar.Render.PostFX ( GPUPostFX(..) )
+import Quaazar.Render.Shader ( GPUProgram(..) )
 import Quaazar.Render.Texture ( GPUTexture(GPUTexture) ) 
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
@@ -41,8 +52,63 @@ newtype RenderLayer = RenderLayer {
                   -> IO ()
   }
 
-renderLayer :: Looked -> RenderLayer
-renderLayer lk = RenderLayer $ unLooked lk
+data GPUModelGroup = forall mat. GPUModelGroup (GPUProgram mat) [Instance (GPUMesh,mat)]
+
+modelGroup :: GPUProgram mat -> [Instance (GPUMesh,mat)] -> GPUModelGroup
+modelGroup = GPUModelGroup
+
+renderLayer :: Instance Projection
+            -> Ambient
+            -> [Instance Omni]
+            -> [GPUModelGroup]
+            -> RenderLayer
+renderLayer cam ambient omnis models =
+  RenderLayer $ \fb omniBuffer shadowsConf -> do
+    let Ambient ligAmbCol ligAmbPow = ambient
+    omnisWithShadows <- case shadowsConf of
+      Just (conf,_) -> do 
+        let
+          omnisWithShadows = flip evalState (0,0,0) $ mapM (addShadowInfo_ lmax mmax hmax) omnis
+          lmax = conf^.lowShadowMaxNb
+          mmax = conf^.mediumShadowMaxNb
+          hmax = conf^.highShadowMaxNb
+        -- TODO: create shadowmaps
+        return omnisWithShadows
+      Nothing -> return $ map addNoShadows omnis
+    bindFramebuffer fb ReadWrite
+    glClearColor 0 0 0 0
+    glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
+    for_ models $ \group -> renderModelGroup group $ do
+      runCamera (gpuCamera cam) camProjViewUniform unused eyeUniform
+      ligAmbColUniform @= ligAmbCol
+      ligAmbPowUniform @= ligAmbPow
+      pushOmnis omnisWithShadows omniBuffer
+  where
+    addShadowInfo_ lmax mmax hmax inst = do
+      let
+        omni = instCarried inst
+        trsf = instTransform inst
+      (omni',lod,i) <- addShadowInfo lmax mmax hmax omni
+      return (omni',lod,i,trsf)
+    addNoShadows inst =
+      let
+        omni = instCarried inst
+        trsf = instTransform inst
+      in (omni,0,0,trsf)
+
+renderModelGroup :: GPUModelGroup -> IO () -> IO ()
+renderModelGroup (GPUModelGroup prog insts) sendUniforms = do
+  useProgram prog
+  sendUniforms
+  traverse_ (renderMeshInstance $ sendToProgram prog) insts
+
+renderMeshInstance :: (mat -> IO ()) -> Instance (GPUMesh,mat) -> IO ()
+renderMeshInstance sinkMat inst = do
+    sinkMat mat
+    renderMesh gmesh modelUniform trsf
+  where
+    (gmesh,mat) = instCarried inst
+    trsf  = instTransform inst
 
 renderLayerCompositor :: (MonadIO m,MonadScoped IO m,MonadError Log m)
                       => Viewport
