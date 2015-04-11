@@ -41,16 +41,18 @@ data Renderer = Renderer {
 makeLenses ''Renderer
 
 getRenderer :: (Applicative m,MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
-            => Natural
+            => Float
+            -> Float
+            -> Natural
             -> Natural
             -> Natural
             -> Maybe ShadowConf
             -> Window
             -> m Renderer
-getRenderer w h lightMaxNb shadowConf window =
+getRenderer znear zfar w h lightMaxNb shadowConf window =
   Renderer
     <$> getCopyProgram
-    <*> getLighting w h lightMaxNb shadowConf
+    <*> getLighting znear zfar w h lightMaxNb shadowConf
     <*> genAttributelessVertexArray
     <*> pure window
 

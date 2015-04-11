@@ -47,10 +47,11 @@ data Lighting = Lighting {
   }
 
 data Shadows = Shadows {
-    _shadowProgram :: Program
-  , _lowShadows    :: CubeOffscreenArray
-  , _mediumShadows :: CubeOffscreenArray
-  , _highShadows   :: CubeOffscreenArray
+    _shadowProgram   :: Program
+  , _shadowProjViews :: [M44 Float]
+  , _lowShadows      :: CubeOffscreenArray
+  , _mediumShadows   :: CubeOffscreenArray
+  , _highShadows     :: CubeOffscreenArray
   }
 
 makeLenses ''Lighting
@@ -60,12 +61,14 @@ makeLenses ''Shadows
 -- can be used later in conjuction with lighting shaders. 'w' and 'h' define
 -- the resolution of the render frame. 'nbMaxLights' is a limit used to
 getLighting :: (Applicative m,MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
-            => Natural
+            => Float
+            -> Float
+            -> Natural
             -> Natural
             -> Natural
             -> Maybe ShadowConf
             -> m Lighting
-getLighting w h nbMaxLights shadowConf = do
+getLighting znear zfar w h nbMaxLights shadowConf = do
   info CoreLog "generating lighting"
   off <- genOffscreen w h Nearest RGB32F RGB
   omniBuffer <- genOmniBuffer nbMaxLights
@@ -75,7 +78,7 @@ getLighting w h nbMaxLights shadowConf = do
     low <- getShadows (conf^.lowShadowSize) (conf^.lowShadowMaxNb)
     medium <- getShadows (conf^.mediumShadowSize) (conf^.mediumShadowMaxNb)
     high <- getShadows (conf^.highShadowSize) (conf^.highShadowMaxNb)
-    return (conf,Shadows shadowProg low medium high)
+    return (conf,Shadows shadowProg (omniProjViews znear zfar) low medium high)
   return (Lighting off omniBuffer shadows)
 
 getShadows :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
