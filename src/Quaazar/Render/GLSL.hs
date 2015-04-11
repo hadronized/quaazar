@@ -36,6 +36,19 @@ ligAmbPowSem = 4
 ligOmniNbSem :: Natural 
 ligOmniNbSem = 5
 
+-- Since there’re 6 matrices, they take locations 6, 7, 8, 9, 10 and 11.
+ligProjViewsSem :: Natural
+ligProjViewsSem = 6
+
+ligPosSem :: Natural
+ligPosSem = 12
+
+ligRadSem :: Natural
+ligRadSem = 13
+
+ligIRadSem :: Natural
+ligIRadSem = 14
+
 --------------------------------------------------------------------------------
 -- GLSL BINDING POINTS
 declUniformBlock :: Natural -> String -> String

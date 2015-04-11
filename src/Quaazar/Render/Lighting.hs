@@ -105,6 +105,15 @@ ligAmbPowUniform = uniform ligAmbPowSem
 ligOmniNbUniform :: Uniform Word32
 ligOmniNbUniform = uniform ligOmniNbSem
 
+ligProjViewsUniform :: Uniform [M44 Float]
+ligProjViewsUniform = uniform ligProjViewsSem
+
+ligPosUniform :: Uniform (V3 Float)
+ligPosUniform = uniform ligPosSem
+
+ligIRadUniform :: Uniform Float
+ligIRadUniform = uniform ligIRadSem
+
 -- |ProjView matrix used to generate shadowmaps.
 omniProjViews :: Float -> Float -> [M44 Float]
 omniProjViews znear radius =
