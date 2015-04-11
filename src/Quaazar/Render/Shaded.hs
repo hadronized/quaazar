@@ -25,7 +25,7 @@ import Quaazar.Render.GL.Shader ( (@=), unused )
 import Quaazar.Render.Light
 import Quaazar.Render.Lighting
 import Quaazar.Render.Rendered ( Rendered(..) )
-import Quaazar.Render.Shader ( GPUProgram(..) )
+import Quaazar.Render.Shader ( GPUProgram(..), ShaderMode(..) )
 
 newtype Shaded = Shaded {
     unShaded :: Framebuffer                -- ^ lighting framebuffer
@@ -50,7 +50,7 @@ shade gprog rdrd = Shaded $ \fb omniBuffer shadowsConf gcam ambient omnis -> do
         -- TODO: create shadowmaps
         return omnisWithShadows
       Nothing -> return $ map addNoShadows omnis
-    useProgram gprog
+    useProgram gprog CommonShading
     runCamera gcam camProjViewUniform unused eyeUniform
     bindFramebuffer fb ReadWrite
     purgeFramebuffer fb

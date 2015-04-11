@@ -13,6 +13,8 @@ module Quaazar.Render.Shader (
     -- * GPU shader programs
     GPUProgram(useProgram, sendToProgram)
   , gpuProgram
+    -- * Shader mode
+  , ShaderMode(..)
     -- * Semantics
   , Semantics(..)
   , ($=)
@@ -25,10 +27,12 @@ import Control.Applicative ( Applicative )
 import Control.Monad ( void )
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
+import Data.Word ( Word32 )
 import Numeric.Natural ( Natural )
-import Quaazar.Render.GL.Shader ( buildProgram )
-import Quaazar.Render.GL.Shader ( Uniform, Uniformable, (@=), uniform )
+import Quaazar.Render.GL.Shader ( Program, Uniform, Uniformable, (@=)
+                                , buildProgram, uniform )
 import qualified Quaazar.Render.GL.Shader as GL ( useProgram )
+import Quaazar.Render.GLSL ( shaderModeSem )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
@@ -46,7 +50,7 @@ s $= a = Semantics $ s @= a
 
 -- |A program that lives on the GPU.
 data GPUProgram a = GPUProgram {
-    useProgram :: IO ()
+    useProgram :: ShaderMode -> IO ()
   , sendToProgram :: a -> IO ()
   }
 
@@ -78,5 +82,18 @@ gpuProgram :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
            -> (a -> Semantics b)
            -> m (GPUProgram a)
 gpuProgram vs tcstes gs fs semMapper = do
-    program <- buildProgram vs tcstes gs fs
-    return $ GPUProgram (GL.useProgram program) (void . runSemantics . semMapper)
+  prog <- buildProgram vs tcstes gs fs
+  return $ GPUProgram (useProgramMode prog)  (void . runSemantics . semMapper)
+
+useProgramMode :: Program -> ShaderMode -> IO ()
+useProgramMode prog mode = do
+  GL.useProgram prog
+  shaderModeUniform @= fromIntegral (fromEnum mode)
+
+data ShaderMode
+  = CommonShading
+  | DepthOnlyShading
+    deriving (Enum,Eq,Show)
+
+shaderModeUniform :: Uniform Word32
+shaderModeUniform = uniform shaderModeSem

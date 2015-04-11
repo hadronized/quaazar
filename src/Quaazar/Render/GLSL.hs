@@ -18,39 +18,42 @@ import Numeric.Natural ( Natural )
 declUniform :: Natural -> String -> String
 declUniform s n = "layout (location = " ++ show s ++ ") uniform " ++ n ++ ";"
 
+shaderModeSem :: Natural
+shaderModeSem = 0
+
 camProjViewSem :: Natural 
-camProjViewSem = 0
+camProjViewSem = 1
 
 modelSem :: Natural 
-modelSem = 1
+modelSem = 2
 
 eyeSem :: Natural 
-eyeSem = 2
+eyeSem = 3
 
 ligAmbColSem :: Natural 
-ligAmbColSem = 3
+ligAmbColSem = 4
 
 ligAmbPowSem :: Natural 
-ligAmbPowSem = 4
+ligAmbPowSem = 5
 
 ligOmniNbSem :: Natural 
-ligOmniNbSem = 5
+ligOmniNbSem = 6
 
 -- Since there’re 6 matrices, they take locations 6, 7, 8, 9, 10 and 11.
 ligProjViewsSem :: Natural
-ligProjViewsSem = 6
+ligProjViewsSem = 7
 
 ligPosSem :: Natural
-ligPosSem = 12
+ligPosSem = 13
 
 ligRadSem :: Natural
-ligRadSem = 13
+ligRadSem = 14
 
 ligIRadSem :: Natural
-ligIRadSem = 14
+ligIRadSem = 15
 
 shadowmapIndexSem :: Natural
-shadowmapIndexSem = 15
+shadowmapIndexSem = 16
 
 --------------------------------------------------------------------------------
 -- GLSL BINDING POINTS
