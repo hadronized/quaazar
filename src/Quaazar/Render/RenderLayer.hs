@@ -66,13 +66,14 @@ renderLayer cam ambient omnis models =
   RenderLayer $ \fb omniBuffer shadowsConf -> do
     let Ambient ligAmbCol ligAmbPow = ambient
     omnisWithShadows <- case shadowsConf of
-      Just (conf,_) -> do 
+      Just (conf,shadows) -> do 
         let
           omnisWithShadows = flip evalState (0,0,0) $ mapM (addShadowInfo_ lmax mmax hmax) omnis
           lmax = conf^.lowShadowMaxNb
           mmax = conf^.mediumShadowMaxNb
           hmax = conf^.highShadowMaxNb
-        -- TODO: create shadowmaps
+        cleanShadows shadows
+        traverse_ (genShadowmap_ shadows meshes) omnisWithShadows
         return omnisWithShadows
       Nothing -> return $ map addNoShadows omnis
     bindFramebuffer fb ReadWrite
@@ -95,6 +96,26 @@ renderLayer cam ambient omnis models =
         omni = instCarried inst
         trsf = instTransform inst
       in (omni,0,trsf)
+    meshes = concatMap dropProgram models
+    dropProgram (GPUModelGroup _ mshs) = map (fmap fst) mshs
+    genShadowmap_ shadows meshes (omni,shadowmapIndex,trsf) =
+      genShadowmap omni shadowmapIndex trsf meshes shadows
+
+-- TODO: try to use the texture interface directly
+cleanShadows :: Shadows -> IO ()
+cleanShadows (Shadows _ low medium high) = do
+  -- low shadows
+  bindFramebuffer $ low^.cubeOffscreenArrayFB
+  glClearColor 0 0 0 0
+  glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
+  -- medium shadows
+  bindFramebuffer $ medium^.cubeOffscreenArrayFB
+  glClearColor 0 0 0 0
+  glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
+  -- high shadows
+  bindFramebuffer $ high^.cubeOffscreenArrayFB
+  glClearColor 0 0 0 0
+  glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
 
 renderModelGroup :: GPUModelGroup -> IO () -> IO ()
 renderModelGroup (GPUModelGroup prog insts) sendUniforms = do
