@@ -105,15 +105,15 @@ renderLayer cam ambient omnis models =
 cleanShadows :: Shadows -> IO ()
 cleanShadows (Shadows _ low medium high) = do
   -- low shadows
-  bindFramebuffer $ low^.cubeOffscreenArrayFB
+  bindFramebuffer (low^.cubeOffscreenArrayFB) ReadWrite
   glClearColor 0 0 0 0
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
   -- medium shadows
-  bindFramebuffer $ medium^.cubeOffscreenArrayFB
+  bindFramebuffer (medium^.cubeOffscreenArrayFB) ReadWrite
   glClearColor 0 0 0 0
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
   -- high shadows
-  bindFramebuffer $ high^.cubeOffscreenArrayFB
+  bindFramebuffer (high^.cubeOffscreenArrayFB) ReadWrite
   glClearColor 0 0 0 0
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
 
