@@ -215,6 +215,9 @@ pushOmnis omnis omniBuffer = do
 
 -- |Generate the shadowmap for a given light and given objects to render. If the
 -- light doesn’t cast shadows, do nothing.
+--
+-- This function doesn’t perform any kind of culling on the objects. You should
+-- cull them before calling that function to maximize performance.
 genShadowmap :: Omni -> Natural -> Transform -> [Instance GPUMesh] -> Shadows -> IO ()
 genShadowmap (Omni col pow rad shadowLOD) shadowmapIndex lightTrsf meshes shadows =
   case shadowLOD of
