@@ -80,13 +80,13 @@ phong = gpuProgram phongVS Nothing Nothing phongFS $ \mat -> do
     uniform phongGlossMapSem $= (glossMap mat,2 :: Natural)
 
 phongDiffMapSem :: Natural
-phongDiffMapSem = 10
+phongDiffMapSem = 128
 
 phongSpecMapSem :: Natural
-phongSpecMapSem = 11
+phongSpecMapSem = 129
 
 phongGlossMapSem :: Natural
-phongGlossMapSem = 12
+phongGlossMapSem = 130
 
 phongVS :: String
 phongVS = unlines
@@ -137,6 +137,10 @@ phongFS = unlines
   , "  uint shadowLOD;"
   , "  uint shadowmapIndex;"
   , " };"
+    -- shadows
+  , declUniform lowShadowmapsSem "samplerCubeArray lowShadowmaps"
+  , declUniform mediumShadowmapsSem "samplerCubeArray mediumShadowmaps"
+  , declUniform highShadowmapsSem "samplerCubeArray highShadowmaps"
 
   , declUniformBlock ligOmniSSBOBP "OmniBuffer { Omni ligs[]; } omniBuffer"
   , declUniform ligOmniNbSem "uint ligOmniNb"

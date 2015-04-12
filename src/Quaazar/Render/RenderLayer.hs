@@ -79,6 +79,8 @@ renderLayer cam ambient omnis models =
     bindFramebuffer fb ReadWrite
     glClearColor 0 0 0 0
     glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
+    -- shadowmaps
+    bindShadowmaps shadows
     for_ models $ \group -> renderModelGroup group $ do
       runCamera (gpuCamera cam) camProjViewUniform unused eyeUniform
       ligAmbColUniform @= ligAmbCol
@@ -116,6 +118,9 @@ cleanShadows (Shadows _ low medium high) = do
   bindFramebuffer (high^.cubeOffscreenArrayFB) ReadWrite
   glClearColor 0 0 0 0
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
+
+bindShadowmaps :: Shadows -> IO ()
+bindShadowmaps (Shadows _ low medium high) = do
 
 renderModelGroup :: GPUModelGroup -> IO () -> IO ()
 renderModelGroup (GPUModelGroup prog insts) sendUniforms = do

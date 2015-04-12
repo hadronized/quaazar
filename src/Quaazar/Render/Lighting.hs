@@ -40,6 +40,7 @@ import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..) )
 import Quaazar.Render.GLSL
 import Quaazar.Render.Light
 import Quaazar.Render.Mesh ( GPUMesh, renderMesh )
+import Quaazar.Render.Texture ( GPUTexture )
 import Quaazar.Utils.Log
 
 -- |'Lighting' gathers information about lighting in the scene.
@@ -129,6 +130,15 @@ ligIRadUniform = uniform ligIRadSem
 shadowmapIndexUniform :: Uniform Word32
 shadowmapIndexUniform = uniform shadowmapIndexSem
 
+lowShadowmapsUniform :: Uniform (GPUTexture,Natural)
+lowShadowmapsUniform = uniform lowShadowmapsUniformSem
+
+mediumShadowmapsUniform :: Uniform (GPUTexture,Natural)
+mediumShadowmapsUniform = uniform mediumShadowmapsUniformSem
+
+highShadowmapsUniform :: Uniform (GPUTexture,Natural)
+highShadowmapsUniform = uniform highShadowmapsUniformSem
+
 -- |ProjView matrix used to generate shadowmaps.
 omniProjViews :: Float -> Float -> [M44 Float]
 omniProjViews znear radius =
@@ -144,7 +154,7 @@ omniProjViews znear radius =
   where
     proj = projectionMatrix $ Perspective (pi/2) 1 znear radius
 
--- |Extand a 'M33' matrix to 'M44'.
+-- |Extend a 'M33' matrix to 'M44'.
 completeM33RotMat :: M33 Float -> M44 Float
 completeM33RotMat (V3 (V3 a b c) (V3 d e f) (V3 g h i)) =
   V4

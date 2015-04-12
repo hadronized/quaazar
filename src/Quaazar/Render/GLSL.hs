@@ -52,6 +52,15 @@ ligIRadSem = 14
 shadowmapIndexSem :: Natural
 shadowmapIndexSem = 15
 
+lowShadowmapsSem :: Natural
+lowShadowmapsSem = 16
+
+mediumShadowmapsSem :: Natural
+mediumShadowmapsSem = 17
+
+highShadowmapsSem :: Natural
+highShadowmapsSem = 18
+
 --------------------------------------------------------------------------------
 -- GLSL BINDING POINTS
 declUniformBlock :: Natural -> String -> String
