@@ -88,13 +88,13 @@ renderLayer cam ambient omnis models =
       let
         omni = instCarried inst
         trsf = instTransform inst
-      (omni',lod,i) <- addShadowInfo lmax mmax hmax omni
-      return (omni',lod,i,trsf)
+      (omni',i) <- addShadowInfo lmax mmax hmax omni
+      return (omni',i,trsf)
     addNoShadows inst =
       let
         omni = instCarried inst
         trsf = instTransform inst
-      in (omni,0,0,trsf)
+      in (omni,0,trsf)
 
 renderModelGroup :: GPUModelGroup -> IO () -> IO ()
 renderModelGroup (GPUModelGroup prog insts) sendUniforms = do

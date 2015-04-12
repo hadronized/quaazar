@@ -114,8 +114,8 @@ gpuMesh msh = case msh^.meshVertices of
 
       unbindBuffer IndexBuffer
 
-      return . GPUMesh vb ib $ \modelSem ent -> do
-        modelSem @= transformMatrix ent
+      return . GPUMesh vb ib $ \modelSem trsf -> do
+        modelSem @= transformMatrix trsf
         bindVertexArray va
         glDrawElements (fromPrimitive prim) (fromIntegral verticesNb) gl_UNSIGNED_INT nullPtr
   where

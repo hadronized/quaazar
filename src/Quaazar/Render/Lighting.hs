@@ -16,6 +16,7 @@ import Control.Monad ( foldM, void )
 import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
+import Data.Foldable ( traverse_ )
 import Graphics.Rendering.OpenGL.Raw
 import Data.Traversable ( for )
 import Data.Word ( Word32 )
@@ -23,6 +24,7 @@ import Linear
 import Numeric.Natural ( Natural )
 import Foreign hiding ( void )
 import Quaazar.Core.Color ( Color(..) )
+import Quaazar.Core.Hierarchy ( Instance, instCarried, instTransform )
 import Quaazar.Core.Projection ( Projection(Perspective), projectionMatrix )
 import Quaazar.Core.Transform
 import Quaazar.Core.Light ( Omni(..), ShadowLOD(..) )
@@ -37,6 +39,7 @@ import Quaazar.Render.GL.Shader ( Program, Uniform, Uniformable, (@=)
 import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..) )
 import Quaazar.Render.GLSL
 import Quaazar.Render.Light
+import Quaazar.Render.Mesh ( GPUMesh, renderMesh )
 import Quaazar.Utils.Log
 
 -- |'Lighting' gathers information about lighting in the scene.
@@ -174,20 +177,25 @@ omniBytes =
 
 -- Poke omnidirectional lights at a given pointer. That pointer should be gotten
 -- from the SSBO.
-pokeOmnis :: [(Omni,Natural,Natural,Transform)] -> Ptr Word8 -> IO Word32
+pokeOmnis :: [(Omni,Natural,Transform)] -> Ptr Word8 -> IO Word32
 pokeOmnis omnis ptr = do
     (_,nbLights) <- foldM cache (ptr,0) omnis
     return nbLights
   where
-    cache (ptr',nbLights) (omni,shadowLOD,shadowIndex,trsf) = do
-      writeAt ptr' omni shadowLOD shadowIndex  trsf
+    cache (ptr',nbLights) (omni,shadowIndex,trsf) = do
+      writeAt ptr' omni shadowIndex  trsf
       return (ptr' `advancePtr` omniBytes,succ nbLights)
-    writeAt ptr' (Omni col pw rad _) shadowLOD shadowIndex trsf = do
+    writeAt ptr' (Omni col pw rad shadowLOD) shadowIndex trsf = do
       pokeByteOff ptr' 0 (trsf^.transformPosition)
       pokeByteOff ptr' 16 (unColor col)
       pokeByteOff ptr' 28 pw
       pokeByteOff ptr' 32 rad
-      pokeByteOff ptr' 36 (fromIntegral shadowLOD :: Word32)
+      pokeByteOff ptr' 36 $ case shadowLOD of
+        Nothing -> 0 :: Word32
+        Just lod -> case lod of
+          LowShadow    -> 1
+          MediumShadow -> 2
+          HighShadow   -> 3
       pokeByteOff ptr' 40 (fromIntegral shadowIndex :: Word32)
 
 -- |Send omnidirectional lights to the GPU.
@@ -198,7 +206,7 @@ pokeOmnis omnis ptr = do
 --   - the shadow LOD (0 if the light doesn’t cast shadows);
 --   - the shadowmap index (whatever if the light doesn’t cast shadows);
 --   - the transform of the light.
-pushOmnis :: [(Omni,Natural,Natural,Transform)] -> Buffer -> IO ()
+pushOmnis :: [(Omni,Natural,Transform)] -> Buffer -> IO ()
 pushOmnis omnis omniBuffer = do
   bindBufferAt omniBuffer ShaderStorageBuffer ligOmniSSBOBP
   void . withMappedBuffer ShaderStorageBuffer B.Write $ \ptr -> do
@@ -207,9 +215,8 @@ pushOmnis omnis omniBuffer = do
 
 -- |Generate the shadowmap for a given light and given objects to render. If the
 -- light doesn’t cast shadows, do nothing.
-{-
-genShadowmap :: Omni -> Natural -> Transform -> Rendered mat -> Shadows -> IO ()
-genShadowmap (Omni col pow rad shadowLOD) shadowmapIndex trsf rdrd shadows =
+genShadowmap :: Omni -> Natural -> Transform -> [Instance GPUMesh] -> Shadows -> IO ()
+genShadowmap (Omni col pow rad shadowLOD) shadowmapIndex lightTrsf meshes shadows =
   case shadowLOD of
     Nothing -> return ()
     Just lod -> do
@@ -220,11 +227,16 @@ genShadowmap (Omni col pow rad shadowLOD) shadowmapIndex trsf rdrd shadows =
           HighShadow -> shadows^.highShadows.cubeOffscreenArrayFB
       bindFramebuffer shadowFB ReadWrite
       useProgram (shadows^.shadowProgram)
-      ligPosUniform @= trsf^.transformPosition
+      ligPosUniform @= lightTrsf^.transformPosition
       ligIRadUniform @= 1 / rad
       shadowmapIndexUniform @= (fromIntegral shadowmapIndex :: Word32)
-      unRendered rdrd modelUniform (const $ return ())
--}
+      traverse_ renderMesh_ meshes   
+  where
+    renderMesh_ meshInst = do
+      let
+        gmesh = instCarried meshInst
+        meshTrsf = instTransform meshInst
+      renderMesh gmesh modelUniform meshTrsf
 
 -- |Shadowmap generation vertex shader.
 genShadowmapVS :: String

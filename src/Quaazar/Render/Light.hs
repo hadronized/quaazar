@@ -35,7 +35,7 @@ makeLenses ''ShadowConf
 --
 -- If a given pool is empty, the next lower pool is tried until the lowest pool
 -- is empty, then shadows are disabled for all remaining lights.
-addShadowInfo :: Natural -> Natural -> Natural -> Omni -> State (Natural,Natural,Natural) (Omni,Natural,Natural)
+addShadowInfo :: Natural -> Natural -> Natural -> Omni -> State (Natural,Natural,Natural) (Omni,Natural)
 addShadowInfo lmax mmax hmax omni@(Omni _ _ _ lod) = case lod of
     Nothing -> noShadows
     Just lod' -> do
@@ -45,13 +45,13 @@ addShadowInfo lmax mmax hmax omni@(Omni _ _ _ lod) = case lod of
         MediumShadow -> getMedium l m h
         HighShadow -> getHigh l m h
   where
-    noShadows = return (omni,0,0)
+    noShadows = return (omni,0)
     getLow l m h
-      | l < lmax = put (succ l,m,h) >> return (omni,1,l)
+      | l < lmax = put (succ l,m,h) >> return (omni,l)
       | otherwise = noShadows
     getMedium l m h
-      | m < mmax = put (l,succ m,h) >> return (omni,2,m)
+      | m < mmax = put (l,succ m,h) >> return (omni,m)
       | otherwise = getLow l m h
     getHigh l m h
-      | h < hmax = put (l,m,succ h) >> return (omni,3,h)
+      | h < hmax = put (l,m,succ h) >> return (omni,h)
       | otherwise = getMedium l m h 
