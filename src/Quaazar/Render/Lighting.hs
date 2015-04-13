@@ -131,13 +131,13 @@ shadowmapIndexUniform :: Uniform Word32
 shadowmapIndexUniform = uniform shadowmapIndexSem
 
 lowShadowmapsUniform :: Uniform (GPUTexture,Natural)
-lowShadowmapsUniform = uniform lowShadowmapsUniformSem
+lowShadowmapsUniform = uniform lowShadowmapsSem
 
 mediumShadowmapsUniform :: Uniform (GPUTexture,Natural)
-mediumShadowmapsUniform = uniform mediumShadowmapsUniformSem
+mediumShadowmapsUniform = uniform mediumShadowmapsSem
 
 highShadowmapsUniform :: Uniform (GPUTexture,Natural)
-highShadowmapsUniform = uniform highShadowmapsUniformSem
+highShadowmapsUniform = uniform highShadowmapsSem
 
 -- |ProjView matrix used to generate shadowmaps.
 omniProjViews :: Float -> Float -> [M44 Float]

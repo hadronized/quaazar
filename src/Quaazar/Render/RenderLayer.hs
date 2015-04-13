@@ -74,13 +74,12 @@ renderLayer cam ambient omnis models =
           hmax = conf^.highShadowMaxNb
         cleanShadows shadows
         traverse_ (genShadowmap_ shadows meshes) omnisWithShadows
+        --bindShadowmaps shadows -- TODO
         return omnisWithShadows
       Nothing -> return $ map addNoShadows omnis
     bindFramebuffer fb ReadWrite
     glClearColor 0 0 0 0
     glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
-    -- shadowmaps
-    bindShadowmaps shadows
     for_ models $ \group -> renderModelGroup group $ do
       runCamera (gpuCamera cam) camProjViewUniform unused eyeUniform
       ligAmbColUniform @= ligAmbCol
@@ -103,7 +102,6 @@ renderLayer cam ambient omnis models =
     genShadowmap_ shadows meshes (omni,shadowmapIndex,trsf) =
       genShadowmap omni shadowmapIndex trsf meshes shadows
 
--- TODO: try to use the texture interface directly
 cleanShadows :: Shadows -> IO ()
 cleanShadows (Shadows _ low medium high) = do
   -- low shadows
@@ -119,8 +117,14 @@ cleanShadows (Shadows _ low medium high) = do
   glClearColor 0 0 0 0
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
 
+-- TODO
+{-
 bindShadowmaps :: Shadows -> IO ()
 bindShadowmaps (Shadows _ low medium high) = do
+  lowShadowmapsUniform @= (low^.cubeOffscreenArrayDepthmaps,0)
+  mediumShadowmapsUniform @= (medium^.cubeOffscreenArrayDepthmaps,1)
+  highShadowmapsUniform @= (high^.cubeOffscreenArrayDepthmaps,2)
+-}
 
 renderModelGroup :: GPUModelGroup -> IO () -> IO ()
 renderModelGroup (GPUModelGroup prog insts) sendUniforms = do
