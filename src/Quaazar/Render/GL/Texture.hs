@@ -11,12 +11,16 @@
 
 module Quaazar.Render.GL.Texture where
 
+import Codec.Picture
+import Codec.Picture.Types
 import Control.Monad.Trans ( MonadIO(..) )
 import Foreign.Marshal.Array ( withArray )
 import Foreign.Ptr ( nullPtr )
 import Foreign.Storable ( Storable )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
+import Quaazar.Core.Loader ( Load(..) )
+import Quaazar.Core.Resource ( Manager, Resource )
 import Quaazar.Render.GL.GLObject
 
 data Wrap
@@ -30,20 +34,20 @@ data Filter
   | Linear
     deriving (Eq,Show)
 
-data InternalFormat
-  = R32F
-  | RG32F
-  | RGB32F
-  | RGBA32F
-  | Depth32F
-    deriving (Eq,Show)
-
 data Format
   = R
   | RG
   | RGB
   | RGBA
   | Depth
+    deriving (Eq,Show)
+
+data InternalFormat
+  = R32F
+  | RG32F
+  | RGB32F
+  | RGBA32F
+  | Depth32F
     deriving (Eq,Show)
 
 data CompareFunc
@@ -57,27 +61,45 @@ data CompareFunc
   | Always
     deriving (Eq,Show)
 
+-- |This typeclass defines what a **texture** is. All textures have to
+-- implement that class, which exposes very basic texture features, such as
+-- texture ID, binding, parameters setting (wrap, filters, depth comparison
+-- function, mipmap base level and max level).
+--
+-- For storage allocation and texels transfer, please refer to either
+-- 'Unidimensional' or 'Multidimensional'.
 class IsTexture t where
-  -- |
+  -- |OpenGL ID of the texture.
   textureID :: t -> GLuint
-  -- |
+  -- |Bind the texture to the current OpenGL context.
   bindTexture :: (MonadIO m) => t -> m ()
-  -- |
+  -- |Unbind the texture in the current OpenGL context. Note that this function
+  -- doesn’t handle texture units and therefore shouldn’t be used.
   unbindTexture :: (MonadIO m) => t -> m ()
   -- TODO: should be setTextureWraps
-  -- |
+  -- |Set the wrapping behavior of a texture. Currently, a single 'Wrap' is
+  -- passed as argument and apply against the **S** and **T** coordinates.
   setTextureWrap :: (MonadIO m) => t -> Wrap -> m ()
-  -- |
+  -- |Set the minification and magnification filters of a texture. Both the
+  -- filters are assigned the same value.
   setTextureFilters :: (MonadIO m) => t -> Filter -> m ()
-  -- |
+  -- |Set the texture’s depth comparison function. If given 'Nothing', no
+  -- comparison will be performed.
   setTextureCompareFunc :: (MonadIO m) => t -> Maybe CompareFunc -> m ()
-  -- |
+  -- |Set the texture’s mipmap base level. That is, the level from which all
+  -- other levels are computed if ordered.
   setTextureBaseLevel :: (MonadIO m) => t -> Natural -> m ()
-  -- |
+  -- |Set the texture’s mipmap max level.
   setTextureMaxLevel :: (MonadIO m) => t -> Natural -> m ()
 
+-- TODO: Unlayered and Layered?
+-- |Unidimensional textures.
+--
+-- A unidimensional texture is not a **1D** texture here. It’s a texture that
+-- has no layer. It’s a raw texture. Whatever it’s a **1D**, **2D** or
+-- **cubemap**, it has no /layer/.
 class (IsTexture t) => Unidimensional t where
-  -- |
+  -- |Allocate some storage for the given texture.
   setTextureStorage :: (MonadIO m) => t -> InternalFormat -> Natural -> Natural -> m ()
   -- |
   transferTexels :: (MonadIO m,Storable a) => t -> Natural -> Natural -> Format -> [a] -> m ()
@@ -98,6 +120,7 @@ class (IsTexture t) => Unidimensional t where
 class (IsTexture t) => Multidimensional t where
   -- |
   setTextureArrayStorage :: (MonadIO m) => t -> InternalFormat -> Natural -> Natural -> Natural -> m ()
+  -- TODO: transferTexelsArray would be a better name I guess
   -- |
   transferArrayTexels :: (MonadIO m,Storable a) => t -> Natural -> Natural -> Natural -> Format -> [a] -> m ()
 
@@ -115,6 +138,23 @@ instance IsTexture Texture2D where
   setTextureCompareFunc _ = setTextureCompareFunc_ gl_TEXTURE_2D
   setTextureBaseLevel _ = setTextureBaseLevel_ gl_TEXTURE_2D
   setTextureMaxLevel _ = setTextureMaxLevel_ gl_TEXTURE_2D
+
+{-}
+instance Load Texture2D where
+  loadRoot = const "textures"
+  loadExt = const ""
+  load rootPath name = do
+      info CoreLog $ "loading texture " ++ name
+      img <- liftIO . fmap (first onError) $
+        readImage (rootPath </> loadRoot (undefined :: Texture)  </> name)
+      eitherToError img >>= imageToTexture
+    where
+      onError = Log ErrorLog CoreLog
+  load_ = load ""
+
+instance Resource () Texture2D
+
+type Texture2DManager = Manager () Texture2D
 
 instance Unidimensional Texture2D where
   setTextureStorage _ ift w h = liftIO $
@@ -200,7 +240,7 @@ instance Multidimensional CubemapArray where
         (fromIntegral h) (fromIntegral $ 6*n)
     where
       ift' = fromIntegral (fromInternalFormat ift)
-  transferArrayPixels = error "cubemap array pixels transfer not implemented yet"
+  transferArrayTexels = error "transferArrayTexels: cubemap array support not implemented yet"
 
 bindTextureAt :: (MonadIO m,IsTexture t) => t -> Natural -> m ()
 bindTextureAt tex unit = do
@@ -282,3 +322,108 @@ fromCompareFunc func = case func of
   GreaterOrEqual -> gl_GEQUAL
   NotEqual -> gl_NOTEQUAL
   Always -> gl_ALWAYS
+
+-------------------------------------------------------------------------------
+-- Loading from disk
+
+-- |Convert a 'DynamicImage' to a 'Texture2D'.
+imageToTexture :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
+               => DynamicImage
+               -> Wrap
+               -> Filter
+               -> Maybe CompareFunc
+               -> Natural
+               -> Natural
+               -> m Texture2D
+imageToTexture dynimg wrap flt cmpf baseLvl maxLvl = do
+  info CoreLog $ "texture type is " ++ showImageFormat dynimg
+  case dynimg of
+    ImageY8 img -> convertImage_ y8Converter img
+    ImageY16 img -> convertImage_ y16Converter img
+    ImageYF img -> convertImage_ yfConverter img
+    ImageYA8 img -> convertImage_ ya8Converter img
+    ImageYA16 img -> convertImage_ ya16Converter img
+    ImageRGB8 img -> convertImage_ rgb8Converter img
+    ImageRGB16 img -> convertImage_ rgb16Converter img
+    ImageRGBF img -> convertImage_ rgbfConverter img
+    ImageRGBA8 img -> convertImage_ rgba8Converter img
+    ImageRGBA16 img -> convertImage_ rgba16Converter img
+    ImageYCbCr8 img -> convertImage_ rgb8Converter (convertImage img)
+    _ -> throwError_ "unimplemented image format"
+
+-- |Show the image format of a 'DynamicImage'.
+showImageFormat :: DynamicImage -> String
+showImageFormat dynimg = case dynimg of
+  ImageY8{} -> "Y8"
+  ImageY16{} -> "Y16"
+  ImageYF{} -> "F"
+  ImageYA8{} -> "YA8"
+  ImageYA16{} -> "YA16"
+  ImageRGB8{} -> "RGB8"
+  ImageRGB16{} -> "RGB16"
+  ImageRGBF{} -> "RGBF"
+  ImageRGBA8{} -> "RGBA8"
+  ImageRGBA16{} -> "RGBA16"
+  ImageYCbCr8{} -> "YCbCr8"
+  _ -> "unknown format"
+
+-- |Cached inverse of constants for colorspace conversion.
+imax8, imax16 :: Float
+imax8 = 1 / 255
+imax16 = 1 / realToFrac (maxBound :: Pixel16)
+
+-- |Turn a @(Pixel a) => Image a@ into a 'Texture2D'.
+convertImage_ :: forall a. (MonadIO m,MonadScoped IO m,Pixel a)
+             => (a -> [Float])
+             -> Image a
+             -> Wrap
+             -> Filter
+             -> Maybe CompareFunc
+             -> Natural
+             -> Natural
+             -> m Texture2D
+convertImage_ converter image@(Image w h _) wrap flt cmpf baseLvl maxLvl =
+    uniTexture w h ft ift wrap flt cmpf baseLvl maxLvl texels'
+  where
+    w' = fromIntegral w
+    h' = fromIntegral h
+    (ft,ift) = case componentCount (undefined :: a) of
+      1 -> (R,R32F)
+      2 -> (RG,RG32F)
+      3 -> (RGB,RGB32F)
+      4 -> (RGBA,RGBA32F)
+      _ -> error "convertImage_: more-than-4-components pixel"
+    texels = concat $ [converter $ pixelAt image x y | y <- [0..h-1], x <- [0..w-1]]
+
+y8Converter :: Pixel8 -> [Float]
+y8Converter y = [imax8 * realToFrac y]
+
+y16Converter :: Pixel16 -> [Float]
+y16Converter y = [imax16 * realToFrac y]
+
+yfConverter :: PixelF -> [Float]
+yfConverter y = [realToFrac y]
+
+ya8Converter :: PixelYA8 -> [Float]
+ya8Converter (PixelYA8 y a) = map ((*imax8) . realToFrac) [y,a]
+
+ya16Converter :: PixelYA16 -> [Float]
+ya16Converter (PixelYA16 y a) = map ((*imax16) . realToFrac) [y,a]
+
+rgb8Converter :: PixelRGB8 -> [Float]
+rgb8Converter (PixelRGB8 r g b) = map ((*imax8) . realToFrac ) [r,g,b]
+
+rgb16Converter :: PixelRGB16 -> [Float]
+rgb16Converter (PixelRGB16 r g b) = map ((*imax16) . realToFrac ) [r,g,b]
+
+rgbfConverter :: PixelRGBF -> [Float]
+rgbfConverter (PixelRGBF r g b) = map realToFrac [r,g,b]
+
+rgba8Converter :: PixelRGBA8 -> [Float]
+rgba8Converter (PixelRGBA8 r g b a) = map ((*imax8) . realToFrac) [r,g,b,a]
+
+rgba16Converter :: PixelRGBA16 -> [Float]
+rgba16Converter (PixelRGBA16 r g b a) = map ((*imax16) . realToFrac) [r,g,b,a]
+
+throwError_ :: (MonadError Log m) => String -> m a
+throwError_ = throwError . Log ErrorLog CoreLog
