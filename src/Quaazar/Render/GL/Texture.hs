@@ -64,6 +64,7 @@ class IsTexture t where
   bindTexture :: (MonadIO m) => t -> m ()
   -- |
   unbindTexture :: (MonadIO m) => t -> m ()
+  -- TODO: should be setTextureWraps
   -- |
   setTextureWrap :: (MonadIO m) => t -> Wrap -> m ()
   -- |
@@ -71,21 +72,34 @@ class IsTexture t where
   -- |
   setTextureCompareFunc :: (MonadIO m) => t -> Maybe CompareFunc -> m ()
   -- |
-  setTextureBaseLevel :: (MonadIO m) => t -> Int -> m ()
+  setTextureBaseLevel :: (MonadIO m) => t -> Natural -> m ()
   -- |
-  setTextureMaxLevel :: (MonadIO m) => t -> Int -> m ()
+  setTextureMaxLevel :: (MonadIO m) => t -> Natural -> m ()
 
-class Unidimensional t where
+class (IsTexture t) => Unidimensional t where
   -- |
   setTextureStorage :: (MonadIO m) => t -> InternalFormat -> Natural -> Natural -> m ()
   -- |
-  transferPixels :: (MonadIO m,Storable a) => t -> Natural -> Natural -> Format -> [a] -> m ()
+  transferTexels :: (MonadIO m,Storable a) => t -> Natural -> Natural -> Format -> [a] -> m ()
+  -- |
+  uniTexture :: (MonadIO m,MonadScoped IO m,Storable a)
+             => Natural
+             -> Natural
+             -> Format
+             -> InternalFormat
+             -> Wrap
+             -> Filter
+             -> Maybe CompareFunc
+             -> Natural
+             -> Natural
+             -> [a]
+             -> m t
 
-class Multidimensional t where
+class (IsTexture t) => Multidimensional t where
   -- |
   setTextureArrayStorage :: (MonadIO m) => t -> InternalFormat -> Natural -> Natural -> Natural -> m ()
   -- |
-  transferArrayPixels :: (MonadIO m,Storable a) => t -> Natural -> Natural -> Natural -> Format -> [a] -> m ()
+  transferArrayTexels :: (MonadIO m,Storable a) => t -> Natural -> Natural -> Natural -> Format -> [a] -> m ()
 
 newtype Texture2D = Texture2D { unTexture2D :: GLuint } deriving (Eq,Ord,Show)
 
@@ -107,7 +121,18 @@ instance Unidimensional Texture2D where
       glTexStorage2D gl_TEXTURE_2D 1 ift' (fromIntegral w) (fromIntegral h)
     where
       ift' = fromIntegral (fromInternalFormat ift)
-  transferPixels _ = transferPixels_ gl_TEXTURE_2D
+  transferTexels _ = transferPixels_ gl_TEXTURE_2D
+  uniTexture w h ft ift ws wrap mmf cmpf baseLvl maxLvl texels = do
+    tex <- genObject
+    bindTexture tex
+    setTextureStorage tex ift w h
+    setTextureWrap tex wrap
+    setTextureFilters tex mmf
+    setTextureCompareFunc tex cmpf
+    setTextureBaseLevel tex baseLvl
+    setTextureMaxLevel tex maxLvl
+    transferPixels tex w h ft texels
+    unbindTexture tex
 
 newtype Texture2DArray = Texture2DArray { unTexture2DArray :: GLuint } deriving (Eq,Ord,Show)
 
@@ -129,6 +154,7 @@ instance Multidimensional Texture2DArray where
       glTexStorage3D gl_TEXTURE_2D_ARRAY 1 ift' (fromIntegral w) (fromIntegral h) (fromIntegral n)
     where
         ift' = fromIntegral (fromInternalFormat ift)
+  transferTexels = error "texture 2D array transfer not implemented yet"
 
 newtype Cubemap = Cubemap { unCubemap :: GLuint } deriving (Eq,Ord,Show)
 
@@ -150,7 +176,8 @@ instance Unidimensional Cubemap where
       glTexStorage2D gl_TEXTURE_CUBE_MAP 1 ift' (fromIntegral w) (fromIntegral h)
     where
       ift' = fromIntegral (fromInternalFormat ift)
-  transferPixels = error "cubemap pixels transfer not implemented yet"
+  transferTexels = error "transferTexels: cubemap support not implemented yet"
+  uniTexture = error "uniTexture: cubemap support not implemented yet"
 
 newtype CubemapArray = CubemapArray { unCubemapArray :: GLuint } deriving (Eq,Ord,Show)
 
