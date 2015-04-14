@@ -44,7 +44,7 @@ instance FromJSON PhongMaterialManifest where
       <*> o .: "specular"
       <*> o .: "gloss"
 
-instance Load PhongMaterialManifest where
+instance Load () PhongMaterialManifest where
   loadRoot = const "materials"
   loadExt = const "qmat"
 

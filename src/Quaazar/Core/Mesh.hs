@@ -45,7 +45,7 @@ makeLenses ''Mesh
 instance FromJSON Mesh where
   parseJSON = withObject "mesh" $ \o -> Mesh <$> o .: "vertices" <*> o .: "vgroup"
 
-instance Load Mesh where
+instance Load () Mesh where
   loadRoot = const "meshes"
   loadExt = const "qmsh"
 

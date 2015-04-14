@@ -13,6 +13,8 @@
 module Quaazar.Core.Loader (
     -- * Loading resources
     Load(..)
+  , load_
+  , eload_
   , loadJSON
   ) where
 
@@ -26,39 +28,67 @@ import Quaazar.Utils.Log
 import Quaazar.Utils.TimePoint
 import System.FilePath
 
-class Load a where
+--------------------------------------------------------------------------------
+-- Loading
+
+class Load opts a | a -> opts where
   -- |Root directory for the given 'a' resource.
   loadRoot :: a -> String
   -- |Extension found at the end of the file hosting the 'a' resource.
   loadExt :: a -> String
-  -- |@load root name@ loads the resource 'name' by looking in the 'root' tree.
-  -- Then, @root/subroot/*.ext@ is the common search tree where 'subroot' refers to
-  -- 'loadRoot' and 'ext' refers to 'loadExt'.
+  -- |@load root name opts@ loads the resource 'name' by looking in the 'root'
+  -- tree. Then, @root/subroot/*.ext@ is the common search tree where 'subroot
+  -- refers to 'loadRoot' and 'ext' refers to 'loadExt'.
   --
-  -- Note that a default implementation exists for @(FromJSON a) => a@.
+  -- You may pass optional loading arguments via 'opts'.
+  --
+  -- Note that a default implementation exists for @(FromJSON a) => a@ and
+  -- 'opts' == '()'.
   load :: (MonadIO m,MonadLogger m,MonadError Log m)
        => FilePath
        -> FilePath
+       -> opts
        -> m a
   default load :: (MonadIO m,MonadLogger m,MonadError Log m,FromJSON a)
                => FilePath
                -> FilePath
+               -> ()
                -> m a
-  load rootPath n = loadJSON rootPath $ resRoot </> n <.> resExt
+  load rootPath n _ = loadJSON rootPath $ resRoot </> n <.> resExt
     where
       resRoot = loadRoot (undefined :: a)
       resExt = loadExt (undefined :: a)
-  -- |@load_ path@ explicitely loads a resource at the given path.
+  -- |@eload path opts@ explicitely loads a resource at the given path.
   --
-  -- Note that a default implementation exists for @(FromJSON a) => a@.
-  load_ :: (MonadIO m,MonadLogger m,MonadError Log m)
+  -- Note that a default implementation exists for @(FromJSON a) => a@ and
+  -- 'opts' == '()'.
+  eload :: (MonadIO m,MonadLogger m,MonadError Log m)
         => FilePath
+        -> opts
         -> m a
-  default load_ :: (MonadIO m,MonadLogger m,MonadError Log m,FromJSON a)
+  default eload :: (MonadIO m,MonadLogger m,MonadError Log m,FromJSON a)
                 => FilePath
+                -> ()
                 -> m a
-  load_ = loadJSON ""
+  eload path _= loadJSON "" path
 
+-- |Load without optional arguments.
+load_ :: (Load () a,MonadIO m,MonadLogger m,MonadError Log m)
+      => FilePath
+      -> FilePath
+      -> m a
+load_ root n = load root n ()
+
+-- |Explicit load without optional arguments.
+eload_ :: (Load () a,MonadIO m,MonadLogger m,MonadError Log m)
+       => FilePath
+       -> m a
+eload_ path = eload path ()
+
+--------------------------------------------------------------------------------
+-- Helpers
+
+-- |Load a JSON value – this is, @(FromJSON a) => a@.
 loadJSON :: (MonadIO m,MonadLogger m,MonadError Log m,FromJSON a)
          => FilePath
          -> FilePath

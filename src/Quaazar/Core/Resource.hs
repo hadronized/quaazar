@@ -38,25 +38,26 @@ data Manager dep r = Manager {
 
 class Resource dep r | r -> dep where
   manager :: (MonadIO m) => FilePath -> m (Manager dep r)
-  default manager :: (MonadIO m,Load r) => FilePath -> m (Manager () r)
+  default manager :: (MonadIO m,Load () r) => FilePath -> m (Manager () r)
   manager root = do
       ref <- liftIO $ newIORef empty
       return $ Manager (retrieve_ ref) (release_ ref)
     where
       retrieve_ ref _ name = do
         mp <- liftIO $ readIORef ref
-        (mp',r) <- lookupInsert root mp name
+        (mp',r) <- lookupInsert root () mp name
         liftIO $ writeIORef ref mp'
         return r
       release_ ref name = liftIO . modifyIORef ref $ delete name
 
-lookupInsert :: (MonadIO m,MonadError Log m,MonadLogger m,Load r)
+lookupInsert :: (MonadIO m,MonadError Log m,MonadLogger m,Load opts r)
              => FilePath
+             -> opts
              -> Map String r
              -> String
              -> m (Map String r,r)
-lookupInsert root mp key = case M.lookup key mp of
+lookupInsert root opts mp key = case M.lookup key mp of
   Just res -> return (mp,res) -- resource already in cache 
   Nothing -> do -- resource not in cache; load it
-    res <- load root key
+    res <- load root key opts
     return (insert key res mp,res)

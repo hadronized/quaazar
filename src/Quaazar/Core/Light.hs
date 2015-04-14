@@ -39,7 +39,7 @@ instance FromJSON Ambient where
         | t == "ambient" = Ambient <$> o .: "color" <*> o .: "power"
         | otherwise = fail "not an ambient light"
 
-instance Load Ambient where
+instance Load () Ambient where
   loadRoot = const "lights"
   loadExt = const "ylig"
 
@@ -64,7 +64,7 @@ instance FromJSON Omni where
             <*> o .:? "shadow_lod" .!= Nothing
         | otherwise = fail "not an omni light"
 
-instance Load Omni where
+instance Load () Omni where
   loadRoot = const "lights"
   loadExt = const "qlig"
 
