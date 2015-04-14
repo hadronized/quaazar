@@ -153,9 +153,9 @@ instance Load (Wrap,Filter,Maybe CompareFunc,Natural,Natural) Texture2D where
       onError = Log ErrorLog CoreLog
   eload = load ""
 
---instance Resource () Texture2D
+instance Resource (Wrap,Filter,Maybe CompareFunc,Natural,Natural) Texture2D
 
-type Texture2DManager = Manager () Texture2D
+type Texture2DManager = Manager (Wrap,Filter,Maybe CompareFunc,Natural,Natural) Texture2D
 
 instance Unlayered Texture2D where
   setTextureStorage _ ift w h = liftIO $
