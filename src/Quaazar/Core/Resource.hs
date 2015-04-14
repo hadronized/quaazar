@@ -38,14 +38,14 @@ data Manager dep r = Manager {
 
 class Resource dep r | r -> dep where
   manager :: (MonadIO m) => FilePath -> m (Manager dep r)
-  default manager :: (MonadIO m,Load () r) => FilePath -> m (Manager () r)
+  default manager :: (MonadIO m,Load dep r) => FilePath -> m (Manager dep r)
   manager root = do
       ref <- liftIO $ newIORef empty
       return $ Manager (retrieve_ ref) (release_ ref)
     where
-      retrieve_ ref _ name = do
+      retrieve_ ref dep name = do
         mp <- liftIO $ readIORef ref
-        (mp',r) <- lookupInsert root () mp name
+        (mp',r) <- lookupInsert root dep mp name
         liftIO $ writeIORef ref mp'
         return r
       release_ ref name = liftIO . modifyIORef ref $ delete name
