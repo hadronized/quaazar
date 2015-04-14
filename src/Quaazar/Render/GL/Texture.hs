@@ -139,7 +139,7 @@ instance IsTexture Texture2D where
   setTextureBaseLevel _ = setTextureBaseLevel_ gl_TEXTURE_2D
   setTextureMaxLevel _ = setTextureMaxLevel_ gl_TEXTURE_2D
 
-{-}
+{-
 instance Load Texture2D where
   loadRoot = const "textures"
   loadExt = const ""
@@ -153,6 +153,7 @@ instance Load Texture2D where
   load_ = load ""
 
 instance Resource () Texture2D
+-}
 
 type Texture2DManager = Manager () Texture2D
 
