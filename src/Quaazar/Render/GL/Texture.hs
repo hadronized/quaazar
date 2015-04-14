@@ -13,8 +13,10 @@ module Quaazar.Render.GL.Texture where
 
 import Codec.Picture
 import Codec.Picture.Types
+import Control.Arrow ( left )
 import Control.Monad.Error.Class ( MonadError(..) )
 import Control.Monad.Trans ( MonadIO(..) )
+import Data.Either.Combinators ( eitherToError )
 import Foreign.Marshal.Array ( withArray )
 import Foreign.Ptr ( nullPtr )
 import Foreign.Storable ( Storable )
@@ -24,6 +26,7 @@ import Quaazar.Core.Loader ( Load(..) )
 import Quaazar.Core.Resource ( Manager, Resource )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Utils.Log
+import System.FilePath ( (</>) )
 
 data Wrap
   = ClampToEdge
@@ -138,21 +141,19 @@ instance IsTexture Texture2D where
   setTextureBaseLevel _ = setTextureBaseLevel_ gl_TEXTURE_2D
   setTextureMaxLevel _ = setTextureMaxLevel_ gl_TEXTURE_2D
 
-{-
-instance Load Texture2D where
+instance Load (Wrap,Filter,Maybe CompareFunc,Natural,Natural) Texture2D where
   loadRoot = const "textures"
   loadExt = const ""
-  load rootPath name = do
+  load rootPath name (wrap,flt,cmpf,baseLvl,maxLvl) = do
       info CoreLog $ "loading texture " ++ name
-      img <- liftIO . fmap (first onError) $
-        readImage (rootPath </> loadRoot (undefined :: Texture)  </> name)
-      eitherToError img >>= imageToTexture
+      img <- liftIO . fmap (left onError) $
+        readImage (rootPath </> loadRoot (undefined :: Texture2D)  </> name)
+      eitherToError img >>= imageToTexture wrap flt cmpf baseLvl maxLvl
     where
       onError = Log ErrorLog CoreLog
-  load_ = load ""
+  eload = load ""
 
-instance Resource () Texture2D
--}
+--instance Resource () Texture2D
 
 type Texture2DManager = Manager () Texture2D
 
@@ -329,14 +330,14 @@ fromCompareFunc func = case func of
 
 -- |Convert a 'DynamicImage' to a 'Texture2D'.
 imageToTexture :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
-               => DynamicImage
-               -> Wrap
+               => Wrap
                -> Filter
                -> Maybe CompareFunc
                -> Natural
                -> Natural
+               -> DynamicImage
                -> m Texture2D
-imageToTexture dynimg wrap flt cmpf baseLvl maxLvl = do
+imageToTexture wrap flt cmpf baseLvl maxLvl dynimg = do
   info CoreLog $ "texture type is " ++ showImageFormat dynimg
   case dynimg of
     ImageY8 img -> convertImage_ y8Converter img wrap flt cmpf baseLvl maxLvl

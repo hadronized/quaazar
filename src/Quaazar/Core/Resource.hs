@@ -50,7 +50,7 @@ class Resource dep r | r -> dep where
         return r
       release_ ref name = liftIO . modifyIORef ref $ delete name
 
-lookupInsert :: (MonadIO m,MonadError Log m,MonadLogger m,Load opts r)
+lookupInsert :: (MonadIO m,MonadScoped IO m,MonadError Log m,MonadLogger m,Load opts r)
              => FilePath
              -> opts
              -> Map String r
