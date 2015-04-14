@@ -25,6 +25,7 @@ import Data.Aeson
 import Data.ByteString.Lazy as B ( readFile )
 import Data.Either.Combinators ( eitherToError, mapLeft )
 import Quaazar.Utils.Log
+import Quaazar.Utils.Scoped ( MonadScoped )
 import Quaazar.Utils.TimePoint
 import System.FilePath
 
@@ -44,12 +45,12 @@ class Load opts a | a -> opts where
   --
   -- Note that a default implementation exists for @(FromJSON a) => a@ and
   -- 'opts' == '()'.
-  load :: (MonadIO m,MonadLogger m,MonadError Log m)
+  load :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
        => FilePath
        -> FilePath
        -> opts
        -> m a
-  default load :: (MonadIO m,MonadLogger m,MonadError Log m,FromJSON a)
+  default load :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m,FromJSON a)
                => FilePath
                -> FilePath
                -> ()
@@ -62,25 +63,25 @@ class Load opts a | a -> opts where
   --
   -- Note that a default implementation exists for @(FromJSON a) => a@ and
   -- 'opts' == '()'.
-  eload :: (MonadIO m,MonadLogger m,MonadError Log m)
+  eload :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
         => FilePath
         -> opts
         -> m a
-  default eload :: (MonadIO m,MonadLogger m,MonadError Log m,FromJSON a)
+  default eload :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m,FromJSON a)
                 => FilePath
                 -> ()
                 -> m a
   eload path _= loadJSON "" path
 
 -- |Load without optional arguments.
-load_ :: (Load () a,MonadIO m,MonadLogger m,MonadError Log m)
+load_ :: (Load () a,MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
       => FilePath
       -> FilePath
       -> m a
 load_ root n = load root n ()
 
 -- |Explicit load without optional arguments.
-eload_ :: (Load () a,MonadIO m,MonadLogger m,MonadError Log m)
+eload_ :: (Load () a,MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
        => FilePath
        -> m a
 eload_ path = eload path ()
