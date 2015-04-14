@@ -36,7 +36,6 @@ library
                      , Quaazar.Core.Position
                      , Quaazar.Core.Projection
                      , Quaazar.Core.Resource
-                     , Quaazar.Core.Texture
                      , Quaazar.Core.Transform
                      , Quaazar.Core.VGroup
                      , Quaazar.Core.Vertex

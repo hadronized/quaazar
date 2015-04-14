@@ -23,7 +23,6 @@ import Data.Map as M ( delete, empty, insert, lookup )
 import Numeric.Natural ( Natural )
 import Quaazar.Core.Loader ( Load(..) )
 import Quaazar.Core.Resource ( Manager(..), Resource(..) )
-import Quaazar.Core.Texture ( Texture, TextureManager )
 import Quaazar.Render.GL.Texture as GL ( Filter, Texture2D, Wrap )
 import Quaazar.Render.GLSL
 import Quaazar.Render.Shader

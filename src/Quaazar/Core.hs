@@ -20,7 +20,6 @@ module Quaazar.Core (
   , module Quaazar.Core.Position
   , module Quaazar.Core.Projection
   , module Quaazar.Core.Resource
-  , module Quaazar.Core.Texture
   , module Quaazar.Core.Transform
   , module Quaazar.Core.UV
   , module Quaazar.Core.Vertex
@@ -37,7 +36,6 @@ import Quaazar.Core.Normal
 import Quaazar.Core.Position
 import Quaazar.Core.Projection
 import Quaazar.Core.Resource
-import Quaazar.Core.Texture
 import Quaazar.Core.Transform
 import Quaazar.Core.UV
 import Quaazar.Core.Vertex
