@@ -13,6 +13,7 @@ module Quaazar.Render.GL.Texture where
 
 import Codec.Picture
 import Codec.Picture.Types
+import Control.Monad.Error.Class ( MonadError(..) )
 import Control.Monad.Trans ( MonadIO(..) )
 import Foreign.Marshal.Array ( withArray )
 import Foreign.Ptr ( nullPtr )
@@ -22,6 +23,7 @@ import Numeric.Natural ( Natural )
 import Quaazar.Core.Loader ( Load(..) )
 import Quaazar.Core.Resource ( Manager, Resource )
 import Quaazar.Render.GL.GLObject
+import Quaazar.Utils.Log
 
 data Wrap
   = ClampToEdge
@@ -67,7 +69,7 @@ data CompareFunc
 -- function, mipmap base level and max level).
 --
 -- For storage allocation and texels transfer, please refer to either
--- 'Unidimensional' or 'Multidimensional'.
+-- 'Unlayegred' or 'Layered'.
 class IsTexture t where
   -- |OpenGL ID of the texture.
   textureID :: t -> GLuint
@@ -92,37 +94,34 @@ class IsTexture t where
   -- |Set the texture’s mipmap max level.
   setTextureMaxLevel :: (MonadIO m) => t -> Natural -> m ()
 
--- TODO: Unlayered and Layered?
--- |Unidimensional textures.
+-- |Unlayered textures.
 --
--- A unidimensional texture is not a **1D** texture here. It’s a texture that
--- has no layer. It’s a raw texture. Whatever it’s a **1D**, **2D** or
--- **cubemap**, it has no /layer/.
-class (IsTexture t) => Unidimensional t where
+-- An unlayered texture has no layer. It’s a raw texture. Whatever it’s a
+-- **1D**, **2D** or **cubemap**, it has no /layer/.
+class (IsTexture t) => Unlayered t where
   -- |Allocate some storage for the given texture.
   setTextureStorage :: (MonadIO m) => t -> InternalFormat -> Natural -> Natural -> m ()
   -- |
   transferTexels :: (MonadIO m,Storable a) => t -> Natural -> Natural -> Format -> [a] -> m ()
   -- |
-  uniTexture :: (MonadIO m,MonadScoped IO m,Storable a)
-             => Natural
-             -> Natural
-             -> Format
-             -> InternalFormat
-             -> Wrap
-             -> Filter
-             -> Maybe CompareFunc
-             -> Natural
-             -> Natural
-             -> [a]
-             -> m t
+  unlayeredTexture :: (MonadIO m,MonadScoped IO m,Storable a)
+                   => Natural
+                   -> Natural
+                   -> Format
+                   -> InternalFormat
+                   -> Wrap
+                   -> Filter
+                   -> Maybe CompareFunc
+                   -> Natural
+                   -> Natural
+                   -> [a]
+                   -> m t
 
-class (IsTexture t) => Multidimensional t where
+class (IsTexture t) => Layered t where
   -- |
-  setTextureArrayStorage :: (MonadIO m) => t -> InternalFormat -> Natural -> Natural -> Natural -> m ()
-  -- TODO: transferTexelsArray would be a better name I guess
+  setTextureStorageLayer :: (MonadIO m) => t -> InternalFormat -> Natural -> Natural -> Natural -> m ()
   -- |
-  transferArrayTexels :: (MonadIO m,Storable a) => t -> Natural -> Natural -> Natural -> Format -> [a] -> m ()
+  transferTexelsLayer :: (MonadIO m,Storable a) => t -> Natural -> Natural -> Natural -> Format -> [a] -> m ()
 
 newtype Texture2D = Texture2D { unTexture2D :: GLuint } deriving (Eq,Ord,Show)
 
@@ -157,13 +156,13 @@ instance Resource () Texture2D
 
 type Texture2DManager = Manager () Texture2D
 
-instance Unidimensional Texture2D where
+instance Unlayered Texture2D where
   setTextureStorage _ ift w h = liftIO $
       glTexStorage2D gl_TEXTURE_2D 1 ift' (fromIntegral w) (fromIntegral h)
     where
       ift' = fromIntegral (fromInternalFormat ift)
   transferTexels _ = transferPixels_ gl_TEXTURE_2D
-  uniTexture w h ft ift ws wrap mmf cmpf baseLvl maxLvl texels = do
+  unlayeredTexture w h ft ift wrap mmf cmpf baseLvl maxLvl texels = do
     tex <- genObject
     bindTexture tex
     setTextureStorage tex ift w h
@@ -172,8 +171,9 @@ instance Unidimensional Texture2D where
     setTextureCompareFunc tex cmpf
     setTextureBaseLevel tex baseLvl
     setTextureMaxLevel tex maxLvl
-    transferPixels tex w h ft texels
+    transferTexels tex w h ft texels
     unbindTexture tex
+    return tex
 
 newtype Texture2DArray = Texture2DArray { unTexture2DArray :: GLuint } deriving (Eq,Ord,Show)
 
@@ -190,12 +190,12 @@ instance IsTexture Texture2DArray where
   setTextureBaseLevel _ = setTextureBaseLevel_ gl_TEXTURE_2D_ARRAY
   setTextureMaxLevel _ = setTextureMaxLevel_ gl_TEXTURE_2D_ARRAY
 
-instance Multidimensional Texture2DArray where
-  setTextureArrayStorage _ ift w h n = liftIO $
+instance Layered Texture2DArray where
+  setTextureStorageLayer _ ift w h n = liftIO $
       glTexStorage3D gl_TEXTURE_2D_ARRAY 1 ift' (fromIntegral w) (fromIntegral h) (fromIntegral n)
     where
         ift' = fromIntegral (fromInternalFormat ift)
-  transferTexels = error "texture 2D array transfer not implemented yet"
+  transferTexelsLayer = error "texture 2D array transfer not implemented yet"
 
 newtype Cubemap = Cubemap { unCubemap :: GLuint } deriving (Eq,Ord,Show)
 
@@ -212,13 +212,13 @@ instance IsTexture Cubemap where
   setTextureBaseLevel _ = setTextureBaseLevel_ gl_TEXTURE_CUBE_MAP
   setTextureMaxLevel _ = setTextureMaxLevel_ gl_TEXTURE_CUBE_MAP
 
-instance Unidimensional Cubemap where
+instance Unlayered Cubemap where
   setTextureStorage _ ift w h = liftIO $
       glTexStorage2D gl_TEXTURE_CUBE_MAP 1 ift' (fromIntegral w) (fromIntegral h)
     where
       ift' = fromIntegral (fromInternalFormat ift)
   transferTexels = error "transferTexels: cubemap support not implemented yet"
-  uniTexture = error "uniTexture: cubemap support not implemented yet"
+  unlayeredTexture = error "uniTexture: cubemap support not implemented yet"
 
 newtype CubemapArray = CubemapArray { unCubemapArray :: GLuint } deriving (Eq,Ord,Show)
 
@@ -235,13 +235,13 @@ instance IsTexture CubemapArray where
   setTextureBaseLevel _ = setTextureBaseLevel_ gl_TEXTURE_CUBE_MAP_ARRAY
   setTextureMaxLevel _ = setTextureMaxLevel_ gl_TEXTURE_CUBE_MAP_ARRAY
 
-instance Multidimensional CubemapArray where
-  setTextureArrayStorage _ ift w h n = liftIO $
+instance Layered CubemapArray where
+  setTextureStorageLayer _ ift w h n = liftIO $
       glTexStorage3D gl_TEXTURE_CUBE_MAP_ARRAY 1 ift' (fromIntegral w)
         (fromIntegral h) (fromIntegral $ 6*n)
     where
       ift' = fromIntegral (fromInternalFormat ift)
-  transferArrayTexels = error "transferArrayTexels: cubemap array support not implemented yet"
+  transferTexelsLayer = error "transferArrayTexels: cubemap array support not implemented yet"
 
 bindTextureAt :: (MonadIO m,IsTexture t) => t -> Natural -> m ()
 bindTextureAt tex unit = do
@@ -278,11 +278,11 @@ setTextureCompareFunc_ t = maybe compareNothing compareRefToTexture
       glTexParameteri t gl_TEXTURE_COMPARE_MODE (fromIntegral gl_COMPARE_REF_TO_TEXTURE)
       glTexParameteri t gl_TEXTURE_COMPARE_FUNC (fromIntegral $ fromCompareFunc func)
 
-setTextureBaseLevel_ :: (MonadIO m) => GLenum -> Int -> m ()
+setTextureBaseLevel_ :: (MonadIO m) => GLenum -> Natural -> m ()
 setTextureBaseLevel_ t l = liftIO $
     glTexParameteri t gl_TEXTURE_MAX_LEVEL (fromIntegral l)
 
-setTextureMaxLevel_ :: (MonadIO m) => GLenum -> Int -> m ()
+setTextureMaxLevel_ :: (MonadIO m) => GLenum -> Natural -> m ()
 setTextureMaxLevel_ t l = liftIO $
     glTexParameteri t gl_TEXTURE_MAX_LEVEL (fromIntegral l)
 
@@ -339,17 +339,17 @@ imageToTexture :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
 imageToTexture dynimg wrap flt cmpf baseLvl maxLvl = do
   info CoreLog $ "texture type is " ++ showImageFormat dynimg
   case dynimg of
-    ImageY8 img -> convertImage_ y8Converter img
-    ImageY16 img -> convertImage_ y16Converter img
-    ImageYF img -> convertImage_ yfConverter img
-    ImageYA8 img -> convertImage_ ya8Converter img
-    ImageYA16 img -> convertImage_ ya16Converter img
-    ImageRGB8 img -> convertImage_ rgb8Converter img
-    ImageRGB16 img -> convertImage_ rgb16Converter img
-    ImageRGBF img -> convertImage_ rgbfConverter img
-    ImageRGBA8 img -> convertImage_ rgba8Converter img
-    ImageRGBA16 img -> convertImage_ rgba16Converter img
-    ImageYCbCr8 img -> convertImage_ rgb8Converter (convertImage img)
+    ImageY8 img -> convertImage_ y8Converter img wrap flt cmpf baseLvl maxLvl
+    ImageY16 img -> convertImage_ y16Converter img wrap flt cmpf baseLvl maxLvl
+    ImageYF img -> convertImage_ yfConverter img wrap flt cmpf baseLvl maxLvl
+    ImageYA8 img -> convertImage_ ya8Converter img wrap flt cmpf baseLvl maxLvl
+    ImageYA16 img -> convertImage_ ya16Converter img wrap flt cmpf baseLvl maxLvl
+    ImageRGB8 img -> convertImage_ rgb8Converter img wrap flt cmpf baseLvl maxLvl
+    ImageRGB16 img -> convertImage_ rgb16Converter img wrap flt cmpf baseLvl maxLvl
+    ImageRGBF img -> convertImage_ rgbfConverter img wrap flt cmpf baseLvl maxLvl
+    ImageRGBA8 img -> convertImage_ rgba8Converter img wrap flt cmpf baseLvl maxLvl
+    ImageRGBA16 img -> convertImage_ rgba16Converter img wrap flt cmpf baseLvl maxLvl
+    ImageYCbCr8 img -> convertImage_ rgb8Converter (convertImage img) wrap flt cmpf baseLvl maxLvl
     _ -> throwError_ "unimplemented image format"
 
 -- |Show the image format of a 'DynamicImage'.
@@ -374,7 +374,7 @@ imax8 = 1 / 255
 imax16 = 1 / realToFrac (maxBound :: Pixel16)
 
 -- |Turn a @(Pixel a) => Image a@ into a 'Texture2D'.
-convertImage_ :: forall a. (MonadIO m,MonadScoped IO m,Pixel a)
+convertImage_ :: forall m a. (MonadIO m,MonadScoped IO m,Pixel a)
              => (a -> [Float])
              -> Image a
              -> Wrap
@@ -384,7 +384,7 @@ convertImage_ :: forall a. (MonadIO m,MonadScoped IO m,Pixel a)
              -> Natural
              -> m Texture2D
 convertImage_ converter image@(Image w h _) wrap flt cmpf baseLvl maxLvl =
-    uniTexture w h ft ift wrap flt cmpf baseLvl maxLvl texels'
+    unlayeredTexture w' h' ft ift wrap flt cmpf baseLvl maxLvl texels
   where
     w' = fromIntegral w
     h' = fromIntegral h

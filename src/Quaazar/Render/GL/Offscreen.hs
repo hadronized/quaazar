@@ -85,14 +85,14 @@ genOffscreenArray w h n flt colift colft colap depthift depthft depthap = do
     bindTexture colormaps
     setTextureWrap colormaps ClampToEdge
     setTextureFilters colormaps flt
-    setTextureArrayStorage colormaps colift w h n
+    setTextureStorageLayer colormaps colift w h n
     unbindTexture colormaps
     -- depthmaps
     depthmaps <- genObject
     bindTexture depthmaps
     setTextureWrap depthmaps ClampToEdge
     setTextureFilters depthmaps flt
-    setTextureArrayStorage depthmaps depthift w h n
+    setTextureStorageLayer depthmaps depthift w h n
     --setTextureCompareFunc depthmaps (Just LessOrEqual)
     unbindTexture depthmaps
     -- framebuffer
@@ -197,14 +197,14 @@ genCubeOffscreenArray cubeSize n flt colift colft colap depthift depthft depthap
     bindTexture colormaps
     setTextureWrap colormaps ClampToEdge
     setTextureFilters colormaps flt
-    setTextureArrayStorage colormaps colift cubeSize cubeSize n
+    setTextureStorageLayer colormaps colift cubeSize cubeSize n
     unbindTexture colormaps
     -- depth cubemaps
     depthmaps <- genObject
     bindTexture depthmaps
     setTextureWrap depthmaps ClampToEdge
     setTextureFilters depthmaps flt
-    setTextureArrayStorage depthmaps depthift cubeSize cubeSize n
+    setTextureStorageLayer depthmaps depthift cubeSize cubeSize n
     --setTextureCompareFunc depthmaps (Just LessOrEqual)
     unbindTexture depthmaps
     -- framebuffer
