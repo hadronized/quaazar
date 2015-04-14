@@ -24,17 +24,16 @@ import Numeric.Natural ( Natural )
 import Quaazar.Core.Loader ( Load(..) )
 import Quaazar.Core.Resource ( Manager(..), Resource(..) )
 import Quaazar.Core.Texture ( Texture, TextureManager )
-import Quaazar.Render.GL.Texture as GL ( Filter, Wrap )
+import Quaazar.Render.GL.Texture as GL ( Filter, Texture2D, Wrap )
 import Quaazar.Render.GLSL
 import Quaazar.Render.Shader
-import Quaazar.Render.Texture ( GPUTexture, GPUTextureManager )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
 data PhongMaterial = PhongMaterial {
-    diffuseMap  :: GPUTexture
-  , specularMap :: GPUTexture
-  , glossMap    :: GPUTexture
+    diffuseMap  :: Texture2D
+  , specularMap :: Texture2D
+  , glossMap    :: Texture2D
   }
 
 data PhongMaterialManifest = PhongMaterialManifest String String String
@@ -50,6 +49,7 @@ instance Load PhongMaterialManifest where
   loadRoot = const "materials"
   loadExt = const "qmat"
 
+{-
 instance Resource (TextureManager,GPUTextureManager,GL.Wrap,GL.Filter) PhongMaterial where
   manager root = do
       ref <- liftIO $ newIORef empty
@@ -71,6 +71,7 @@ instance Resource (TextureManager,GPUTextureManager,GL.Wrap,GL.Filter) PhongMate
       release_ ref name = liftIO . modifyIORef ref $ delete name
 
 type PhongMaterialManager = Manager (TextureManager,GPUTextureManager,GL.Wrap,GL.Filter) PhongMaterial
+-}
 
 phong :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
       => m (GPUProgram PhongMaterial)

@@ -18,9 +18,9 @@ import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO )
 import Numeric.Natural ( Natural )
 import Quaazar.Render.Compositing ( Compositor, renderNode )
-import Quaazar.Render.Viewport ( Viewport )
+import Quaazar.Render.GL.Texture ( Texture2D )
 import Quaazar.Render.Shader ( Uniform, ($=), uniform )
-import Quaazar.Render.Texture ( GPUTexture )
+import Quaazar.Render.Viewport ( Viewport )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
@@ -37,11 +37,11 @@ gammaCorrectionSrc = unlines
 
 gammaCorrection :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
                 => Viewport
-                -> m (Compositor GPUTexture GPUTexture)
+                -> m (Compositor Texture2D Texture2D)
 gammaCorrection vp = do
   compt <- renderNode vp gammaCorrectionSrc $ \source ->
     gammaCorrectionSourceUniform $= (source,0)
   return (fmap fst compt)
 
-gammaCorrectionSourceUniform :: Uniform (GPUTexture,Natural)
+gammaCorrectionSourceUniform :: Uniform (Texture2D,Natural)
 gammaCorrectionSourceUniform = uniform 0

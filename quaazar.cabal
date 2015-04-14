@@ -51,7 +51,6 @@ library
                      , Quaazar.Render.RenderLayer
                      , Quaazar.Render.Renderer
                      , Quaazar.Render.Shader
-                     , Quaazar.Render.Texture
                      , Quaazar.Render.Viewport
                      , Quaazar.Technics
                      , Quaazar.Technics.Compositing

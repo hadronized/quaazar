@@ -28,13 +28,12 @@ import Quaazar.Render.GL.Buffer ( Buffer )
 import Quaazar.Render.GL.Framebuffer ( Target(..), bindFramebuffer ) 
 import Quaazar.Render.GL.Offscreen ( Offscreen(Offscreen), genOffscreen )
 import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
-                                 , bindTextureAt )
+                                 , Texture2D, bindTextureAt )
 import Quaazar.Render.GL.VertexArray ( VertexArray, bindVertexArray
                                      , genAttributelessVertexArray )
 import Quaazar.Render.Light ( ShadowConf )
 import Quaazar.Render.Lighting ( Shadows )
 import Quaazar.Render.Shader
-import Quaazar.Render.Texture ( GPUTexture(GPUTexture) )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
@@ -97,7 +96,7 @@ renderNode :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
            => Viewport
            -> String
            -> (a -> Semantics b)
-           -> m (Compositor a (GPUTexture,GPUTexture))
+           -> m (Compositor a (Texture2D,Texture2D))
 renderNode vp shaderSrc semMapper = do
     Offscreen nodeColor nodeDepth nodeFB <- genOffscreen w h Nearest RGBA32F RGBA
     prog <- gpuProgram copyVS Nothing Nothing shaderSrc semMapper
@@ -112,7 +111,7 @@ renderNode vp shaderSrc semMapper = do
       glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
       setViewport vp
       glDrawArrays gl_TRIANGLE_STRIP 0 4
-      return (GPUTexture $ bindTextureAt nodeColor,GPUTexture $ bindTextureAt nodeDepth)
+      return (nodeColor,nodeDepth)
   where
     Viewport _ _ w h = vp
 

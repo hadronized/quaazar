@@ -20,7 +20,6 @@ module Quaazar.Render (
   , module Quaazar.Render.Renderer
   , module Quaazar.Render.RenderLayer
   , module Quaazar.Render.Shader
-  , module Quaazar.Render.Texture
   , module Quaazar.Render.Viewport
   ) where
 
@@ -34,5 +33,4 @@ import Quaazar.Render.PostFX
 import Quaazar.Render.Renderer
 import Quaazar.Render.RenderLayer
 import Quaazar.Render.Shader
-import Quaazar.Render.Texture
 import Quaazar.Render.Viewport

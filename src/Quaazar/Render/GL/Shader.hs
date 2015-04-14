@@ -32,7 +32,7 @@ import Quaazar.Core.Color ( Color(unColor) )
 import Quaazar.Core.Position ( Position(unPosition) )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Log ( gllog )
-import Quaazar.Render.Texture ( GPUTexture(..) )
+import Quaazar.Render.GL.Texture ( Texture2D, bindTextureAt )
 import Quaazar.Utils.Log
 
 throwError_ :: (MonadError Log m) => String -> m a
@@ -389,7 +389,7 @@ instance Uniformable Color where
 instance Uniformable Position where
   sendUniform l = sendUniform l . unPosition
 
-instance Uniformable (GPUTexture,Natural) where
+instance Uniformable (Texture2D,Natural) where
   sendUniform l (tex,texUnit) = do
     bindTextureAt tex texUnit
     sendUniform l texUnit

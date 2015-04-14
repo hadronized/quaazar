@@ -36,11 +36,11 @@ import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Shader ( Program, Uniform, Uniformable, (@=)
                                 , buildProgram, uniform, useProgram )
-import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..) )
+import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
+                                 , Texture2D )
 import Quaazar.Render.GLSL
 import Quaazar.Render.Light
 import Quaazar.Render.Mesh ( GPUMesh, renderMesh )
-import Quaazar.Render.Texture ( GPUTexture )
 import Quaazar.Utils.Log
 
 -- |'Lighting' gathers information about lighting in the scene.
@@ -130,13 +130,13 @@ ligIRadUniform = uniform ligIRadSem
 shadowmapIndexUniform :: Uniform Word32
 shadowmapIndexUniform = uniform shadowmapIndexSem
 
-lowShadowmapsUniform :: Uniform (GPUTexture,Natural)
+lowShadowmapsUniform :: Uniform (Texture2D,Natural)
 lowShadowmapsUniform = uniform lowShadowmapsSem
 
-mediumShadowmapsUniform :: Uniform (GPUTexture,Natural)
+mediumShadowmapsUniform :: Uniform (Texture2D,Natural)
 mediumShadowmapsUniform = uniform mediumShadowmapsSem
 
-highShadowmapsUniform :: Uniform (GPUTexture,Natural)
+highShadowmapsUniform :: Uniform (Texture2D,Natural)
 highShadowmapsUniform = uniform highShadowmapsSem
 
 -- |ProjView matrix used to generate shadowmaps.
