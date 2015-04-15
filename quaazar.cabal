@@ -49,7 +49,6 @@ library
                      , Quaazar.Render.Mesh
                      , Quaazar.Render.RenderLayer
                      , Quaazar.Render.Renderer
-                     , Quaazar.Render.Shader
                      , Quaazar.Render.Viewport
                      , Quaazar.Technics
                      , Quaazar.Technics.Compositing

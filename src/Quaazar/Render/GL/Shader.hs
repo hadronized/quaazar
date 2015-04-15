@@ -393,3 +393,23 @@ instance Uniformable (Texture2D,Natural) where
   sendUniform l (tex,texUnit) = do
     bindTextureAt tex texUnit
     sendUniform l texUnit
+
+--------------------------------------------------------------------------------
+-- Semantics
+
+-- |Semantics are used by the user to customize shaders. It basically
+-- exposes all 'Uniformable' instances, but constraint them into pure code.
+--
+-- See '($=)' for building 'Semantics'.
+newtype Semantics a = Semantics {
+    -- |Update all semantics into the currently bound shader program.ã
+    runSemantics :: IO a
+  } deriving (Applicative,Functor,Monad)
+
+-- |Map a semantic to its value.
+($=) :: (Uniformable a) => Uniform a -> a -> Semantics ()
+s $= a = Semantics $ s @= a
+
+-- FIXME: needs a better name
+-- |'Program' with its 'Semantic's.
+type Program' a = (Program,a -> Semantics ())

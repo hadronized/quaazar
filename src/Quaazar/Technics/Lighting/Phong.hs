@@ -23,10 +23,11 @@ import Data.Map as M ( delete, empty, insert, lookup )
 import Numeric.Natural ( Natural )
 import Quaazar.Core.Loader
 import Quaazar.Core.Resource ( Manager(..), Resource(..) )
+import Quaazar.Render.GL.Shader ( Program', Semantics, ($=), buildProgram
+                                , uniform )
 import Quaazar.Render.GL.Texture ( CompareFunc, Filter, Texture2D
                                  , Texture2DManager, Wrap )
 import Quaazar.Render.GLSL
-import Quaazar.Render.Shader
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
@@ -72,11 +73,15 @@ instance Resource (Texture2DManager,Wrap,Filter,Maybe CompareFunc,Natural,Natura
 type PhongMaterialManager = Manager (Texture2DManager,Wrap,Filter,Maybe CompareFunc,Natural,Natural) PhongMaterial
 
 phong :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
-      => m (GPUProgram PhongMaterial)
-phong = gpuProgram phongVS Nothing Nothing phongFS $ \mat -> do
-    uniform phongDiffMapSem $= (diffuseMap mat,0 :: Natural)
-    uniform phongSpecMapSem $= (specularMap mat,1 :: Natural)
-    uniform phongGlossMapSem $= (glossMap mat,2 :: Natural)
+      => m (Program' PhongMaterial)
+phong = do
+    prog <- buildProgram phongVS Nothing Nothing phongFS
+    return (prog,semantics)
+  where
+    semantics mat = do
+      uniform phongDiffMapSem $= (diffuseMap mat,0 :: Natural)
+      uniform phongSpecMapSem $= (specularMap mat,1 :: Natural)
+      uniform phongGlossMapSem $= (glossMap mat,2 :: Natural)
 
 phongDiffMapSem :: Natural
 phongDiffMapSem = 128

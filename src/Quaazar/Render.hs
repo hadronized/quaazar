@@ -16,10 +16,8 @@ module Quaazar.Render (
   , module Quaazar.Render.Light
   , module Quaazar.Render.Lighting
   , module Quaazar.Render.Mesh
-  , module Quaazar.Render.PostFX
   , module Quaazar.Render.Renderer
   , module Quaazar.Render.RenderLayer
-  , module Quaazar.Render.Shader
   , module Quaazar.Render.Viewport
   ) where
 
@@ -29,8 +27,6 @@ import Quaazar.Render.GLSL
 import Quaazar.Render.Light
 import Quaazar.Render.Lighting
 import Quaazar.Render.Mesh
-import Quaazar.Render.PostFX
 import Quaazar.Render.Renderer
 import Quaazar.Render.RenderLayer
-import Quaazar.Render.Shader
 import Quaazar.Render.Viewport

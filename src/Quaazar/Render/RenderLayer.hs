@@ -32,15 +32,14 @@ import Quaazar.Render.GL.Buffer ( Buffer )
 import Quaazar.Render.GL.Framebuffer ( Framebuffer, Target(..)
                                      , bindFramebuffer )
 import Quaazar.Render.GL.Offscreen
-import Quaazar.Render.GL.Shader ( (@=), unused )
+import Quaazar.Render.GL.Shader ( Program', Semantics(..), (@=), unused
+                                , useProgram )
 import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
                                  , Texture2D, bindTextureAt )
 import Quaazar.Render.GL.VertexArray ( bindVertexArray )
 import Quaazar.Render.Light
 import Quaazar.Render.Lighting
 import Quaazar.Render.Mesh ( GPUMesh, renderMesh )
-import Quaazar.Render.PostFX ( GPUPostFX(..) )
-import Quaazar.Render.Shader ( GPUProgram(..) )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
@@ -51,9 +50,9 @@ newtype RenderLayer = RenderLayer {
                   -> IO ()
   }
 
-data GPUModelGroup = forall mat. GPUModelGroup (GPUProgram mat) [Instance (GPUMesh,mat)]
+data GPUModelGroup = forall mat. GPUModelGroup (Program' mat) [Instance (GPUMesh,mat)]
 
-modelGroup :: GPUProgram mat -> [Instance (GPUMesh,mat)] -> GPUModelGroup
+modelGroup :: Program' mat -> [Instance (GPUMesh,mat)] -> GPUModelGroup
 modelGroup = GPUModelGroup
 
 renderLayer :: Instance Projection
@@ -126,14 +125,14 @@ bindShadowmaps (Shadows _ low medium high) = do
 -}
 
 renderModelGroup :: GPUModelGroup -> IO () -> IO ()
-renderModelGroup (GPUModelGroup prog insts) sendUniforms = do
+renderModelGroup (GPUModelGroup (prog,semantics) insts) sendUniforms = do
   useProgram prog
   sendUniforms
-  traverse_ (renderMeshInstance $ sendToProgram prog) insts
+  traverse_ (renderMeshInstance semantics) insts
 
-renderMeshInstance :: (mat -> IO ()) -> Instance (GPUMesh,mat) -> IO ()
-renderMeshInstance sinkMat inst = do
-    sinkMat mat
+renderMeshInstance :: (mat -> Semantics ()) -> Instance (GPUMesh,mat) -> IO ()
+renderMeshInstance semantics inst = do
+    runSemantics $ semantics mat
     renderMesh gmesh modelUniform trsf
   where
     (gmesh,mat) = instCarried inst

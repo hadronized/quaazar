@@ -27,13 +27,13 @@ import Quaazar.Render.Viewport ( Viewport(Viewport), setViewport )
 import Quaazar.Render.GL.Buffer ( Buffer )
 import Quaazar.Render.GL.Framebuffer ( Target(..), bindFramebuffer ) 
 import Quaazar.Render.GL.Offscreen ( Offscreen(Offscreen), genOffscreen )
+import Quaazar.Render.GL.Shader ( Semantics(..), buildProgram, useProgram )
 import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
                                  , Texture2D, bindTextureAt )
 import Quaazar.Render.GL.VertexArray ( VertexArray, bindVertexArray
                                      , genAttributelessVertexArray )
 import Quaazar.Render.Light ( ShadowConf )
 import Quaazar.Render.Lighting ( Shadows )
-import Quaazar.Render.Shader
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
@@ -97,13 +97,13 @@ renderNode :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
            -> String
            -> (a -> Semantics b)
            -> m (Compositor a (Texture2D,Texture2D))
-renderNode vp shaderSrc semMapper = do
+renderNode vp shaderSrc semantics = do
     Offscreen nodeColor nodeDepth nodeFB <- genOffscreen w h Nearest RGBA32F RGBA
-    prog <- gpuProgram copyVS Nothing Nothing shaderSrc semMapper
+    prog <- buildProgram copyVS Nothing Nothing shaderSrc
     return . Compositor $ \va _ _ a -> do
       -- use the node’s program and send input
       useProgram prog
-      sendToProgram prog a
+      runSemantics $ semantics a
       -- bind the VA
       bindVertexArray va
       -- bind the node’s framebuffer
