@@ -16,7 +16,11 @@ module Quaazar (
     -- * Re-exported
   , Window
   , module Quaazar.Control
+  , module Quaazar.Geometry
+  , module Quaazar.Lighting
   , module Quaazar.Render
+  , module Quaazar.Scene
+  , module Quaazar.System
   , module Quaazar.Technics
   , module Quaazar.Utils
   ) where
@@ -30,6 +34,8 @@ import Graphics.UI.GLFW as GLFW hiding ( setWindowTitle )
 import qualified Graphics.UI.GLFW as GLFW ( setWindowTitle )
 import Numeric.Natural ( Natural )
 import Quaazar.Control
+import Quaazar.Geometry
+import Quaazar.Lighting
 import Quaazar.Render
 import Quaazar.System.Event as E
 import Quaazar.Technics
