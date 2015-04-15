@@ -12,6 +12,8 @@
 module Quaazar.Render (
     module Quaazar.Render.Camera
   , module Quaazar.Render.Compositing
+  , module Quaazar.Render.GL.Shader
+  , module Quaazar.Render.GL.Texture
   , module Quaazar.Render.GLSL
   , module Quaazar.Render.Light
   , module Quaazar.Render.Lighting
@@ -23,6 +25,8 @@ module Quaazar.Render (
 
 import Quaazar.Render.Camera
 import Quaazar.Render.Compositing
+import Quaazar.Render.GL.Shader
+import Quaazar.Render.GL.Texture
 import Quaazar.Render.GLSL
 import Quaazar.Render.Light
 import Quaazar.Render.Lighting
