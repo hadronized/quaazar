@@ -16,7 +16,6 @@ module Quaazar (
     -- * Re-exported
   , Window
   , module Quaazar.Control
-  , module Quaazar.Core
   , module Quaazar.Render
   , module Quaazar.Technics
   , module Quaazar.Utils
@@ -31,9 +30,8 @@ import Graphics.UI.GLFW as GLFW hiding ( setWindowTitle )
 import qualified Graphics.UI.GLFW as GLFW ( setWindowTitle )
 import Numeric.Natural ( Natural )
 import Quaazar.Control
-import Quaazar.Core
-import Quaazar.Event as E
 import Quaazar.Render
+import Quaazar.System.Event as E
 import Quaazar.Technics
 import Quaazar.Utils
 

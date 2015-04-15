@@ -10,7 +10,7 @@
 -- Portability : portable
 ----------------------------------------------------------------------------
 
-module Quaazar.Core.Light (
+module Quaazar.Lighting.Light (
     -- * Lights
     Ambient(..)
   , Omni(..)
@@ -23,9 +23,9 @@ module Quaazar.Core.Light (
 
 import Control.Applicative
 import Data.Aeson
-import Quaazar.Core.Color ( Color )
-import Quaazar.Core.Loader ( Load(..) )
-import Quaazar.Core.Resource ( Manager, Resource )
+import Quaazar.Scene.Color ( Color )
+import Quaazar.System.Loader ( Load(..) )
+import Quaazar.System.Resource ( Manager, Resource )
 
 -- |'Ambient col pow'.
 data Ambient = Ambient Color Float deriving (Eq,Show)

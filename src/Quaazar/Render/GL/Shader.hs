@@ -27,12 +27,11 @@ import Foreign.Storable ( peek )
 import Linear
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
-import Quaazar.Core.Albedo ( Albedo(unAlbedo) )
-import Quaazar.Core.Color ( Color(unColor) )
-import Quaazar.Core.Position ( Position(unPosition) )
+import Quaazar.Geometry.Position ( Position(unPosition) )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Log ( gllog )
 import Quaazar.Render.GL.Texture ( Texture2D, bindTextureAt )
+import Quaazar.Scene.Color ( Color(unColor) )
 import Quaazar.Utils.Log
 
 genericGenShader :: (MonadScoped IO m)
@@ -376,9 +375,6 @@ instance Uniformable [M44 Float] where
   sendUniform l a =
     withArrayLen a $ \s p ->
       glUniformMatrix4fv l (fromIntegral s) (fromBool True) (castPtr p)
-
-instance Uniformable Albedo where
-  sendUniform l = sendUniform l . unAlbedo
 
 instance Uniformable Color where
   sendUniform l = sendUniform l . unColor

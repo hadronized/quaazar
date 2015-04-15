@@ -11,7 +11,7 @@
 --
 ----------------------------------------------------------------------------
 
-module Quaazar.Core.Resource (
+module Quaazar.System.Resource (
     -- * Resource manager
     Manager(Manager)
   , Resource(..)
@@ -27,7 +27,7 @@ import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Data.IORef ( modifyIORef, newIORef, readIORef, writeIORef )
 import Data.Map as M ( Map, delete, empty, insert, lookup )
-import Quaazar.Core.Loader ( Load(load) )
+import Quaazar.System.Loader ( Load(load) )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 

@@ -23,11 +23,6 @@ import Data.Word ( Word32 )
 import Linear
 import Numeric.Natural ( Natural )
 import Foreign hiding ( void )
-import Quaazar.Core.Color ( Color(..) )
-import Quaazar.Core.Hierarchy ( Instance, instCarried, instTransform )
-import Quaazar.Core.Projection ( Projection(Perspective), projectionMatrix )
-import Quaazar.Core.Transform
-import Quaazar.Core.Light ( Omni(..), ShadowLOD(..) )
 import Quaazar.Render.GL.Buffer hiding ( MapAccess(..) )
 import qualified Quaazar.Render.GL.Buffer as B ( MapAccess(..) )
 import Quaazar.Render.GL.Framebuffer as FB ( AttachmentPoint(..), Target(..)
@@ -40,7 +35,12 @@ import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
                                  , Texture2D )
 import Quaazar.Render.GLSL
 import Quaazar.Render.Light
+import Quaazar.Render.Projection ( Projection(Perspective), projectionMatrix )
+import Quaazar.Lighting.Light ( Omni(..), ShadowLOD(..) )
 import Quaazar.Render.Mesh ( GPUMesh, renderMesh )
+import Quaazar.Scene.Color ( Color(..) )
+import Quaazar.Scene.Hierarchy ( Instance, instCarried, instTransform )
+import Quaazar.Scene.Transform
 import Quaazar.Utils.Log
 
 -- |'Lighting' gathers information about lighting in the scene.

@@ -21,9 +21,7 @@ import Data.Bits ( (.|.) )
 import Data.Foldable ( for_, traverse_ )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
-import Quaazar.Core.Hierarchy ( Instance, instCarried, instTransform )
-import Quaazar.Core.Light
-import Quaazar.Core.Projection ( Projection )
+import Quaazar.Lighting.Light
 import Quaazar.Render.Camera ( GPUCamera(..), gpuCamera )
 import Quaazar.Render.Compositing
 import Quaazar.Render.Lighting
@@ -40,6 +38,8 @@ import Quaazar.Render.GL.VertexArray ( bindVertexArray )
 import Quaazar.Render.Light
 import Quaazar.Render.Lighting
 import Quaazar.Render.Mesh ( GPUMesh, renderMesh )
+import Quaazar.Render.Projection ( Projection )
+import Quaazar.Scene.Hierarchy ( Instance, instCarried, instTransform )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 

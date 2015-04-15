@@ -14,7 +14,7 @@ module Quaazar.Render.Light where
 import Control.Lens
 import Control.Monad.State ( State, get, put )
 import Numeric.Natural ( Natural )
-import Quaazar.Core.Light ( Omni(..), ShadowLOD(..) )
+import Quaazar.Lighting.Light ( Omni(..), ShadowLOD(..) )
 
 -- |Shadow configuration. Holds for each shadow level of detail the available
 -- textures number and their resolutions.

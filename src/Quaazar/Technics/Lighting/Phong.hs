@@ -21,13 +21,13 @@ import Data.Aeson
 import Data.IORef ( modifyIORef, newIORef, readIORef, writeIORef )
 import Data.Map as M ( delete, empty, insert, lookup )
 import Numeric.Natural ( Natural )
-import Quaazar.Core.Loader
-import Quaazar.Core.Resource ( Manager(..), Resource(..) )
 import Quaazar.Render.GL.Shader ( Program', Semantics, ($=), buildProgram
                                 , uniform )
 import Quaazar.Render.GL.Texture ( CompareFunc, Filter, Texture2D
                                  , Texture2DManager, Wrap )
 import Quaazar.Render.GLSL
+import Quaazar.System.Loader
+import Quaazar.System.Resource ( Manager(..), Resource(..) )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 

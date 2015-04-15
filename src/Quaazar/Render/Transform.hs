@@ -17,7 +17,7 @@ module Quaazar.Render.Transform (
 
 import Control.Lens
 import Linear
-import Quaazar.Core.Transform
+import Quaazar.Scene.Transform
 
 transformMatrix :: Transform -> M44 Float
 transformMatrix e = mkTransformation o p !*! scaled (V4 sx sy sz 1)

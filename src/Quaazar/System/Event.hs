@@ -9,7 +9,7 @@
 --
 ----------------------------------------------------------------------------
 
-module Quaazar.Event (
+module Quaazar.System.Event (
     -- * Events
     Event(..)
     -- * Key

@@ -12,7 +12,7 @@
 -- Vertices can be grouped by indices through a 'VGroup'.
 ----------------------------------------------------------------------------
 
-module Quaazar.Core.VGroup (
+module Quaazar.Geometry.VGroup (
     -- * Grouping
     Line(..)
   , Triangle(..)

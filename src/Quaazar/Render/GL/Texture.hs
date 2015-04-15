@@ -22,8 +22,8 @@ import Foreign.Ptr ( nullPtr )
 import Foreign.Storable ( Storable )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
-import Quaazar.Core.Loader ( Load(..) )
-import Quaazar.Core.Resource ( Manager, Resource )
+import Quaazar.System.Loader ( Load(..) )
+import Quaazar.System.Resource ( Manager, Resource )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Log ( gllog )
 import Quaazar.Utils.Log

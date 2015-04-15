@@ -16,7 +16,7 @@
 --   - *scaling*.
 ----------------------------------------------------------------------------
 
-module Quaazar.Core.Transform (
+module Quaazar.Scene.Transform (
     -- * Transform
     Transform(Transform)
   , transformPosition

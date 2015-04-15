@@ -14,11 +14,11 @@ module Quaazar.Render.Camera where
 import Control.Lens
 import Data.Maybe ( fromJust )
 import Linear ( M44, V3, (!*!), inv44 )
-import Quaazar.Core.Hierarchy ( Instance(..) )
-import Quaazar.Core.Transform ( Transform, transformPosition )
-import Quaazar.Core.Projection ( Projection, projectionMatrix )
 import Quaazar.Render.Transform ( cameraMatrix )
 import Quaazar.Render.GL.Shader ( Uniform, (@=) )
+import Quaazar.Render.Projection ( Projection, projectionMatrix )
+import Quaazar.Scene.Hierarchy ( Instance(..) )
+import Quaazar.Scene.Transform ( Transform, transformPosition )
 
 data GPUCamera = GPUCamera {
     runCamera :: Uniform (M44 Float) -- ^ projection * view

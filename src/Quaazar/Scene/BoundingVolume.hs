@@ -9,14 +9,14 @@
 --
 ----------------------------------------------------------------------------
 
-module Quaazar.Core.BoundingVolume (
+module Quaazar.Scene.BoundingVolume (
     -- *
   ) where
 
 import Control.Lens ( view )
 import Linear
-import Quaazar.Core.Position ( unPosition )
-import Quaazar.Core.Vertex ( Vertices(..), vertexPosition )
+import Quaazar.Geometry.Position ( unPosition )
+import Quaazar.Geometry.Vertex ( Vertices(..), vertexPosition )
 
 data BoundingVolume
   = BSphere Float          -- ^ radius

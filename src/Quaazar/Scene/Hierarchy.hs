@@ -9,7 +9,7 @@
 --
 ----------------------------------------------------------------------------
 
-module Quaazar.Core.Hierarchy (
+module Quaazar.Scene.Hierarchy (
     -- * Hierarchy
     Hierarchy
   , runHierarchy
@@ -25,7 +25,7 @@ module Quaazar.Core.Hierarchy (
 import Control.Applicative ( Applicative )
 import Control.Monad.Reader ( Reader, ask, local, runReader )
 import Data.Semigroup ( (<>) )
-import Quaazar.Core.Transform ( Transform )
+import Quaazar.Scene.Transform ( Transform )
 
 -- |A @Hierarchy a@ represents a hierarchical computation yielding a value of
 -- type 'a'. Hierarchical computations introduce the concept of hierarchy.

@@ -13,7 +13,7 @@
 -- > For now, any vector-related function/type uses "linear"’s vectors.
 ----------------------------------------------------------------------------
 
-module Quaazar.Core.Color (
+module Quaazar.Scene.Color (
     -- * Color
     Color(unColor)
   , color

@@ -10,7 +10,7 @@
 -- UV coordinates are represented by a 2D-float vector.
 ----------------------------------------------------------------------------
 
-module Quaazar.Core.UV (
+module Quaazar.Geometry.UV (
     -- * UV
     UV(..)
   , uv

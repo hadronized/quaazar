@@ -6,12 +6,9 @@
 -- Maintainer  : Dimitri Sabadie <dimitri.sabadie@gmail.com>
 -- Stability   : experimental
 -- Portability : portable
---
--- Projection is often used in 3D engine. They’re a lot of types of
--- projection. Those supported are contained in 'Projection'.
 ----------------------------------------------------------------------------
 
-module Quaazar.Core.Projection (
+module Quaazar.Render.Projection (
     -- * Projection
     Projection(..)
   , projectionMatrix

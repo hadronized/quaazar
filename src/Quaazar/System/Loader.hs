@@ -10,7 +10,7 @@
 -- Portability : portable
 ----------------------------------------------------------------------------
 
-module Quaazar.Core.Loader (
+module Quaazar.System.Loader (
     -- * Loading resources
     Load(..)
   , load_

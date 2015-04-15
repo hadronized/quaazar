@@ -12,22 +12,18 @@
 -- Vertices are points in space with extra information attached. This
 -- module exports everything you need to handle vertices and all associated
 -- types.
---
--- You’ll find useful functions, such as 'deinterleave' and
--- 'withDeinterleave' you can use to deinterleave vertices in order to
--- optimize/whatever evil you plan to do with ;)
 ----------------------------------------------------------------------------
 
-module Quaazar.Core.Vertex where
+module Quaazar.Geometry.Vertex where
 
 import Control.Applicative
 import Control.Lens
 import Data.Aeson
 import Data.Aeson.Types ( typeMismatch )
 import Numeric.Natural ( Natural )
-import Quaazar.Core.Normal ( Normal )
-import Quaazar.Core.Position ( Position )
-import Quaazar.Core.UV ( UV )
+import Quaazar.Geometry.Normal ( Normal )
+import Quaazar.Geometry.Position ( Position )
+import Quaazar.Geometry.UV ( UV )
 
 data Vertex = Vertex {
     -- |Position.

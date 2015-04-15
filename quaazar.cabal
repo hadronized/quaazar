@@ -24,23 +24,13 @@ library
   exposed-modules:     Quaazar
                      , Quaazar.Control
                      , Quaazar.Control.Monad
-                     , Quaazar.Core
-                     , Quaazar.Core.Albedo
-                     , Quaazar.Core.BoundingVolume
-                     , Quaazar.Core.Color
-                     , Quaazar.Core.Hierarchy
-                     , Quaazar.Core.Light
-                     , Quaazar.Core.Loader
-                     , Quaazar.Core.Mesh
-                     , Quaazar.Core.Normal
-                     , Quaazar.Core.Position
-                     , Quaazar.Core.Projection
-                     , Quaazar.Core.Resource
-                     , Quaazar.Core.Transform
-                     , Quaazar.Core.VGroup
-                     , Quaazar.Core.Vertex
-                     , Quaazar.Core.UV
-                     , Quaazar.Event
+                     , Quaazar.Lighting.Light
+                     , Quaazar.Geometry.Mesh
+                     , Quaazar.Geometry.Normal
+                     , Quaazar.Geometry.Position
+                     , Quaazar.Geometry.VGroup
+                     , Quaazar.Geometry.Vertex
+                     , Quaazar.Geometry.UV
                      , Quaazar.Render
                      , Quaazar.Render.Camera
                      , Quaazar.Render.Compositing
@@ -49,9 +39,17 @@ library
                      , Quaazar.Render.GLSL
                      , Quaazar.Render.Light
                      , Quaazar.Render.Mesh
+                     , Quaazar.Render.Projection
                      , Quaazar.Render.RenderLayer
                      , Quaazar.Render.Renderer
                      , Quaazar.Render.Viewport
+                     , Quaazar.Scene.BoundingVolume
+                     , Quaazar.Scene.Color
+                     , Quaazar.Scene.Hierarchy
+                     , Quaazar.Scene.Transform
+                     , Quaazar.System.Event
+                     , Quaazar.System.Loader
+                     , Quaazar.System.Resource
                      , Quaazar.Technics
                      , Quaazar.Technics.Compositing
                      , Quaazar.Technics.Lighting.Phong

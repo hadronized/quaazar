@@ -7,27 +7,27 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Position in space is a 3-float vector.
+-- Normal in space is a 3-float vector.
 ----------------------------------------------------------------------------
 
-module Quaazar.Core.Position (
-    -- * Position
-    Position(..)
-  , pos
+module Quaazar.Geometry.Normal (
+    -- * Normal 
+    Normal(..)
+  , nor
   ) where
 
 import Data.Aeson
 import Data.Aeson.Types ( typeMismatch )
 import Linear ( V3(..) )
 
-newtype Position = Position { unPosition :: V3 Float } deriving (Eq,Ord,Show)
+newtype Normal = Normal { unNormal :: V3 Float } deriving (Eq,Ord,Show)
 
-instance FromJSON Position where
+instance FromJSON Normal where
   parseJSON v = do
     a <- parseJSON v
     case a of
-      [x,y,z] -> return (pos x y z)
-      _       -> typeMismatch "position" v
+      [x,y,z] -> return (nor x y z)
+      _       -> typeMismatch "normal" v
 
-pos :: Float -> Float -> Float -> Position
-pos x y z = Position (V3 x y z)
+nor :: Float -> Float -> Float -> Normal
+nor x y z = Normal (V3 x y z)

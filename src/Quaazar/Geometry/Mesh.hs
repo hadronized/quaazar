@@ -13,7 +13,7 @@
 -- and a description of faces through a vertices group.
 ----------------------------------------------------------------------------
 
-module Quaazar.Core.Mesh (
+module Quaazar.Geometry.Mesh (
     -- * Mesh
     Mesh(Mesh)
   , meshVertices
@@ -21,17 +21,17 @@ module Quaazar.Core.Mesh (
     -- * Resource
   , MeshManager
     -- * Re-exported modules
-  , module Quaazar.Core.Vertex
-  , module Quaazar.Core.VGroup
+  , module Quaazar.Geometry.Vertex
+  , module Quaazar.Geometry.VGroup
   ) where
 
 import Control.Applicative
 import Control.Lens
 import Data.Aeson
-import Quaazar.Core.Loader ( Load(..) )
-import Quaazar.Core.Resource ( Manager, Resource )
-import Quaazar.Core.Vertex
-import Quaazar.Core.VGroup
+import Quaazar.Geometry.Vertex
+import Quaazar.Geometry.VGroup
+import Quaazar.System.Loader ( Load(..) )
+import Quaazar.System.Resource ( Manager, Resource )
 
 -- |A mesh is a pair of vertices and vertex group. See 'meshVertices' and
 -- 'meshVGroup' for further details.

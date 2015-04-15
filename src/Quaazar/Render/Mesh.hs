@@ -21,18 +21,18 @@ import Foreign.Storable ( sizeOf )
 import Linear ( M44, V2, V3 )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
-import Quaazar.Core.Transform ( Transform )
-import Quaazar.Core.Mesh hiding ( Line, Triangle )
-import Quaazar.Core.Normal
-import Quaazar.Core.Position
-import Quaazar.Core.Resource ( Manager(..), Resource(..) )
-import Quaazar.Core.UV
+import Quaazar.Geometry.Mesh hiding ( Line, Triangle )
+import Quaazar.Geometry.Normal
+import Quaazar.Geometry.Position
+import Quaazar.Geometry.UV
 import Quaazar.Render.GL.Buffer
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Primitive
 import Quaazar.Render.GL.Shader ( Uniform, (@=) )
 import Quaazar.Render.GL.VertexArray
 import Quaazar.Render.Transform ( transformMatrix )
+import Quaazar.Scene.Transform ( Transform )
+import Quaazar.System.Resource ( Manager(..), Resource(..) )
 
 data GPUMesh = GPUMesh {
     vertexBuffer :: Buffer
