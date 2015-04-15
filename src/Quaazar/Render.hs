@@ -18,6 +18,7 @@ module Quaazar.Render (
   , module Quaazar.Render.Light
   , module Quaazar.Render.Lighting
   , module Quaazar.Render.Mesh
+  , module Quaazar.Render.Projection
   , module Quaazar.Render.Renderer
   , module Quaazar.Render.RenderLayer
   , module Quaazar.Render.Viewport
@@ -31,6 +32,7 @@ import Quaazar.Render.GLSL
 import Quaazar.Render.Light
 import Quaazar.Render.Lighting
 import Quaazar.Render.Mesh
+import Quaazar.Render.Projection
 import Quaazar.Render.Renderer
 import Quaazar.Render.RenderLayer
 import Quaazar.Render.Viewport
