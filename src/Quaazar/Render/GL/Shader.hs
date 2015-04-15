@@ -35,9 +35,6 @@ import Quaazar.Render.GL.Log ( gllog )
 import Quaazar.Render.GL.Texture ( Texture2D, bindTextureAt )
 import Quaazar.Utils.Log
 
-throwError_ :: (MonadError Log m) => String -> m a
-throwError_ = throwError . Log ErrorLog gllog
-
 genericGenShader :: (MonadScoped IO m)
                  => GLenum -- ^ shader type
                  -> (GLuint -> a) -- ^ Haskell wrapper
@@ -123,7 +120,7 @@ genericCompile sname shdr src = do
       ll <- clogLength sid
       cl <- clog ll sid
       return (compiled,cl)
-    unless compiled $ throwError_ cl
+    unless compiled $ throwLog gllog cl
   where
     sid = shaderID shdr
     isCompiled s = fmap ((==gl_TRUE) . fromIntegral) .
@@ -163,7 +160,7 @@ link (Program pid) = do
       ll <- clogLength pid
       cl <- clog ll pid
       return (linked,cl)
-    unless linked $ throwError_ cl
+    unless linked $ throwLog gllog cl
   where
     isLinked s   = fmap ((==gl_TRUE) . fromIntegral) .
         alloca $ liftA2 (*>) (glGetProgramiv s gl_LINK_STATUS) peek

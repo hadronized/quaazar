@@ -25,6 +25,7 @@ import Numeric.Natural ( Natural )
 import Quaazar.Core.Loader ( Load(..) )
 import Quaazar.Core.Resource ( Manager, Resource )
 import Quaazar.Render.GL.GLObject
+import Quaazar.Render.GL.Log ( gllog )
 import Quaazar.Utils.Log
 import System.FilePath ( (</>) )
 
@@ -351,7 +352,7 @@ imageToTexture wrap flt cmpf baseLvl maxLvl dynimg = do
     ImageRGBA8 img -> convertImage_ rgba8Converter img wrap flt cmpf baseLvl maxLvl
     ImageRGBA16 img -> convertImage_ rgba16Converter img wrap flt cmpf baseLvl maxLvl
     ImageYCbCr8 img -> convertImage_ rgb8Converter (convertImage img) wrap flt cmpf baseLvl maxLvl
-    _ -> throwError_ "unimplemented image format"
+    _ -> throwLog gllog "unimplemented image format"
 
 -- |Show the image format of a 'DynamicImage'.
 showImageFormat :: DynamicImage -> String
@@ -426,6 +427,3 @@ rgba8Converter (PixelRGBA8 r g b a) = map ((*imax8) . realToFrac) [r,g,b,a]
 
 rgba16Converter :: PixelRGBA16 -> [Float]
 rgba16Converter (PixelRGBA16 r g b a) = map ((*imax16) . realToFrac) [r,g,b,a]
-
-throwError_ :: (MonadError Log m) => String -> m a
-throwError_ = throwError . Log ErrorLog CoreLog

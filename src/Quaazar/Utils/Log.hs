@@ -126,7 +126,7 @@ err :: (MonadLogger m) => LogCommitter -> String -> m ()
 err = log_ ErrorLog
 
 -- |Alternative way of outputting logs, through 'MonadError'.
-throwLog :: (MonadError Log m) => LogCommitter -> String -> m ()
+throwLog :: (MonadError Log m) => LogCommitter -> String -> m a
 throwLog lc msg = throwError (Log ErrorLog lc msg)
 
 journal_ :: (MonadLogger m) => Log -> m ()
