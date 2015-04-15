@@ -44,6 +44,8 @@ library
                      , Quaazar.Render
                      , Quaazar.Render.Camera
                      , Quaazar.Render.Compositing
+                     , Quaazar.Render.GL.Shader
+                     , Quaazar.Render.GL.Texture
                      , Quaazar.Render.GLSL
                      , Quaazar.Render.Light
                      , Quaazar.Render.Mesh
@@ -67,8 +69,6 @@ library
                      , Quaazar.Render.GL.Offscreen
                      , Quaazar.Render.GL.Primitive
                      , Quaazar.Render.GL.Renderbuffer
-                     , Quaazar.Render.GL.Shader
-                     , Quaazar.Render.GL.Texture
                      , Quaazar.Render.GL.VertexArray
                      , Quaazar.Render.Transform
 
