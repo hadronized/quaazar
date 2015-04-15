@@ -10,12 +10,10 @@
 ----------------------------------------------------------------------------
 
 module Quaazar.System (
-    module Quaazar.Geometry.Event
-  , module Quaazar.Geometry.Loader
-  , module Quaazar.Geometry.Resource
+    module Quaazar.System.Loader
+  , module Quaazar.System.Resource
   ) where
 
 
-import Quaazar.Geometry.Event
-import Quaazar.Geometry.Loader
-import Quaazar.Geometry.Resource
+import Quaazar.System.Loader
+import Quaazar.System.Resource

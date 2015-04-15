@@ -37,6 +37,8 @@ import Quaazar.Control
 import Quaazar.Geometry
 import Quaazar.Lighting
 import Quaazar.Render
+import Quaazar.Scene
+import Quaazar.System
 import Quaazar.System.Event as E
 import Quaazar.Technics
 import Quaazar.Utils
