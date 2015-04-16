@@ -66,6 +66,8 @@ data CompareFunc
   | Always
     deriving (Eq,Show)
 
+newtype Unit = Unit Natural deriving (Enum,Eq,Integral,Num,Ord,Real,Show)
+
 -- |This typeclass defines what a **texture** is. All textures have to
 -- implement that class, which exposes very basic texture features, such as
 -- texture ID, binding, parameters setting (wrap, filters, depth comparison
@@ -244,7 +246,7 @@ instance Layered CubemapArray where
       ift' = fromIntegral (fromInternalFormat ift)
   transferTexelsLayer = error "transferArrayTexels: cubemap array support not implemented yet"
 
-bindTextureAt :: (MonadIO m,IsTexture t) => t -> Natural -> m ()
+bindTextureAt :: (MonadIO m,IsTexture t) => t -> Unit -> m ()
 bindTextureAt tex unit = do
   liftIO $ glActiveTexture (gl_TEXTURE0 + fromIntegral unit)
   bindTexture tex

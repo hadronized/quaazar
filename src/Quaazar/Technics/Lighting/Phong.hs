@@ -23,7 +23,7 @@ import Numeric.Natural ( Natural )
 import Quaazar.Render.GL.Shader ( Program', ($=), buildProgram
                                 , uniform )
 import Quaazar.Render.GL.Texture ( CompareFunc, Filter, Texture2D
-                                 , Texture2DManager, Wrap )
+                                 , Texture2DManager, Unit(..), Wrap )
 import Quaazar.Render.GLSL
 import Quaazar.System.Loader
 import Quaazar.System.Resource ( Manager(..), Resource(..) )
@@ -78,9 +78,9 @@ phong = do
     return (prog,semantics)
   where
     semantics mat = do
-      uniform phongDiffMapSem $= (diffuseMap mat,0 :: Natural)
-      uniform phongSpecMapSem $= (specularMap mat,1 :: Natural)
-      uniform phongGlossMapSem $= (glossMap mat,2 :: Natural)
+      uniform phongDiffMapSem $= (diffuseMap mat,Unit 0)
+      uniform phongSpecMapSem $= (specularMap mat,Unit 1)
+      uniform phongGlossMapSem $= (glossMap mat,Unit 2)
 
 phongDiffMapSem :: Natural
 phongDiffMapSem = 128

@@ -19,7 +19,7 @@ import Control.Monad.Trans ( MonadIO )
 import Numeric.Natural ( Natural )
 import Quaazar.Render.Compositing ( Compositor, renderNode )
 import Quaazar.Render.GL.Shader ( Uniform, ($=), uniform )
-import Quaazar.Render.GL.Texture ( Texture2D )
+import Quaazar.Render.GL.Texture ( Texture2D, Unit )
 import Quaazar.Render.Viewport ( Viewport )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
@@ -43,5 +43,5 @@ gammaCorrection vp = do
     gammaCorrectionSourceUniform $= (source,0)
   return (fmap fst compt)
 
-gammaCorrectionSourceUniform :: Uniform (Texture2D,Natural)
+gammaCorrectionSourceUniform :: Uniform (Texture2D,Unit)
 gammaCorrectionSourceUniform = uniform 0

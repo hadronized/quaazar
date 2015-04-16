@@ -30,7 +30,7 @@ import Numeric.Natural ( Natural )
 import Quaazar.Geometry.Position ( Position(unPosition) )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Log ( gllog )
-import Quaazar.Render.GL.Texture ( Texture2D, bindTextureAt )
+import Quaazar.Render.GL.Texture ( Texture2D, Unit, bindTextureAt )
 import Quaazar.Scene.Color ( Color(unColor) )
 import Quaazar.Utils.Log
 
@@ -382,10 +382,10 @@ instance Uniformable Color where
 instance Uniformable Position where
   sendUniform l = sendUniform l . unPosition
 
-instance Uniformable (Texture2D,Natural) where
+instance Uniformable (Texture2D,Unit) where
   sendUniform l (tex,texUnit) = do
     bindTextureAt tex texUnit
-    sendUniform l texUnit
+    sendUniform l (fromIntegral texUnit :: Int32)
 
 --------------------------------------------------------------------------------
 -- Semantics
