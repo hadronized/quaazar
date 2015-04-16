@@ -10,7 +10,9 @@
 ----------------------------------------------------------------------------
 
 module Quaazar.Scene.BoundingVolume (
-    -- *
+    -- * Bounding volumes
+    BoundingVolume(..)
+  , bsphere
   ) where
 
 import Control.Lens ( view )

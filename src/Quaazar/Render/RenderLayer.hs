@@ -20,7 +20,6 @@ import Control.Monad.Trans ( MonadIO )
 import Data.Bits ( (.|.) )
 import Data.Foldable ( for_, traverse_ )
 import Graphics.Rendering.OpenGL.Raw
-import Numeric.Natural ( Natural )
 import Quaazar.Lighting.Light
 import Quaazar.Render.Camera ( GPUCamera(..), gpuCamera )
 import Quaazar.Render.Compositing
@@ -32,11 +31,8 @@ import Quaazar.Render.GL.Framebuffer ( Framebuffer, Target(..)
 import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Shader ( Program', Semantics(..), (@=), unused
                                 , useProgram )
-import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
-                                 , Texture2D, bindTextureAt )
-import Quaazar.Render.GL.VertexArray ( bindVertexArray )
+import Quaazar.Render.GL.Texture ( Filter(..), InternalFormat(..), Texture2D )
 import Quaazar.Render.Light
-import Quaazar.Render.Lighting
 import Quaazar.Render.Mesh ( GPUMesh, renderMesh )
 import Quaazar.Render.Projection ( Projection )
 import Quaazar.Scene.Hierarchy ( Instance, instCarried, instTransform )
@@ -64,14 +60,14 @@ renderLayer cam ambient omnis models =
   RenderLayer $ \fb omniBuffer shadowsConf -> do
     let Ambient ligAmbCol ligAmbPow = ambient
     omnisWithShadows <- case shadowsConf of
-      Just (conf,shadows) -> do 
+      Just (conf,shdws) -> do 
         let
           omnisWithShadows = flip evalState (0,0,0) $ mapM (addShadowInfo_ lmax mmax hmax) omnis
           lmax = conf^.lowShadowMaxNb
           mmax = conf^.mediumShadowMaxNb
           hmax = conf^.highShadowMaxNb
-        cleanShadows shadows
-        traverse_ (genShadowmap_ shadows meshes) omnisWithShadows
+        cleanShadows shdws
+        traverse_ (genShadowmap_ shdws) omnisWithShadows
         --bindShadowmaps shadows -- TODO
         return omnisWithShadows
       Nothing -> return $ map addNoShadows omnis
@@ -97,8 +93,8 @@ renderLayer cam ambient omnis models =
       in (omni,0,trsf)
     meshes = concatMap dropProgram models
     dropProgram (GPUModelGroup _ mshs) = map (fmap fst) mshs
-    genShadowmap_ shadows meshes (omni,shadowmapIndex,trsf) =
-      genShadowmap omni shadowmapIndex trsf meshes shadows
+    genShadowmap_ shdws (omni,shadowmapIndex,trsf) =
+      genShadowmap omni shadowmapIndex trsf meshes shdws
 
 cleanShadows :: Shadows -> IO ()
 cleanShadows (Shadows _ low medium high) = do
@@ -142,7 +138,7 @@ renderLayerCompositor :: (MonadIO m,MonadScoped IO m,MonadError Log m)
                       => Viewport
                       -> m (Compositor RenderLayer (Texture2D,Texture2D))
 renderLayerCompositor vp = do
-    Offscreen nodeColor nodeDepth nodeFB <- genOffscreen w h Nearest RGBA32F RGBA
+    Offscreen nodeColor nodeDepth nodeFB <- genOffscreen w h Nearest RGBA32F
     return . Compositor $ \_ omniBuffer shadowsConf rl -> do
       setViewport vp
       unRenderLayer rl nodeFB omniBuffer shadowsConf

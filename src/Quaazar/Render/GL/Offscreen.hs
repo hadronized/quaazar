@@ -35,9 +35,8 @@ genOffscreen :: (MonadScoped IO m,MonadIO m,MonadError Log m)
              -> Natural
              -> Filter
              -> InternalFormat
-             -> Format
              -> m Offscreen
-genOffscreen w h flt texift texft = do
+genOffscreen w h flt texift = do
   (colormap,depthmap,fb') <- do
     colormap <- genObject
     bindTexture colormap
@@ -72,13 +71,11 @@ genOffscreenArray :: (MonadScoped IO m,MonadIO m,MonadError Log m)
                   -> Natural
                   -> Filter
                   -> InternalFormat
-                  -> Format
                   -> AttachmentPoint
                   -> InternalFormat
-                  -> Format
                   -> AttachmentPoint
                   -> m OffscreenArray
-genOffscreenArray w h n flt colift colft colap depthift depthft depthap = do
+genOffscreenArray w h n flt colift colap depthift depthap = do
   (colormaps,depthmaps,fb') <- do
     -- colormaps
     colormaps <- genObject
@@ -140,13 +137,11 @@ genCubeOffscreen :: (MonadScoped IO m,MonadIO m,MonadError Log m)
                  => Natural
                  -> Filter
                  -> InternalFormat
-                 -> Format
                  -> AttachmentPoint
                  -> InternalFormat
-                 -> Format
                  -> AttachmentPoint
                  -> m CubeOffscreen
-genCubeOffscreen cubeSize flt colift colft colap depthift depthft depthap = do
+genCubeOffscreen cubeSize flt colift colap depthift depthap = do
   (colormap,depthmap,fb') <- do
     -- color cubemap
     colormap <- genObject
@@ -184,13 +179,11 @@ genCubeOffscreenArray :: (MonadIO m,MonadScoped IO m,MonadError Log m)
                       -> Natural
                       -> Filter
                       -> InternalFormat
-                      -> Format
                       -> AttachmentPoint
                       -> InternalFormat
-                      -> Format
                       -> AttachmentPoint
                       -> m CubeOffscreenArray
-genCubeOffscreenArray cubeSize n flt colift colft colap depthift depthft depthap = do
+genCubeOffscreenArray cubeSize n flt colift colap depthift depthap = do
   (colormaps,depthmaps,fb') <- do
     -- color cubemaps
     colormaps <- genObject

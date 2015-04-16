@@ -18,7 +18,6 @@ import Control.Monad.Error.Class ( MonadError(..) )
 import Control.Monad.Trans ( MonadIO(..) )
 import Data.Either.Combinators ( eitherToError )
 import Foreign.Marshal.Array ( withArray )
-import Foreign.Ptr ( nullPtr )
 import Foreign.Storable ( Storable )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )

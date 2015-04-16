@@ -14,14 +14,13 @@
 module Quaazar.Technics.Lighting.Phong where
 
 import Control.Applicative hiding ( empty )
-import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Data.Aeson
 import Data.IORef ( modifyIORef, newIORef, readIORef, writeIORef )
 import Data.Map as M ( delete, empty, insert, lookup )
 import Numeric.Natural ( Natural )
-import Quaazar.Render.GL.Shader ( Program', Semantics, ($=), buildProgram
+import Quaazar.Render.GL.Shader ( Program', ($=), buildProgram
                                 , uniform )
 import Quaazar.Render.GL.Texture ( CompareFunc, Filter, Texture2D
                                  , Texture2DManager, Wrap )

@@ -17,9 +17,7 @@ import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Data.Foldable ( traverse_ )
-import Graphics.Rendering.OpenGL.Raw
 import Data.Traversable ( for )
-import Data.Word ( Word32 )
 import Linear
 import Numeric.Natural ( Natural )
 import Foreign hiding ( void )
@@ -29,10 +27,9 @@ import Quaazar.Render.GL.Framebuffer as FB ( AttachmentPoint(..), Target(..)
                                            , bindFramebuffer )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Offscreen
-import Quaazar.Render.GL.Shader ( Program, Uniform, Uniformable, (@=)
-                                , buildProgram, uniform, useProgram )
-import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
-                                 , Texture2D )
+import Quaazar.Render.GL.Shader ( Program, Uniform, (@=), buildProgram, uniform
+                                , useProgram )
+import Quaazar.Render.GL.Texture ( Filter(..), InternalFormat(..), Texture2D )
 import Quaazar.Render.GLSL
 import Quaazar.Render.Light
 import Quaazar.Render.Projection ( Projection(Perspective), projectionMatrix )
@@ -74,15 +71,15 @@ getLighting :: (Applicative m,MonadIO m,MonadScoped IO m,MonadLogger m,MonadErro
             -> m Lighting
 getLighting znear zfar w h nbMaxLights shadowConf = do
   info CoreLog "generating lighting"
-  off <- genOffscreen w h Nearest RGB32F RGB
+  off <- genOffscreen w h Nearest RGB32F
   omniBuffer <- genOmniBuffer nbMaxLights
-  shadows <- for shadowConf $ \conf -> do
+  shdws <- for shadowConf $ \conf -> do
     shadowProg <- genShadowProgram znear zfar
     low <- getShadows (conf^.lowShadowSize) (conf^.lowShadowMaxNb)
     medium <- getShadows (conf^.mediumShadowSize) (conf^.mediumShadowMaxNb)
     high <- getShadows (conf^.highShadowSize) (conf^.highShadowMaxNb)
     return (conf,Shadows shadowProg low medium high)
-  return (Lighting off omniBuffer shadows)
+  return (Lighting off omniBuffer shdws)
 
 genShadowProgram :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
                  => Float
@@ -99,7 +96,7 @@ getShadows :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
            => Natural
            -> Natural
            -> m CubeOffscreenArray
-getShadows cubeSize d = genCubeOffscreenArray cubeSize d Nearest RGB32F RGB (ColorAttachment 0) Depth32F Depth DepthAttachment
+getShadows cubeSize d = genCubeOffscreenArray cubeSize d Nearest RGB32F (ColorAttachment 0) Depth32F DepthAttachment
 
 camProjViewUniform :: Uniform (M44 Float)
 camProjViewUniform = uniform camProjViewSem
@@ -230,17 +227,17 @@ pushOmnis omnis omniBuffer = do
 -- This function doesn’t perform any kind of culling on the objects. You should
 -- cull them before calling that function to maximize performance.
 genShadowmap :: Omni -> Natural -> Transform -> [Instance GPUMesh] -> Shadows -> IO ()
-genShadowmap (Omni col pow rad shadowLOD) shadowmapIndex lightTrsf meshes shadows =
+genShadowmap (Omni _ _ rad shadowLOD) shadowmapIndex lightTrsf meshes shdws =
   case shadowLOD of
     Nothing -> return ()
     Just lod -> do
       let
         shadowFB = case lod of
-          LowShadow -> shadows^.lowShadows.cubeOffscreenArrayFB
-          MediumShadow -> shadows^.mediumShadows.cubeOffscreenArrayFB
-          HighShadow -> shadows^.highShadows.cubeOffscreenArrayFB
+          LowShadow -> shdws^.lowShadows.cubeOffscreenArrayFB
+          MediumShadow -> shdws^.mediumShadows.cubeOffscreenArrayFB
+          HighShadow -> shdws^.highShadows.cubeOffscreenArrayFB
       bindFramebuffer shadowFB ReadWrite
-      useProgram (shadows^.shadowProgram)
+      useProgram (shdws^.shadowProgram)
       ligPosUniform @= lightTrsf^.transformPosition
       ligIRadUniform @= 1 / rad
       shadowmapIndexUniform @= (fromIntegral shadowmapIndex :: Word32)
