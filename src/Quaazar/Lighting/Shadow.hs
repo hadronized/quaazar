@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   : (C) 2015 Dimitri Sabadie
@@ -9,7 +11,11 @@
 ----------------------------------------------------------------------------
 
 module Quaazar.Lighting.Shadow (
+    -- * Shadows
+    ShadowLOD(..)
   ) where
+
+import Data.Aeson
 
 -- |'ShadowLOD' represents the level of detail of a shadow. There’s currently
 -- three levels of detail:

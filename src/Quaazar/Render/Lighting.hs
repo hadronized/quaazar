@@ -36,7 +36,8 @@ import Quaazar.Render.GL.Texture ( Filter(..), Format(..), InternalFormat(..)
 import Quaazar.Render.GLSL
 import Quaazar.Render.Light
 import Quaazar.Render.Projection ( Projection(Perspective), projectionMatrix )
-import Quaazar.Lighting.Light ( Omni(..), ShadowLOD(..) )
+import Quaazar.Lighting.Light ( Omni(..) )
+import Quaazar.Lighting.Shadow ( ShadowLOD(..) )
 import Quaazar.Render.Mesh ( GPUMesh, renderMesh )
 import Quaazar.Scene.Color ( Color(..) )
 import Quaazar.Scene.Hierarchy ( Instance, instCarried, instTransform )

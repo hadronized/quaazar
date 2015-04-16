@@ -33,6 +33,7 @@ library
                      , Quaazar.Geometry.UV
                      , Quaazar.Lighting
                      , Quaazar.Lighting.Light
+                     , Quaazar.Lighting.Shadow
                      , Quaazar.Render
                      , Quaazar.Render.Camera
                      , Quaazar.Render.Compositing

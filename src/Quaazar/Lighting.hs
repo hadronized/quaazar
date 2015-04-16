@@ -11,7 +11,9 @@
 
 module Quaazar.Lighting (
     module Quaazar.Lighting.Light
+  , module Quaazar.Lighting.Shadow
   ) where
 
 
 import Quaazar.Lighting.Light
+import Quaazar.Lighting.Shadow
