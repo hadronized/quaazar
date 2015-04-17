@@ -14,7 +14,21 @@ module Quaazar.Render.GLSL where
 import Numeric.Natural ( Natural )
 
 --------------------------------------------------------------------------------
--- GLSL SEMANTICS
+-- GLSL ins
+declIn :: Natural -> String -> String
+declIn i n = "layout (location = " ++ show i ++ ") in " ++ n ++ ";"
+
+coIn :: Natural
+coIn = 0
+
+noIn :: Natural
+noIn = 1
+
+uvIn :: Natural
+uvIn = 2
+
+--------------------------------------------------------------------------------
+-- GLSL uniform semantics
 declUniform :: Natural -> String -> String
 declUniform s n = "layout (location = " ++ show s ++ ") uniform " ++ n ++ ";"
 
@@ -62,7 +76,7 @@ highShadowmapsSem :: Natural
 highShadowmapsSem = 18
 
 --------------------------------------------------------------------------------
--- GLSL BINDING POINTS
+-- GLSL binding points
 declUniformBlock :: Natural -> String -> String
 declUniformBlock bp block = "layout (std430,binding = " ++ show bp ++ ") buffer " ++ block ++ ";"
 
