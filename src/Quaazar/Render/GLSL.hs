@@ -14,18 +14,18 @@ module Quaazar.Render.GLSL where
 import Numeric.Natural ( Natural )
 
 --------------------------------------------------------------------------------
--- GLSL ins
-declIn :: Natural -> String -> String
-declIn i n = "layout (location = " ++ show i ++ ") in " ++ n ++ ";"
+-- GLSL inputs
+declInput :: Natural -> String -> String
+declInput i n = "layout (location = " ++ show i ++ ") in " ++ n ++ ";"
 
-coIn :: Natural
-coIn = 0
+coInput :: Natural
+coInput = 0
 
-noIn :: Natural
-noIn = 1
+noInput :: Natural
+noInput = 1
 
-uvIn :: Natural
-uvIn = 2
+uvInput :: Natural
+uvInput = 2
 
 --------------------------------------------------------------------------------
 -- GLSL uniform semantics
