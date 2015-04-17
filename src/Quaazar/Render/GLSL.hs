@@ -76,7 +76,7 @@ highShadowmapsSem :: Natural
 highShadowmapsSem = 18
 
 --------------------------------------------------------------------------------
--- GLSL binding points
+-- GLSL uniform block binding points
 declUniformBlock :: Natural -> String -> String
 declUniformBlock bp block = "layout (std430,binding = " ++ show bp ++ ") buffer " ++ block ++ ";"
 
