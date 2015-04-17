@@ -15,7 +15,7 @@ module Qzr.Init (
   ) where
 
 import System.Directory ( createDirectoryIfMissing )
-import System.FilePath ( (</>), (<.>), FilePath )
+import System.FilePath ( (</>), FilePath )
 import Prelude hiding ( init )
 
 init :: String -> FilePath -> IO ()
