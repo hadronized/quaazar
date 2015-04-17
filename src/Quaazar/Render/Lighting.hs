@@ -29,7 +29,7 @@ import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Shader ( Program, Uniform, (@=), buildProgram, uniform
                                 , useProgram )
-import Quaazar.Render.GL.Texture ( Filter(..), InternalFormat(..), Texture2D
+import Quaazar.Render.GL.Texture ( CubemapArray, Filter(..), InternalFormat(..)
                                  , Unit )
 import Quaazar.Render.GLSL
 import Quaazar.Render.Light
@@ -129,13 +129,13 @@ ligIRadUniform = uniform ligIRadSem
 shadowmapIndexUniform :: Uniform Word32
 shadowmapIndexUniform = uniform shadowmapIndexSem
 
-lowShadowmapsUniform :: Uniform (Texture2D,Unit)
+lowShadowmapsUniform :: Uniform (CubemapArray,Unit)
 lowShadowmapsUniform = uniform lowShadowmapsSem
 
-mediumShadowmapsUniform :: Uniform (Texture2D,Unit)
+mediumShadowmapsUniform :: Uniform (CubemapArray,Unit)
 mediumShadowmapsUniform = uniform mediumShadowmapsSem
 
-highShadowmapsUniform :: Uniform (Texture2D,Unit)
+highShadowmapsUniform :: Uniform (CubemapArray,Unit)
 highShadowmapsUniform = uniform highShadowmapsSem
 
 -- |ProjView matrix used to generate shadowmaps.

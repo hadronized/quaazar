@@ -31,7 +31,8 @@ import Quaazar.Render.GL.Framebuffer ( Framebuffer, Target(..)
 import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Shader ( Program', Semantics(..), (@=), unused
                                 , useProgram )
-import Quaazar.Render.GL.Texture ( Filter(..), InternalFormat(..), Texture2D )
+import Quaazar.Render.GL.Texture ( Filter(..), InternalFormat(..), Texture2D
+                                 , Unit(..) )
 import Quaazar.Render.Light
 import Quaazar.Render.Mesh ( GPUMesh, renderMesh )
 import Quaazar.Render.Projection ( Projection )
@@ -112,13 +113,11 @@ cleanShadows (Shadows _ low medium high) = do
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
 
 -- TODO
-{-
 bindShadowmaps :: Shadows -> IO ()
 bindShadowmaps (Shadows _ low medium high) = do
-  lowShadowmapsUniform @= (low^.cubeOffscreenArrayDepthmaps,0)
-  mediumShadowmapsUniform @= (medium^.cubeOffscreenArrayDepthmaps,1)
-  highShadowmapsUniform @= (high^.cubeOffscreenArrayDepthmaps,2)
--}
+  lowShadowmapsUniform @= (low^.cubeOffscreenArrayDepthmaps,Unit 0)
+  mediumShadowmapsUniform @= (medium^.cubeOffscreenArrayDepthmaps,Unit 1)
+  highShadowmapsUniform @= (high^.cubeOffscreenArrayDepthmaps,Unit 2)
 
 renderModelGroup :: GPUModelGroup -> IO () -> IO ()
 renderModelGroup (GPUModelGroup (prog,semantics) insts) sendUniforms = do
