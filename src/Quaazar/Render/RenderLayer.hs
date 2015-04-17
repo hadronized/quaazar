@@ -69,7 +69,7 @@ renderLayer cam ambient omnis models =
           hmax = conf^.highShadowMaxNb
         cleanShadows shdws
         traverse_ (genShadowmap_ shdws) omnisWithShadows
-        --bindShadowmaps shadows -- TODO
+        bindShadowmaps shdws
         return omnisWithShadows
       Nothing -> return $ map addNoShadows omnis
     bindFramebuffer fb ReadWrite
