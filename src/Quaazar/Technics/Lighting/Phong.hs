@@ -150,6 +150,28 @@ phongFS = unlines
 
   , "out vec4 frag;"
 
+  , "float sampleShadowmap(uint lod, uint index, vec3 ligDir) {"
+  , "  switch (lod) {"
+  , "    case 1u:"
+  , "      return texture(lowShadowmaps, vec4(ligDir, float(index))).r;"
+  
+  , "    case 2u:"
+  , "      return texture(mediumShadowmaps, vec4(ligDir, float(index))).r;"
+
+  , "    case 3u:"
+  , "      return texture(highShadowmaps, vec4(ligDir, float(index))).r;"
+
+  , "    default:"
+  , "      return 1.;"
+  , "  }"
+  , "}"
+
+  , "float computeShadow(uint lod, uint index, vec3 ligDir, float ligRad, float distToLight) {"
+  , "  float shadowDist = sampleShadowmap(lod, index, ligDir) * ligRad;"
+  , "  float shadowBias = 0.001;"
+  , "  return (((distToLight - shadowDist) < shadowBias) ? 1. : 0.);"
+  , "}"
+
   , "void main() {"
   , "  vec3 phongDiff = texture(phongDiffMap, vuv).rgb;"
   , "  vec3 phongSpec = texture(phongSpecMap, vuv).rgb;"
@@ -162,6 +184,7 @@ phongFS = unlines
     -- omni lights
   , "  vec3 omni = vec3(0.,0.,0.);"
   , "  for (uint i = 0u; i < ligOmniNb; ++i) {"
+         -- lighting
   , "    vec3 ligCol = omniBuffer.ligs[i].col;"
   , "    float ligPow = omniBuffer.ligs[i].pow;"
   , "    float ligRad = omniBuffer.ligs[i].rad;"
@@ -169,11 +192,15 @@ phongFS = unlines
   , "    uint shadowmapIndex = omniBuffer.ligs[i].shadowmapIndex;"
   , "    vec3 ligToVertex = omniBuffer.ligs[i].pos - vco;"
   , "    vec3 ligDir = normalize(ligToVertex);"
+  , "    float distToLight = length(ligToVertex);"
   , "    vec3 r = normalize(reflect(-ligDir,vno));"
   , "    vec3 spec = pow(max(0.,dot(r,v)), 1. + phongGloss * 1000.) * ligCol * phongSpec;"
   , "    vec3 diff = max(0.,dot(vno,ligDir)) * (ligCol - spec) * phongDiff;"
-  , "    float atten = ligPow / (pow(1. + length(ligToVertex)/ligRad,2.));"
-  , "    omni += atten * (diff + spec);"
+  , "    float atten = ligPow / (pow(1. + distToLight/ligRad,2.));"
+         -- shadowing
+  , "    float shadow = shadowLOD == 0u ? computeShadow(shadowLOD, shadowmapIndex, -ligDir, ligRad, distToLight) : 1.;"
+         -- lighting * shadowing
+  , "    omni += shadow * atten * (diff + spec);"
   , "  }"
 
   , "  frag = clamp(vec4(ambient + omni,1.), vec4(0.,0.,0.,0.), vec4(1.,1.,1.,1.));"

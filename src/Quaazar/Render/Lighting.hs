@@ -287,7 +287,7 @@ genShadowmapGS = unlines
   , declUniform shadowmapIndexSem "uint shadowmapIndex"
 
   , "void main() {"
-  , "  uint firstLayerFace = shadowmapIndex*6;"
+  , "  uint firstLayerFace = shadowmapIndex * 6;"
   , "  uint lastLayerFace = firstLayerFace + 5;"
   , "  for (uint layerFaceID = firstLayerFace; layerFaceID <= lastLayerFace; ++layerFaceID) {"
   , "    for (uint i = 0u; i < 3u; ++i) {"

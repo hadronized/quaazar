@@ -60,7 +60,7 @@ renderLayer :: Instance Projection
 renderLayer cam ambient omnis models =
   RenderLayer $ \fb omniBuffer shadowsConf -> do
     let Ambient ligAmbCol ligAmbPow = ambient
-    omnisWithShadows <- case shadowsConf of
+    (omnisWithShadows,bindShadowmaps_) <- case shadowsConf of
       Just (conf,shdws) -> do 
         let
           omnisWithShadows = flip evalState (0,0,0) $ mapM (addShadowInfo_ lmax mmax hmax) omnis
@@ -69,9 +69,8 @@ renderLayer cam ambient omnis models =
           hmax = conf^.highShadowMaxNb
         cleanShadows shdws
         traverse_ (genShadowmap_ shdws) omnisWithShadows
-        bindShadowmaps shdws
-        return omnisWithShadows
-      Nothing -> return $ map addNoShadows omnis
+        return (omnisWithShadows,bindShadowmaps shdws)
+      Nothing -> return (map addNoShadows omnis,return ())
     bindFramebuffer fb ReadWrite
     glClearColor 0 0 0 0
     glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
@@ -80,6 +79,7 @@ renderLayer cam ambient omnis models =
       ligAmbColUniform @= ligAmbCol
       ligAmbPowUniform @= ligAmbPow
       pushOmnis omnisWithShadows omniBuffer
+      bindShadowmaps_
   where
     addShadowInfo_ lmax mmax hmax inst = do
       let
@@ -101,11 +101,11 @@ cleanShadows :: Shadows -> IO ()
 cleanShadows (Shadows _ low medium high) = do
   -- low shadows
   bindFramebuffer (low^.cubeOffscreenArrayFB) ReadWrite
-  glClearColor 0 0 0 0
+  glClearColor 1 1 1 1
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
   -- medium shadows
   bindFramebuffer (medium^.cubeOffscreenArrayFB) ReadWrite
-  glClearColor 0 0 0 0
+  glClearColor 1 1 1 1
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
   -- high shadows
   bindFramebuffer (high^.cubeOffscreenArrayFB) ReadWrite
@@ -115,9 +115,9 @@ cleanShadows (Shadows _ low medium high) = do
 -- TODO
 bindShadowmaps :: Shadows -> IO ()
 bindShadowmaps (Shadows _ low medium high) = do
-  lowShadowmapsUniform @= (low^.cubeOffscreenArrayDepthmaps,Unit 0)
-  mediumShadowmapsUniform @= (medium^.cubeOffscreenArrayDepthmaps,Unit 1)
-  highShadowmapsUniform @= (high^.cubeOffscreenArrayDepthmaps,Unit 2)
+  lowShadowmapsUniform @= (low^.cubeOffscreenArrayDepthmaps,Unit 3)
+  mediumShadowmapsUniform @= (medium^.cubeOffscreenArrayDepthmaps,Unit 4)
+  highShadowmapsUniform @= (high^.cubeOffscreenArrayDepthmaps,Unit 5)
 
 renderModelGroup :: GPUModelGroup -> IO () -> IO ()
 renderModelGroup (GPUModelGroup (prog,semantics) insts) sendUniforms = do
