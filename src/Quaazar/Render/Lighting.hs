@@ -231,9 +231,9 @@ genShadowmap :: Omni -> Natural -> Transform -> [Instance GPUMesh] -> Shadows ->
 genShadowmap (Omni _ _ rad shadowLOD) shadowmapIndex lightTrsf meshes shdws =
     for_ shadowLOD $ \lod -> do
       let shadowFB = case lod of
-        LowShadow -> shdws^.lowShadows.cubeOffscreenArrayFB
-        MediumShadow -> shdws^.mediumShadows.cubeOffscreenArrayFB
-        HighShadow -> shdws^.highShadows.cubeOffscreenArrayFB
+            LowShadow -> shdws^.lowShadows.cubeOffscreenArrayFB
+            MediumShadow -> shdws^.mediumShadows.cubeOffscreenArrayFB
+            HighShadow -> shdws^.highShadows.cubeOffscreenArrayFB
       bindFramebuffer shadowFB ReadWrite
       useProgram (shdws^.shadowProgram)
       ligPosUniform @= lightTrsf^.transformPosition
