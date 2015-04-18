@@ -230,11 +230,10 @@ pushOmnis omnis omniBuffer = do
 genShadowmap :: Omni -> Natural -> Transform -> [Instance GPUMesh] -> Shadows -> IO ()
 genShadowmap (Omni _ _ rad shadowLOD) shadowmapIndex lightTrsf meshes shdws =
     for_ shadowLOD $ \lod -> do
-      let
-        shadowFB = case lod of
-          LowShadow -> shdws^.lowShadows.cubeOffscreenArrayFB
-          MediumShadow -> shdws^.mediumShadows.cubeOffscreenArrayFB
-          HighShadow -> shdws^.highShadows.cubeOffscreenArrayFB
+      let shadowFB = case lod of
+        LowShadow -> shdws^.lowShadows.cubeOffscreenArrayFB
+        MediumShadow -> shdws^.mediumShadows.cubeOffscreenArrayFB
+        HighShadow -> shdws^.highShadows.cubeOffscreenArrayFB
       bindFramebuffer shadowFB ReadWrite
       useProgram (shdws^.shadowProgram)
       ligPosUniform @= lightTrsf^.transformPosition
@@ -308,8 +307,8 @@ genShadowmapFS = unlines
   , "in vec3 gco;"
   , "out float outDistance;"
 
-  , "uniform vec3 ligPos;"
-  , "uniform float ligIRad;"
+  , declUniform ligPosSem "vec3 ligPos"
+  , declUniform ligIRadSem "float ligIRad"
 
   , "void main() {"
   , "  outDistance = distance(ligPos,gco) * ligIRad;"
