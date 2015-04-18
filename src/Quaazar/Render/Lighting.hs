@@ -16,7 +16,7 @@ import Control.Monad ( foldM, void )
 import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
-import Data.Foldable ( traverse_ )
+import Data.Foldable ( for_, traverse_ )
 import Data.Traversable ( for )
 import Linear
 import Numeric.Natural ( Natural )
@@ -229,9 +229,7 @@ pushOmnis omnis omniBuffer = do
 -- cull them before calling that function to maximize performance.
 genShadowmap :: Omni -> Natural -> Transform -> [Instance GPUMesh] -> Shadows -> IO ()
 genShadowmap (Omni _ _ rad shadowLOD) shadowmapIndex lightTrsf meshes shdws =
-  case shadowLOD of
-    Nothing -> return ()
-    Just lod -> do
+    for_ shadowLOD $ \lod -> do
       let
         shadowFB = case lod of
           LowShadow -> shdws^.lowShadows.cubeOffscreenArrayFB

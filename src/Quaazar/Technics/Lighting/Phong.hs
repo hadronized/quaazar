@@ -198,7 +198,7 @@ phongFS = unlines
   , "    vec3 diff = max(0.,dot(vno,ligDir)) * (ligCol - spec) * phongDiff;"
   , "    float atten = ligPow / (pow(1. + distToLight/ligRad,2.));"
          -- shadowing
-  , "    float shadow = shadowLOD == 0u ? computeShadow(shadowLOD, shadowmapIndex, -ligDir, ligRad, distToLight) : 1.;"
+  , "    float shadow = shadowLOD == 0u ? 1. : computeShadow(shadowLOD, shadowmapIndex, -ligDir, ligRad, distToLight);"
          -- lighting * shadowing
   , "    omni += shadow * atten * (diff + spec);"
   , "  }"

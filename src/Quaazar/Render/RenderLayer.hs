@@ -109,15 +109,15 @@ cleanShadows (Shadows _ low medium high) = do
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
   -- high shadows
   bindFramebuffer (high^.cubeOffscreenArrayFB) ReadWrite
-  glClearColor 0 0 0 0
+  glClearColor 1 1 1 1
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
 
 -- TODO
 bindShadowmaps :: Shadows -> IO ()
 bindShadowmaps (Shadows _ low medium high) = do
-  lowShadowmapsUniform @= (low^.cubeOffscreenArrayDepthmaps,Unit 3)
-  mediumShadowmapsUniform @= (medium^.cubeOffscreenArrayDepthmaps,Unit 4)
-  highShadowmapsUniform @= (high^.cubeOffscreenArrayDepthmaps,Unit 5)
+  lowShadowmapsUniform @= (low^.cubeOffscreenArrayColormaps,Unit 3)
+  mediumShadowmapsUniform @= (medium^.cubeOffscreenArrayColormaps,Unit 4)
+  highShadowmapsUniform @= (high^.cubeOffscreenArrayColormaps,Unit 5)
 
 renderModelGroup :: GPUModelGroup -> IO () -> IO ()
 renderModelGroup (GPUModelGroup (prog,semantics) insts) sendUniforms = do
