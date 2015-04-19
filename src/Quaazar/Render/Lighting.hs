@@ -34,6 +34,7 @@ import Quaazar.Render.GL.Texture ( CubemapArray, Filter(..), InternalFormat(..)
 import Quaazar.Render.GLSL
 import Quaazar.Render.Light
 import Quaazar.Render.Projection ( Projection(Perspective), projectionMatrix )
+import Quaazar.Render.Viewport
 import Quaazar.Lighting.Light ( Omni(..) )
 import Quaazar.Lighting.Shadow ( ShadowLOD(..) )
 import Quaazar.Render.Mesh ( GPUMesh, renderMesh )
@@ -51,9 +52,9 @@ data Lighting = Lighting {
 
 data Shadows = Shadows {
     _shadowProgram   :: Program
-  , _lowShadows      :: CubeOffscreenArray
-  , _mediumShadows   :: CubeOffscreenArray
-  , _highShadows     :: CubeOffscreenArray
+  , _lowShadows      :: (CubeOffscreenArray,Viewport)
+  , _mediumShadows   :: (CubeOffscreenArray,Viewport)
+  , _highShadows     :: (CubeOffscreenArray,Viewport)
   }
 
 makeLenses ''Lighting
@@ -96,8 +97,11 @@ genShadowProgram znear zfar = do
 getShadows :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
            => Natural
            -> Natural
-           -> m CubeOffscreenArray
-getShadows cubeSize d = genCubeOffscreenArray cubeSize d Nearest RGB32F (ColorAttachment 0) Depth32F DepthAttachment
+           -> m (CubeOffscreenArray,Viewport)
+getShadows cubeSize d = 
+  (,)
+    <$> genCubeOffscreenArray cubeSize d Nearest RGB32F (ColorAttachment 0) Depth32F DepthAttachment
+    <*> pure (Viewport 0 0 cubeSize cubeSize)
 
 camProjViewUniform :: Uniform (M44 Float)
 camProjViewUniform = uniform camProjViewSem
@@ -230,15 +234,16 @@ pushOmnis omnis omniBuffer = do
 genShadowmap :: Omni -> Natural -> Transform -> [Instance GPUMesh] -> Shadows -> IO ()
 genShadowmap (Omni _ _ rad shadowLOD) shadowmapIndex lightTrsf meshes shdws =
     for_ shadowLOD $ \lod -> do
-      let shadowFB = case lod of
-            LowShadow -> shdws^.lowShadows.cubeOffscreenArrayFB
-            MediumShadow -> shdws^.mediumShadows.cubeOffscreenArrayFB
-            HighShadow -> shdws^.highShadows.cubeOffscreenArrayFB
-      bindFramebuffer shadowFB ReadWrite
+      let shadow = case lod of
+            LowShadow -> shdws^.lowShadows
+            MediumShadow -> shdws^.mediumShadows
+            HighShadow -> shdws^.highShadows
+      bindFramebuffer (fst shadow ^. cubeOffscreenArrayFB) ReadWrite
+      setViewport (snd shadow)
       useProgram (shdws^.shadowProgram)
       ligPosUniform @= lightTrsf^.transformPosition
+      shadowmapIndexUniform @= (fromIntegral shadowmapIndex * 6 :: Word32)
       ligIRadUniform @= 1 / rad
-      shadowmapIndexUniform @= (fromIntegral shadowmapIndex :: Word32)
       traverse_ renderMesh_ meshes   
   where
     renderMesh_ meshInst = do
@@ -253,8 +258,8 @@ genShadowmapVS = unlines
   [
     "#version 430 core"
 
-  , "layout (location = 0) in vec3 co;"
-  , "layout (location = 1) in vec3 no;"
+  , declInput coInput "vec3 co"
+  , declInput noInput "vec3 no"
 
   , declUniform modelSem "mat4 model"
 
@@ -284,13 +289,11 @@ genShadowmapGS = unlines
   , declUniform shadowmapIndexSem "uint shadowmapIndex"
 
   , "void main() {"
-  , "  uint firstLayerFace = shadowmapIndex * 6;"
-  , "  uint lastLayerFace = firstLayerFace + 5;"
-  , "  for (uint layerFaceID = firstLayerFace; layerFaceID <= lastLayerFace; ++layerFaceID) {"
+  , "  for (uint layerFaceID = shadowmapIndex, faceID = 0; layerFaceID < 6; ++layerFaceID, ++faceID) {"
   , "    for (uint i = 0u; i < 3u; ++i) {"
   , "      gl_Layer = int(layerFaceID);"
   , "      gco = gl_in[i].gl_Position.xyz;"
-  , "      gl_Position = ligProjViews[layerFaceID] * vec4(gl_in[i].gl_Position.xyz - ligPos,1.);"
+  , "      gl_Position = ligProjViews[faceID] * vec4(gco - ligPos,1.);"
   , "      EmitVertex();"
   , "    }"
   , "    EndPrimitive();"

@@ -168,8 +168,8 @@ phongFS = unlines
 
   , "float computeShadow(uint lod, uint index, vec3 ligDir, float ligRad, float distToLight) {"
   , "  float shadowDist = sampleShadowmap(lod, index, ligDir) * ligRad;"
-  , "  float shadowBias = 0.001;"
-  , "  return (((distToLight - shadowDist) < shadowBias) ? 1. : 0.);"
+  , "  float shadowBias = 0.01;"
+  , "  return (((distToLight - shadowDist) <= shadowBias) ? 1. : 0.);"
   , "}"
 
   , "void main() {"
@@ -199,6 +199,7 @@ phongFS = unlines
   , "    float atten = ligPow / (pow(1. + distToLight/ligRad,2.));"
          -- shadowing
   , "    float shadow = shadowLOD == 0u ? 1. : computeShadow(shadowLOD, shadowmapIndex, -ligDir, ligRad, distToLight);"
+  --, "    float shadow = sampleShadowmap(shadowLOD, shadowmapIndex, -ligDir);"
          -- lighting * shadowing
   , "    omni += shadow * atten * (diff + spec);"
   , "  }"
