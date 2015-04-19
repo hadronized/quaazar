@@ -100,7 +100,7 @@ getShadows :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
            -> m (CubeOffscreenArray,Viewport)
 getShadows cubeSize d = 
   (,)
-    <$> genCubeOffscreenArray cubeSize d Nearest RGB32F (ColorAttachment 0) Depth32F DepthAttachment
+    <$> genCubeOffscreenArray cubeSize d Linear R32F (ColorAttachment 0) Depth32F DepthAttachment
     <*> pure (Viewport 0 0 cubeSize cubeSize)
 
 camProjViewUniform :: Uniform (M44 Float)
@@ -242,7 +242,7 @@ genShadowmap (Omni _ _ rad shadowLOD) shadowmapIndex lightTrsf meshes shdws =
       setViewport (snd shadow)
       useProgram (shdws^.shadowProgram)
       ligPosUniform @= lightTrsf^.transformPosition
-      shadowmapIndexUniform @= (fromIntegral shadowmapIndex * 6 :: Word32)
+      shadowmapIndexUniform @= (fromIntegral shadowmapIndex :: Word32)
       ligIRadUniform @= 1 / rad
       traverse_ renderMesh_ meshes   
   where
@@ -289,7 +289,7 @@ genShadowmapGS = unlines
   , declUniform shadowmapIndexSem "uint shadowmapIndex"
 
   , "void main() {"
-  , "  for (uint layerFaceID = shadowmapIndex, faceID = 0; layerFaceID < 6; ++layerFaceID, ++faceID) {"
+  , "  for (uint layerFaceID = shadowmapIndex * 6, faceID = 0; faceID < 6; ++layerFaceID, ++faceID) {"
   , "    for (uint i = 0u; i < 3u; ++i) {"
   , "      gl_Layer = int(layerFaceID);"
   , "      gco = gl_in[i].gl_Position.xyz;"

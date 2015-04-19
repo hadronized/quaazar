@@ -169,7 +169,7 @@ phongFS = unlines
   , "float computeShadow(uint lod, uint index, vec3 ligDir, float ligRad, float distToLight) {"
   , "  float shadowDist = sampleShadowmap(lod, index, ligDir) * ligRad;"
   , "  float shadowBias = 0.01;"
-  , "  return (((distToLight - shadowDist - shadowBias) <= 0) ? 1. : 0.);"
+  , "  return shadowDist + shadowBias >= distToLight ? 1. : 0.;"
   , "}"
 
   , "void main() {"

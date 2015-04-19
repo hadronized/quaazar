@@ -103,15 +103,12 @@ cleanShadows :: Shadows -> IO ()
 cleanShadows (Shadows _ low medium high) = do
   -- low shadows
   bindFramebuffer (fst low ^. cubeOffscreenArrayFB) ReadWrite
-  glClearColor 1 1 1 1
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
   -- medium shadows
   bindFramebuffer (fst medium ^. cubeOffscreenArrayFB) ReadWrite
-  glClearColor 1 1 1 1
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
   -- high shadows
   bindFramebuffer (fst high ^. cubeOffscreenArrayFB) ReadWrite
-  glClearColor 1 1 1 1
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
 
 -- TODO
