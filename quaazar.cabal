@@ -119,6 +119,27 @@ library
 
   default-language:    Haskell2010
 
+executable qzr
+  ghc-options:         -O3 -W -Wall -funbox-strict-fields
+
+  ghc-prof-options:    -prof -fprof-auto -rtsopts
+
+  hs-source-dirs:      sdk/qzr/src
+
+  main-is:             Main.hs
+
+  default-extensions:  ScopedTypeVariables
+
+  build-depends:       base              >= 4.6   && < 5.0
+                     , mtl               >= 2.2.1 && < 2.3
+                     , quaazar           >= 0.1   && < 0.2
+                     , either            >= 4.3   && < 4.4
+                     , monad-journal     >= 0.2   && < 0.8
+                     , filepath          >= 1.3   && < 1.4
+                     , directory         >= 1.2   && < 1.3
+
+  default-language:    Haskell2010
+
 -- executable qzr-mat-sdbx
 --   ghc-options:         -O3 -W -Wall -funbox-strict-fields
 -- 

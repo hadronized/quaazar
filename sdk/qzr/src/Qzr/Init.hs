@@ -20,13 +20,24 @@ import Prelude hiding ( init )
 
 init :: String -> FilePath -> IO ()
 init projectName path = do
+    putStrLn "creating new quaazar project"
+    putStrLn $ "project name  : " ++ projectName
+    putStrLn $ "path location : " ++ path </> projectName
+    putStrLn "creating project root..."
     createDirectoryIfMissing True projectRoot
+    putStrLn "creating project data root..."
     createDirectoryIfMissing True dataRoot
+    putStrLn "creating project lights root..."
     createDirectoryIfMissing True $ dataRoot </> "lights"
+    putStrLn "creating project materials root..."
     createDirectoryIfMissing True $ dataRoot </> "materials"
+    putStrLn "creating project meshes root..."
     createDirectoryIfMissing True $ dataRoot </> "meshes"
+    putStrLn "creating project textures root..."
     createDirectoryIfMissing True $ dataRoot </> "textures"
+    putStrLn "creating project file source root..."
     createDirectoryIfMissing True srcRoot
+    putStrLn "writing a default Main.hs..."
     writeFile (srcRoot </> "Main.hs") mainHS
   where
     projectRoot = path </> projectName
