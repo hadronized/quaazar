@@ -7,6 +7,7 @@
 -- Stability   : experimental
 -- Portability : portable
 --
+-- OpenGL log committer.
 ----------------------------------------------------------------------------
 
 module Quaazar.Render.GL.Log (
@@ -16,5 +17,6 @@ module Quaazar.Render.GL.Log (
 
 import Quaazar.Utils.Log ( LogCommitter(BackendLog) )
 
+-- |OpenGL 'LogCommitter'.
 gllog :: LogCommitter
 gllog = BackendLog "gl"
