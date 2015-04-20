@@ -16,7 +16,6 @@ module Quaazar.Technics.Compositing (
 
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO )
-import Numeric.Natural ( Natural )
 import Quaazar.Render.Compositing ( Compositor, renderNode )
 import Quaazar.Render.GL.Shader ( Uniform, ($=), uniform )
 import Quaazar.Render.GL.Texture ( Texture2D, Unit )
