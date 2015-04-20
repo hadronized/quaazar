@@ -9,9 +9,13 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Vertices are points in space with extra information attached. This
--- module exports everything you need to handle vertices and all associated
--- types.
+-- Vertices are points in space with extra information attached:
+--
+--   - position
+--   - normal (can be flat or smooth)
+--   - UV coordinates channels
+--
+-- Currently, only one UV channel is supported.
 ----------------------------------------------------------------------------
 
 module Quaazar.Geometry.Vertex where
@@ -25,6 +29,8 @@ import Quaazar.Geometry.Normal ( Normal )
 import Quaazar.Geometry.Position ( Position )
 import Quaazar.Geometry.UV ( UV )
 
+-- |A 'Vertex' is a point in space. The system used is a local space
+-- to the object the vertex belongs to.
 data Vertex = Vertex {
     -- |Position.
     _vertexPosition :: Position
@@ -43,6 +49,13 @@ instance FromJSON Vertex where
 
 makeLenses ''Vertex
 
+-- |A list of vertices is wrapped in a dedicated type called 'Vertices'.
+-- In comes in two flavours:
+--
+--   - 'Interleaved', which just glues 'Vertex' to each other in a list;
+--     that’s the definition of interleaved vertices
+--   - 'Deinterleaved', wich extracts all components out of vertices and
+--     pack them in specific lists
 data Vertices
   = Interleaved [Vertex]
   | Deinterleaved Natural [Position] [Normal] [[UV]]
@@ -64,7 +77,7 @@ interleaved :: [Vertex] -> Vertices
 interleaved = Interleaved
 
 -- FIXME: the foldr1 might be very slow, so we can use a foldl1' and
--- DList to maximize append speed.
+-- 'DList' to maximize append speed.
 -- |Group '[Vertex]' into deinterleaved 'Vertices'.
 deinterleaved :: [Vertex] -> Vertices
 deinterleaved verts =
