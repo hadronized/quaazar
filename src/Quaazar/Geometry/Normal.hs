@@ -20,6 +20,10 @@ import Data.Aeson
 import Data.Aeson.Types ( typeMismatch )
 import Linear ( V3(..) )
 
+-- |Normal. Used for lighting purposes mostly.
+--
+-- Notice: the 'nor' function is used to build a 'Normal', but don’t
+-- get it wrong: the resulting 'Normal' **is not normalized**!
 newtype Normal = Normal { unNormal :: V3 Float } deriving (Eq,Ord,Show)
 
 instance FromJSON Normal where
