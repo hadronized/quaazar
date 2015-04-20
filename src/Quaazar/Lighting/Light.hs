@@ -8,6 +8,18 @@
 -- Maintainer  : Dimitri Sabadie <dimitri.sabadie@gmail.com>
 -- Stability   : experimental
 -- Portability : portable
+--
+-- Lighting enables shading computation over surfaces with light sources.
+--
+-- 'Ambient' lighting is a very simple kind of lighting. It has no source.
+-- It only has a 'Color' that defines the ambient spectrum all over the
+-- scene, and a power used to modulate that color. That color is then
+-- diffused to all objects, no matter what. Because of 'Ambient' not having
+-- a source in space, no diffuse nor specular hilights are possible.
+--
+-- 'Omni' lights are the default lights. They’re omnidirectional lights
+-- emitting photons in all directions from their sources. They’re defined
+-- via a 'Color', a power, a radius and a shadow configuration.
 ----------------------------------------------------------------------------
 
 module Quaazar.Lighting.Light (
@@ -26,7 +38,20 @@ import Quaazar.Scene.Color ( Color )
 import Quaazar.System.Loader ( Load(..) )
 import Quaazar.System.Resource ( Manager, Resource )
 
--- |'Ambient col pow'.
+-- |'Ambient col pow' is the ambient lighting of
+-- scene.
+--
+-- If you want a perfect dark scene, you can use the
+-- following ambient lights:
+--
+-- @
+--   Ambient (color 0 0 0) whatever
+--   Ambient whatever 0
+--   Ambient (color 0 0 0) 0
+-- @
+--
+-- In no circumstances you’d want to use @Ambient (color 1 1 1) 1@
+-- as it would burn your whole scene!
 data Ambient = Ambient Color Float deriving (Eq,Show)
 
 instance FromJSON Ambient where
@@ -44,9 +69,14 @@ instance Load () Ambient where
 
 instance Resource () Ambient
 
+-- |'Ambient' lights manager.
 type AmbientManager = Manager () Ambient
 
--- |'Omni col pow rad shadowLOD'.
+-- |'Omni col pow rad shadowLOD' is an omnidirectional light.
+--
+-- 'shadowLOD' is an object of type @Maybe ShadowLOD@. Feel free to read
+-- the documentation of 'ShadowLOD' for further information about that type.
+-- If you don’t want the light to cast shadows, set 'shadowLOD' to 'Nothing.
 data Omni = Omni Color Float Float (Maybe ShadowLOD) deriving (Eq,Show)
 
 instance FromJSON Omni where
@@ -69,4 +99,5 @@ instance Load () Omni where
 
 instance Resource () Omni
 
+-- |'Omni' lights manager.
 type OmniManager = Manager () Omni
