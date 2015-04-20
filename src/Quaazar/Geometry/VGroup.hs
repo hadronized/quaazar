@@ -10,6 +10,11 @@
 -- Portability : portable
 --
 -- Vertices can be grouped by indices through a 'VGroup'.
+--
+-- Vertex groups are mandatory to describe surfaces or how vertices are
+-- connected between each other. 'VGroup' exposes all the possible options
+-- for vertices connection. Basically, you can have /points/, /lines/ and
+-- /triangles/. Arbitrary polygons are not supported.
 ----------------------------------------------------------------------------
 
 module Quaazar.Geometry.VGroup (
@@ -39,7 +44,7 @@ instance FromJSON Line where
       _ -> fail "incorrect line type"
     _ -> fail" incorrect line format"
 
--- |A triangle is thre vertex indices.
+-- |A triangle is three vertex indices.
 data Triangle = Triangle Word32 Word32 Word32 deriving (Eq,Read,Show)
 
 instance FromJSON Triangle where
@@ -59,11 +64,15 @@ instance FromJSON Triangle where
 --   - 'SLines' is used to connect vertices as lines;
 --   - 'STriangles' is used to connect vertices as triangles.
 data VGroup
-  = Points [Word32]
-  | Lines [Line]
-  | Triangles [Triangle]
-  | SLines Line [Word32]
-  | STriangles Triangle [Word32]
+  = Points [Word32] -- ^ list of indices
+  | Lines [Line] -- ^ list of lines
+  | Triangles [Triangle] -- ^ list of triangles
+  | SLines Line [Word32] -- ^ the first line defines the starting line, then each
+                         -- ^ indices extends the lines with a new vertex, defining
+                         -- ^ a new line
+  | STriangles Triangle [Word32] -- ^ the first triangle defines the starting
+                                 -- ^ triangle, then each indices extends the last two
+                                 -- ^ indices into a new triangle
     deriving (Eq,Read,Show)
 
 instance FromJSON VGroup where
