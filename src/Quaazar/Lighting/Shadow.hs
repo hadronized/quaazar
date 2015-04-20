@@ -8,6 +8,8 @@
 -- Maintainer  : Dimitri Sabadie <dimitri.sabadie@gmail.com>
 -- Stability   : experimental
 -- Portability : portable
+--
+-- Shadows can be cast from lights into scene.
 ----------------------------------------------------------------------------
 
 module Quaazar.Lighting.Shadow (
@@ -17,7 +19,7 @@ module Quaazar.Lighting.Shadow (
 
 import Data.Aeson
 
--- |'ShadowLOD' represents the level of detail of a shadow. There’s currently
+-- |'ShadowLOD' represents the level of detail of a shadow. There’re currently
 -- three levels of detail:
 --
 --   - 'LowShadow' is a /low-detail/ shadow. You should use that LOD when you
