@@ -7,6 +7,9 @@
 -- Stability   : experimental
 -- Portability : portable
 --
+-- Offscreen renders are very important as they represent most of the work.
+-- They come in several flavours, depending on what type of offscreen
+-- renders you seek.
 ----------------------------------------------------------------------------
 
 module Quaazar.Render.GL.Offscreen where
@@ -22,6 +25,8 @@ import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Texture
 import Quaazar.Utils.Log
 
+-- |Standard 2D offscreen. Provide the colormap and depthmap of
+-- the resulting render.
 data Offscreen = Offscreen {
     _offscreenRender   :: Texture2D
   , _offscreenDepthmap :: Texture2D
@@ -30,6 +35,9 @@ data Offscreen = Offscreen {
 
 makeLenses ''Offscreen
 
+-- |'genOffscreen w h flt texift' generates an 'Offscreen' which
+-- width is 'w', heigh is 'h', the texture min and mag filters are
+-- 'flt' and the internal format is 'texift'.
 genOffscreen :: (MonadScoped IO m,MonadIO m,MonadError Log m)
              => Natural
              -> Natural
@@ -57,6 +65,8 @@ genOffscreen w h flt texift = do
   fb <- eitherToError fb'
   return (Offscreen colormap depthmap fb)
 
+-- |'OffscreenArray' is almost the same kind of offscreen than 'Offscreen' but
+-- for layered renders.
 data OffscreenArray = OffscreenArray {
     _offscreenArrayColormaps :: Texture2DArray
   , _offscreenArrayDepthmaps :: Texture2DArray
