@@ -16,7 +16,7 @@ module Quaazar.Control.Monad (
     partitionM
   ) where
 
--- |Monadic version of 'filter'.
+-- |Monadic version of 'partition'.
 partitionM :: (Monad m) => (a -> m Bool) -> [a] -> m ([a],[a])
 partitionM p l = sel l ([],[])
   where
