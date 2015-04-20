@@ -18,13 +18,12 @@ import System.Directory ( createDirectoryIfMissing )
 import System.FilePath ( (</>) )
 import Prelude hiding ( init )
 
-init :: String -> FilePath -> IO ()
-init projectName path = do
+init :: FilePath -> IO ()
+init path = do
     putStrLn "creating new quaazar project"
-    putStrLn $ "project name  : " ++ projectName
-    putStrLn $ "path location : " ++ path </> projectName
+    putStrLn $ "path location : " ++ path
     putStrLn "creating project root..."
-    createDirectoryIfMissing True projectRoot
+    createDirectoryIfMissing True path
     putStrLn "creating project data root..."
     createDirectoryIfMissing True dataRoot
     putStrLn "creating project lights root..."
@@ -40,9 +39,8 @@ init projectName path = do
     putStrLn "writing a default Main.hs..."
     writeFile (srcRoot </> "Main.hs") mainHS
   where
-    projectRoot = path </> projectName
-    dataRoot = projectRoot </> "data"
-    srcRoot = projectRoot </> "src"
+    dataRoot = path </> "data"
+    srcRoot = path </> "src"
 
 mainHS :: String
 mainHS = unlines
@@ -56,7 +54,7 @@ mainHS = unlines
   , "import Control.Monad.Trans.Journal ( runJournalT )"
   , "import Numeric.Natural ( Natural )"
   , "import Quaazar"
-  , "import Quaazar.Event ( Closed, Escape, Event(..), KeyReleased, Quit)"
+  , "import Quaazar.System.Event"
   , ""
   , "screenW,screenH :: Natural"
   , "screenW = 800"

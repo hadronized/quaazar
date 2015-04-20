@@ -18,7 +18,7 @@ import System.FilePath
 import Prelude hiding ( init )
 
 data Command
-  = Init String (Maybe FilePath)
+  = Init (Maybe FilePath)
     deriving (Eq,Show)
 
 instance Read Command where
@@ -27,13 +27,12 @@ instance Read Command where
       _ -> []
     where
       processInit xs = case xs of
-        [name] -> [(Init name Nothing,"")]
-        [name,path] -> [(Init name (Just path),"")]
-        _ -> []
+        [path] -> [(Init (Just path),"")]
+        _ -> [(Init Nothing,"")]
 
 dispatchCommand :: Command -> IO ()
 dispatchCommand cmd = case cmd of
-  Init name path -> init name (fromMaybe "./" path)
+  Init path -> init (fromMaybe "./" path)
 
 main :: IO ()
 main = do
