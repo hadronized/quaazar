@@ -9,8 +9,8 @@
 -- Stability   : experimental
 -- Portability : portable
 --
--- Meshes are the way geometry is built up. A 'Mesh' is a bunch of vertices
--- and a description of faces through a vertices group.
+-- Meshes are the way geometry is built up. A 'Mesh' is a bunch of
+-- 'Vertices' and a description of faces through a 'VGroup'.
 ----------------------------------------------------------------------------
 
 module Quaazar.Geometry.Mesh (
@@ -33,8 +33,7 @@ import Quaazar.Geometry.VGroup
 import Quaazar.System.Loader ( Load(..) )
 import Quaazar.System.Resource ( Manager, Resource )
 
--- |A mesh is a pair of vertices and vertex group. See 'meshVertices' and
--- 'meshVGroup' for further details.
+-- |A mesh is a pair of vertices and vertex group.
 data Mesh = Mesh {
     _meshVertices :: Vertices
   , _meshVGroup   :: VGroup
@@ -51,4 +50,5 @@ instance Load () Mesh where
 
 instance Resource () Mesh
 
+-- |Mesh manager.
 type MeshManager = Manager () Mesh
