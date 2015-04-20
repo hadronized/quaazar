@@ -33,5 +33,8 @@ instance FromJSON Normal where
       [x,y,z] -> return (nor x y z)
       _       -> typeMismatch "normal" v
 
+-- |Build a 'Normal' from /x/, /y/ and /z/ components. Keep in mind that
+-- the resulting 'Normal' is not normalized by 'nor': you have to handle
+-- normalization.
 nor :: Float -> Float -> Float -> Normal
 nor x y z = Normal (V3 x y z)
