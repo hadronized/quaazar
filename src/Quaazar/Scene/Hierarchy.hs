@@ -22,7 +22,6 @@ module Quaazar.Scene.Hierarchy (
   , instantiate
   ) where
 
-import Control.Applicative ( Applicative )
 import Control.Monad.Reader ( Reader, ask, local, runReader )
 import Data.Semigroup ( (<>) )
 import Quaazar.Scene.Transform ( Transform )

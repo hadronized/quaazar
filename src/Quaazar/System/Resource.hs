@@ -22,7 +22,6 @@ module Quaazar.System.Resource (
   , lookupInsert
   ) where
 
-import Control.Applicative ( Applicative )
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Data.IORef ( modifyIORef, newIORef, readIORef, writeIORef )
@@ -32,8 +31,8 @@ import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
 data Manager dep r = Manager {
-    retrieve :: (Applicative m,MonadIO m,MonadScoped IO m,MonadError Log m,MonadLogger m) => dep -> String -> m r
-  , release :: (MonadIO m) => String -> m ()
+    retrieve :: forall m. (Applicative m,MonadIO m,MonadScoped IO m,MonadError Log m,MonadLogger m) => dep -> String -> m r
+  , release :: forall m. (MonadIO m) => String -> m ()
   }
 
 class Resource dep r | r -> dep where

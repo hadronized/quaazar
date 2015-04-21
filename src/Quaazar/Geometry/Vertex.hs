@@ -20,7 +20,6 @@
 
 module Quaazar.Geometry.Vertex where
 
-import Control.Applicative
 import Control.Lens
 import Data.Aeson
 import Data.Aeson.Types ( typeMismatch )

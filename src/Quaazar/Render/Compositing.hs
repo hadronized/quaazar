@@ -14,11 +14,9 @@ module Quaazar.Render.Compositing where
 import Control.Arrow ( Arrow(..) )
 import Control.Category ( Category(..) ) 
 import Control.Lens
-import Control.Applicative ( Applicative(..) )
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO )
 import Data.Bits ( (.|.) )
-import Data.Monoid ( Monoid(..) ) 
 import Data.Semigroup ( Semigroup(..) ) 
 import Graphics.Rendering.OpenGL.Raw
 import Quaazar.Render.Viewport ( Viewport(Viewport), setViewport )

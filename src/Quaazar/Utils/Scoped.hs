@@ -21,7 +21,6 @@ module Quaazar.Utils.Scoped (
   , module Control.Monad.Base
   ) where
 
-import Control.Applicative ( Applicative )
 import Control.Monad.Base ( MonadBase(..) )
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Journal ( MonadJournal )
@@ -32,7 +31,6 @@ import Control.Monad.Trans.Journal ( JournalT )
 import Control.Monad.Trans.State ( StateT, modify, runStateT )
 import Control.Monad.Trans.Writer ( WriterT )
 import Control.Monad.Writer ( MonadWriter )
-import Data.Monoid ( Monoid )
 
 class (MonadBase b m) => MonadScoped b m where
   scoped :: b () -> m ()

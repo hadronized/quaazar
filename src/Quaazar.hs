@@ -25,7 +25,6 @@ module Quaazar (
   , module Quaazar.Utils
   ) where
 
-import Control.Applicative
 import Control.Concurrent.STM ( TVar, atomically, modifyTVar, newTVarIO
                               , readTVar, writeTVar )
 import Data.List ( intercalate )

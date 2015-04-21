@@ -28,7 +28,6 @@ module Quaazar.Geometry.VGroup (
   , fromVGroup
   ) where
 
-import Control.Applicative
 import Data.Aeson
 import Data.Scientific ( toBoundedInteger )
 import Data.Word ( Word32 )

@@ -11,7 +11,6 @@
 
 module Quaazar.Render.Lighting where
 
-import Control.Applicative
 import Control.Monad ( foldM, void )
 import Control.Lens
 import Control.Monad.Error.Class ( MonadError )

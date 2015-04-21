@@ -11,7 +11,6 @@
 
 module Quaazar.Render.Renderer where
 
-import Control.Applicative
 import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )

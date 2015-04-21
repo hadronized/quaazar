@@ -25,7 +25,6 @@ module Quaazar.Geometry.Mesh (
   , module Quaazar.Geometry.VGroup
   ) where
 
-import Control.Applicative
 import Control.Lens
 import Data.Aeson
 import Quaazar.Geometry.Vertex

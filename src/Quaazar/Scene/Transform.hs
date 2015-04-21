@@ -42,7 +42,6 @@ module Quaazar.Scene.Transform (
   ) where
 
 import Control.Lens
-import Data.Monoid ( Monoid(..)  )
 import Data.Semigroup ( Semigroup(..) )
 import Linear
 

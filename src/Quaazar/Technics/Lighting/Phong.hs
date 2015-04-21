@@ -13,7 +13,6 @@
 
 module Quaazar.Technics.Lighting.Phong where
 
-import Control.Applicative hiding ( empty )
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Data.Aeson

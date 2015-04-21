@@ -31,7 +31,6 @@ module Quaazar.Lighting.Light (
   , OmniManager
   ) where
 
-import Control.Applicative
 import Data.Aeson
 import Quaazar.Lighting.Shadow
 import Quaazar.Scene.Color ( Color )
