@@ -17,6 +17,7 @@ module Quaazar.System.Resource (
   , Resource(..)
     -- * Retrieving and releasing resources
   , retrieve
+  , retrieve_
   , release
     -- * Miscellaneous
   , lookupInsert
@@ -40,14 +41,21 @@ class Resource dep r | r -> dep where
   default manager :: (MonadIO m,Load dep r) => FilePath -> m (Manager dep r)
   manager root = do
       ref <- liftIO $ newIORef empty
-      return $ Manager (retrieve_ ref) (release_ ref)
+      return $ Manager (rtrv ref) (release_ ref)
     where
-      retrieve_ ref dep name = do
+      rtrv ref dep name = do
         mp <- liftIO $ readIORef ref
         (mp',r) <- lookupInsert root dep mp name
         liftIO $ writeIORef ref mp'
         return r
       release_ ref name = liftIO . modifyIORef ref $ delete name
+
+-- |Retrieve with no argument.
+retrieve_ :: (Applicative m,MonadIO m,MonadScoped IO m,MonadError Log m,MonadLogger m)
+          => Manager () r
+          -> String
+          -> m r
+retrieve_ mgr = retrieve mgr ()
 
 lookupInsert :: (MonadIO m,MonadScoped IO m,MonadError Log m,MonadLogger m,Load opts r)
              => FilePath
