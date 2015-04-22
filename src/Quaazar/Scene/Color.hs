@@ -20,6 +20,22 @@ module Quaazar.Scene.Color (
   , colorR
   , colorG
   , colorB
+    -- * Coder-colors
+  , white
+  , black
+  , red
+  , green
+  , blue
+  , yellow
+  , magenta
+  , cyan
+    -- * Bright coder-colors
+  , brightRed
+  , brightGreen
+  , brightBlue
+  , brightYellow
+  , brightMagenta
+  , brightCyan
   ) where
 
 import Control.Lens
@@ -53,3 +69,45 @@ colorG (Color c) = c^._y
 
 colorB :: Color -> Float
 colorB (Color c) = c^._z
+
+white :: Color
+white = color 1 1 1
+
+black :: Color
+black = color 0 0 0
+
+red :: Color
+red = color 1 0 0
+
+brightRed :: Color
+brightRed = color 1 0.5 0.5
+
+green :: Color
+green = color 0 1 0
+
+brightGreen :: Color
+brightGreen = color 0.5 1 0.5
+
+blue :: Color
+blue = color 0 0 1
+
+brightBlue :: Color
+brightBlue = color 0.5 0.5 1
+
+yellow :: Color
+yellow = color 1 1 0
+
+brightYellow :: Color
+brightYellow = color 1 1 0.5
+
+magenta :: Color
+magenta = color 1 0 1
+
+brightMagenta :: Color
+brightMagenta = color 1 0.5 1
+
+cyan :: Color
+cyan = color 0 1 1
+
+brightCyan :: Color
+brightCyan = color 0.5 1 1
