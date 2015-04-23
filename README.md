@@ -25,7 +25,8 @@ start a new **quaazar** project in the current directory. It’ll create a defau
 application with a black window.
 
 The documentation is not on hackage yet since it’s not released, so consider
-building it when installing **quaazar**. It’s not complete, but it’s not empty.
+building it when installing **quaazar**. It’s not complete, but it’s not empty
+either.
 
 # About contributions…
 
