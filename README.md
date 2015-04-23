@@ -28,6 +28,14 @@ The documentation is not on hackage yet since it’s not released, so consider
 building it when installing **quaazar**. It’s not complete, but it’s not empty
 either.
 
+# For who?
+
+**quaazar** will be available on the following platforms:
+
+  - **Windows**
+  - **GNU/Linux**
+  - **Mac OSX**
+
 # About contributions…
 
 Yeah, you might find **quaazar** pretty cool. If you don’t, tell me in the face.
