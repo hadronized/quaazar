@@ -48,7 +48,7 @@ a lot of people at some times, I want everyone to be happy with it. Don’t blam
 # Versions
 
 As new versions get released, backward compatibility and legacy code will follow
-the Haskell versionning guidelines, that is:
+the Haskell versioning guidelines, that are:
 
   - a patch version number gets incremented when **quaazar** gets something fixed
     internally that doesn’t add anything nor break anything ; the changes have no
