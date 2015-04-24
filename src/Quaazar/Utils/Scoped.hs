@@ -25,6 +25,7 @@ import Control.Monad.Base ( MonadBase(..) )
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Journal ( MonadJournal )
 import Control.Monad.Reader ( MonadReader )
+import Control.Monad.State ( MonadState(..) )
 import Control.Monad.Trans
 import Control.Monad.Trans.Either ( EitherT )
 import Control.Monad.Trans.Journal ( JournalT )
@@ -58,6 +59,11 @@ deriving instance (MonadIO m) => MonadIO (IOScopedT m)
 deriving instance (MonadJournal w m,Monoid w) => MonadJournal w (IOScopedT m)
 deriving instance (MonadError e m) => MonadError e (IOScopedT m)
 deriving instance (MonadReader r m) => MonadReader r (IOScopedT m)
+instance (MonadState s m) => MonadState s (IOScopedT m) where
+  get = lift get
+  put = lift . put
+  state = lift . state
+
 deriving instance (MonadWriter w m) => MonadWriter w (IOScopedT m)
 
 instance (MonadBase IO m) => MonadScoped IO (IOScopedT m) where
