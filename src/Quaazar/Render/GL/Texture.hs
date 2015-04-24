@@ -21,9 +21,9 @@ import Foreign.Marshal.Array ( withArray )
 import Foreign.Storable ( Storable )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
-import Quaazar.System.Loader ( Load(..) )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Log ( gllog )
+import Quaazar.System.Loader ( Load(..), rootPath )
 import Quaazar.Utils.Log
 import System.FilePath ( (</>) )
 
@@ -145,14 +145,14 @@ instance IsTexture Texture2D where
 instance Load (Wrap,Filter,Maybe CompareFunc,Natural,Natural) Texture2D where
   loadRoot = const "textures"
   loadExt = const ""
-  load rootPath name (wrap,flt,cmpf,baseLvl,maxLvl) = do
+  load name (wrap,flt,cmpf,baseLvl,maxLvl) = do
       info CoreLog $ "loading texture " ++ name
       img <- liftIO . fmap (left onError) $
         readImage (rootPath </> loadRoot (undefined :: Texture2D)  </> name)
       eitherToError img >>= imageToTexture wrap flt cmpf baseLvl maxLvl
     where
       onError = Log ErrorLog CoreLog
-  eload = load ""
+  eload = load
 
 instance Unlayered Texture2D where
   setTextureStorage _ ift w h = liftIO $

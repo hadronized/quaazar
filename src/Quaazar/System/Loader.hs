@@ -16,6 +16,7 @@ module Quaazar.System.Loader (
   , load_
   , eload_
   , loadJSON
+  , rootPath
   ) where
 
 import Control.Exception ( IOException, catch )
@@ -31,14 +32,13 @@ import System.FilePath
 
 --------------------------------------------------------------------------------
 -- Loading
-
 class Load opts a | a -> opts where
   -- |Root directory for the given 'a' resource.
   loadRoot :: a -> String
   -- |Extension found at the end of the file hosting the 'a' resource.
   loadExt :: a -> String
-  -- |@load root name opts@ loads the resource 'name' by looking in the 'root'
-  -- tree. Then, @root/subroot/*.ext@ is the common search tree where 'subroot
+  -- |@load name opts@ loads the resource 'name' by looking in the 'data'
+  -- tree. Then, @data/subroot/*.ext@ is the common search tree where 'subroot
   -- refers to 'loadRoot' and 'ext' refers to 'loadExt'.
   --
   -- You may pass optional loading arguments via 'opts'.
@@ -47,15 +47,13 @@ class Load opts a | a -> opts where
   -- 'opts' == '()'.
   load :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
        => FilePath
-       -> FilePath
        -> opts
        -> m a
   default load :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m,FromJSON a)
                => FilePath
-               -> FilePath
                -> ()
                -> m a
-  load rootPath n _ = loadJSON rootPath $ resRoot </> n <.> resExt
+  load n _ = loadJSON rootPath $ resRoot </> n <.> resExt
     where
       resRoot = loadRoot (undefined :: a)
       resExt = loadExt (undefined :: a)
@@ -71,14 +69,17 @@ class Load opts a | a -> opts where
                 => FilePath
                 -> ()
                 -> m a
-  eload path _= loadJSON "" path
+  eload path _ = loadJSON "" path
+
+-- |Resources root path.
+rootPath :: FilePath
+rootPath = "./data"
 
 -- |Load without optional arguments.
 load_ :: (Load () a,MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
       => FilePath
-      -> FilePath
       -> m a
-load_ root n = load root n ()
+load_ n = load n ()
 
 -- |Explicit load without optional arguments.
 eload_ :: (Load () a,MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
@@ -94,11 +95,11 @@ loadJSON :: (MonadIO m,MonadLogger m,MonadError Log m,FromJSON a)
          => FilePath
          -> FilePath
          -> m a
-loadJSON rootPath path = do
+loadJSON root path = do
     deb CoreLog $ "parsing '" ++ path ++ "'"
     (st,r,et) <- liftIO $ do
       st <- timePoint
-      !r <- (catch (fmap eitherDecode . B.readFile $ rootPath </> path) onError)
+      !r <- (catch (fmap eitherDecode . B.readFile $ root </> path) onError)
       et <- timePoint
       return (st,r,et)
     deb CoreLog $ "parsing time: " ++ show (et - st)
