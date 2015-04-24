@@ -28,6 +28,7 @@ import Control.Monad.Reader ( MonadReader )
 import Control.Monad.Trans
 import Control.Monad.Trans.Either ( EitherT )
 import Control.Monad.Trans.Journal ( JournalT )
+import Control.Monad.Trans.Reader ( ReaderT )
 import Control.Monad.Trans.State ( StateT, modify, runStateT )
 import Control.Monad.Trans.Writer ( WriterT )
 import Control.Monad.Writer ( MonadWriter )
@@ -39,6 +40,9 @@ instance (MonadScoped b m,Monoid w) => MonadScoped b (JournalT w m) where
   scoped = lift . scoped
 
 instance (MonadScoped b m) => MonadScoped b (EitherT e m) where
+  scoped = lift . scoped
+
+instance (MonadScoped b m) => MonadScoped b (ReaderT r m) where
   scoped = lift . scoped
 
 instance (MonadScoped b m,Monoid w) => MonadScoped b (WriterT w m) where
