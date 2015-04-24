@@ -9,7 +9,14 @@
 --
 ----------------------------------------------------------------------------
 
-module Quaazar.System.Resource where
+module Quaazar.System.Resource (
+    -- * Cache and cache access
+    Cache
+  , emptyCache
+  , HasCache(..)
+    -- * Resource objects
+  , Resource(..)
+  ) where
 
 import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
