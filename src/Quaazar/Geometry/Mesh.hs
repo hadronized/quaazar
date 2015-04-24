@@ -18,8 +18,6 @@ module Quaazar.Geometry.Mesh (
     Mesh(Mesh)
   , meshVertices
   , meshVGroup
-    -- * Resource
-  , MeshManager
     -- * Re-exported modules
   , module Quaazar.Geometry.Vertex
   , module Quaazar.Geometry.VGroup
@@ -30,7 +28,6 @@ import Data.Aeson
 import Quaazar.Geometry.Vertex
 import Quaazar.Geometry.VGroup
 import Quaazar.System.Loader ( Load(..) )
-import Quaazar.System.Resource ( Manager, Resource )
 
 -- |A mesh is a pair of vertices and vertex group.
 data Mesh = Mesh {
@@ -46,8 +43,3 @@ instance FromJSON Mesh where
 instance Load () Mesh where
   loadRoot = const "meshes"
   loadExt = const "qmsh"
-
-instance Resource () Mesh
-
--- |Mesh manager.
-type MeshManager = Manager () Mesh

@@ -84,6 +84,7 @@ library
                      , MultiParamTypeClasses
                      , ScopedTypeVariables
                      , TemplateHaskell
+                     , TypeFamilies
 
   other-extensions:    BangPatterns
                      , ConstraintKinds

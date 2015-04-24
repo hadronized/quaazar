@@ -13,8 +13,6 @@ module Quaazar.Render.Mesh where
 
 import Control.Lens
 import Control.Monad.Trans ( MonadIO(..) )
-import Data.IORef ( modifyIORef, newIORef, readIORef, writeIORef )
-import Data.Map as M ( delete, empty, lookup, insert )
 import Data.Word ( Word32 )
 import Foreign.Ptr ( nullPtr )
 import Foreign.Storable ( sizeOf )
@@ -32,7 +30,6 @@ import Quaazar.Render.GL.Shader ( Uniform, (@=) )
 import Quaazar.Render.GL.VertexArray
 import Quaazar.Render.Transform ( transformMatrix )
 import Quaazar.Scene.Transform ( Transform )
-import Quaazar.System.Resource ( Manager(..), Resource(..) )
 
 data GPUMesh = GPUMesh {
     vertexBuffer :: Buffer
@@ -43,24 +40,6 @@ data GPUMesh = GPUMesh {
   }
 
 makeLenses ''GPUMesh
-
-instance Resource MeshManager GPUMesh where
-  manager _ = do
-      ref <- liftIO $ newIORef empty
-      return $ Manager (retrieve_ ref) (release_ ref)
-    where
-      retrieve_ ref mshMgr name = do
-        mp <- liftIO $ readIORef ref
-        case M.lookup name mp of
-          Just r -> return r
-          Nothing -> do
-            msh <- retrieve mshMgr () name
-            r <- gpuMesh msh
-            liftIO . writeIORef ref $ insert name r mp
-            return r
-      release_ ref name = liftIO . modifyIORef ref $ delete name
-      
-type GPUMeshManager = Manager MeshManager GPUMesh
 
 -- |OpenGL 'Mesh' representation.
 gpuMesh :: (MonadScoped IO m,MonadIO m) => Mesh -> m GPUMesh

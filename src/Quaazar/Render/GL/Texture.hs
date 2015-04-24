@@ -22,7 +22,6 @@ import Foreign.Storable ( Storable )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Quaazar.System.Loader ( Load(..) )
-import Quaazar.System.Resource ( Manager, Resource )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Log ( gllog )
 import Quaazar.Utils.Log
@@ -154,10 +153,6 @@ instance Load (Wrap,Filter,Maybe CompareFunc,Natural,Natural) Texture2D where
     where
       onError = Log ErrorLog CoreLog
   eload = load ""
-
-instance Resource (Wrap,Filter,Maybe CompareFunc,Natural,Natural) Texture2D
-
-type Texture2DManager = Manager (Wrap,Filter,Maybe CompareFunc,Natural,Natural) Texture2D
 
 instance Unlayered Texture2D where
   setTextureStorage _ ift w h = liftIO $

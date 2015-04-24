@@ -1,5 +1,3 @@
-{-# LANGUAGE ExistentialQuantification, RankNTypes #-}
-
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   : (C) 2015 Dimitri Sabadie
@@ -12,59 +10,71 @@
 ----------------------------------------------------------------------------
 
 module Quaazar.System.Resource (
-    -- * Resource manager
-    Manager(Manager)
-  , Resource(..)
-    -- * Retrieving and releasing resources
-  , retrieve
-  , retrieve_
-  , release
-    -- * Miscellaneous
-  , lookupInsert
   ) where
 
+import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
-import Control.Monad.Trans ( MonadIO(..) )
-import Data.IORef ( modifyIORef, newIORef, readIORef, writeIORef )
-import Data.Map as M ( Map, delete, empty, insert, lookup )
-import Quaazar.System.Loader ( Load(load) )
+import Control.Monad.Trans ( MonadIO(..) ) 
+import Control.Monad.Trans.State ( StateT, get, modify, put )
+import Data.Map as M ( Map, empty, insert, lookup )
+import Quaazar.Geometry.Mesh ( Mesh )
+import Quaazar.Render.GL.Texture ( Texture2D )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
-data Manager dep r = Manager {
-    retrieve :: forall m. (Applicative m,MonadIO m,MonadScoped IO m,MonadError Log m,MonadLogger m) => dep -> String -> m r
-  , release :: forall m. (MonadIO m) => String -> m ()
-  }
+--------------------------------------------------------------------------------
+-- Cache
+data Cache = Cache {
+    _cachedMeshes :: Map String Mesh
+  , _cachedTexture2Ds :: Map String Texture2D
+  } deriving (Eq,Show)
 
-class Resource dep r | r -> dep where
-  manager :: (MonadIO m) => FilePath -> m (Manager dep r)
-  default manager :: (MonadIO m,Load dep r) => FilePath -> m (Manager dep r)
-  manager root = do
-      ref <- liftIO $ newIORef empty
-      return $ Manager (rtrv ref) (release_ ref)
-    where
-      rtrv ref dep name = do
-        mp <- liftIO $ readIORef ref
-        (mp',r) <- lookupInsert root dep mp name
-        liftIO $ writeIORef ref mp'
-        return r
-      release_ ref name = liftIO . modifyIORef ref $ delete name
+makeLenses ''Cache
 
--- |Retrieve with no argument.
-retrieve_ :: (Applicative m,MonadIO m,MonadScoped IO m,MonadError Log m,MonadLogger m)
-          => Manager () r
-          -> String
-          -> m r
-retrieve_ mgr = retrieve mgr ()
+class (Monad m) => HasCache m where
+  getCache    :: m Cache
+  modifyCache :: (Cache -> Cache) -> m ()
+  putCache    :: Cache -> m ()
 
-lookupInsert :: (MonadIO m,MonadScoped IO m,MonadError Log m,MonadLogger m,Load opts r)
-             => FilePath
-             -> opts
-             -> Map String r
-             -> String
-             -> m (Map String r,r)
-lookupInsert root opts mp key = case M.lookup key mp of
-  Just res -> return (mp,res) -- resource already in cache 
-  Nothing -> do -- resource not in cache; load it
-    res <- load root key opts
-    return (insert key res mp,res)
+
+instance (Monad m) => HasCache (StateT Cache m) where
+  getCache = get
+  modifyCache = modify
+  putCache = put
+
+emptyCache :: Cache
+emptyCache = Cache empty empty
+
+--------------------------------------------------------------------------------
+-- Resource
+class Resource r where
+  type Opt r :: *
+  retrieve :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m,HasCache m)
+           => String
+           -> Opt r 
+           -> m r
+
+{-
+instance Resource Mesh where
+  type Opt Mesh = ()
+  retrieve name _ = do
+    found <- fmap (M.lookup name . view cachedMeshes) getCache
+    case found of
+      Just m -> pure m
+      Nothing -> do
+        loaded <- fmap Mesh $ liftIO getLine
+        modifyCache $ cachedMeshes . at name .~ Just loaded
+        pure loaded
+-}
+{-
+instance Resource Texture where
+  type Opt Texture = ()
+  retrieve name _ = do
+    found <- fmap (M.lookup name . view cachedTextures) getCache
+    case found of
+      Just m -> pure m
+      Nothing -> do
+        loaded <- fmap Texture $ liftIO getLine
+        modifyCache $ cachedTextures . at name .~ Just loaded
+        pure loaded
+-}

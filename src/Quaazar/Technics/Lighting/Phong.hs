@@ -16,16 +16,12 @@ module Quaazar.Technics.Lighting.Phong where
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Data.Aeson
-import Data.IORef ( modifyIORef, newIORef, readIORef, writeIORef )
-import Data.Map as M ( delete, empty, insert, lookup )
 import Numeric.Natural ( Natural )
 import Quaazar.Render.GL.Shader ( Program', ($=), buildProgram
                                 , uniform )
-import Quaazar.Render.GL.Texture ( CompareFunc, Filter, Texture2D
-                                 , Texture2DManager, Unit(..), Wrap )
+import Quaazar.Render.GL.Texture ( Texture2D, Unit(..) )
 import Quaazar.Render.GLSL
 import Quaazar.System.Loader
-import Quaazar.System.Resource ( Manager(..), Resource(..) )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
@@ -47,28 +43,6 @@ instance FromJSON PhongMaterialManifest where
 instance Load () PhongMaterialManifest where
   loadRoot = const "materials"
   loadExt = const "qmat"
-
-instance Resource (Texture2DManager,Wrap,Filter,Maybe CompareFunc,Natural,Natural) PhongMaterial where
-  manager root = do
-      ref <- liftIO $ newIORef empty
-      return $ Manager (retrieve_ ref) (release_ ref)
-    where
-      retrieve_ ref (texMgr,wrap,flt,cmpf,baseLvl,maxLvl) name = do
-        mp <- liftIO $ readIORef ref
-        case M.lookup name mp of
-          Just mat -> return mat
-          Nothing -> do
-            mat <- do
-              PhongMaterialManifest dp sp gp <- load_ root name
-              PhongMaterial
-                <$> retrieve texMgr (wrap,flt,cmpf,baseLvl,maxLvl) dp
-                <*> retrieve texMgr (wrap,flt,cmpf,baseLvl,maxLvl) sp
-                <*> retrieve texMgr (wrap,flt,cmpf,baseLvl,maxLvl) gp
-            liftIO . writeIORef ref $ insert name mat mp
-            return mat
-      release_ ref name = liftIO . modifyIORef ref $ delete name
-
-type PhongMaterialManager = Manager (Texture2DManager,Wrap,Filter,Maybe CompareFunc,Natural,Natural) PhongMaterial
 
 phong :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
       => m (Program' PhongMaterial)
