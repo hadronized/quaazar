@@ -61,7 +61,7 @@ renderLayer :: Instance Projection
 renderLayer cam vp ambient omnis models =
   RenderLayer $ \fb omniBuffer shadowsConf -> do
     let Ambient ligAmbCol ligAmbPow = ambient
-    (omnisWithShadows,bindShadowmaps_) <- case shadowsConf of
+    (omnisWithShadows,maybeBindShadowmaps_) <- case shadowsConf of
       Just (conf,shdws) -> do 
         let
           omnisWithShadows = flip evalState (0,0,0) $ mapM (addShadowInfo_ lmax mmax hmax) omnis
@@ -81,7 +81,7 @@ renderLayer cam vp ambient omnis models =
       ligAmbColUniform @= ligAmbCol
       ligAmbPowUniform @= ligAmbPow
       pushOmnis omnisWithShadows omniBuffer
-      bindShadowmaps_
+      maybeBindShadowmaps_
   where
     addShadowInfo_ lmax mmax hmax inst = do
       let
