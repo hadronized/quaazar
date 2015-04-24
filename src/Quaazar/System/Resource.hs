@@ -39,9 +39,16 @@ data Cache = Cache {
 
 makeLenses ''Cache
 
+-- |'HasCache m' constraints 'm' to expose three functions to deal with 'Cache'
+-- in 'm'. It’s some kind of 'MonadState', but is more general in that it can
+-- be implemented via 'MonadState' or any kind of monad that implements the
+-- three functions.
 class (Monad m) => HasCache m where
+  -- |Get the 'Cache'.
   getCache    :: m Cache
+  -- |Modify the 'Cache'.
   modifyCache :: (Cache -> Cache) -> m ()
+  -- |Replace the 'Cache'.
   putCache    :: Cache -> m ()
 
 instance (Monad m) => HasCache (StateT Cache m) where
@@ -49,13 +56,28 @@ instance (Monad m) => HasCache (StateT Cache m) where
   modifyCache = modify
   putCache = put
 
+-- |Empty cache.
 emptyCache :: Cache
 emptyCache = Cache empty empty empty empty empty
 
 --------------------------------------------------------------------------------
 -- Resource
+
+-- |An object than can be handled through the 'Cache' is a @Resource r@. It’s
+-- composed of two important parts:
+--
+--   - @Opt r@: type family associated with @Resource r@, it exports the
+--     options to pass to the loader to actually get the object and store it in
+--     the cache. If no specific option is required, @Opt r@ should default to
+--     '()' ;
+--   - 'retrieve', the function to retrieve an object from the 'Cache'.
 class Resource r where
+  -- |Associated loading options. You should use '()' if you don’t need any
+  -- options.
   type Opt r :: *
+  -- |'retrieve name opt' retrieves an object resource called 'name' from the
+  -- 'Cache' by using the 'opt' loading options. In order to use 'retrieve',
+  -- the monad 'm' should implement 'HasCache'.
   retrieve :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m,HasCache m)
            => String
            -> Opt r 
