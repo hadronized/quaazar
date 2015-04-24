@@ -45,6 +45,9 @@ instance (MonadScoped b m) => MonadScoped b (EitherT e m) where
 instance (MonadScoped b m) => MonadScoped b (ReaderT r m) where
   scoped = lift . scoped
 
+instance (MonadScoped b m) => MonadScoped b (StateT r m) where
+  scoped = lift . scoped
+
 instance (MonadScoped b m,Monoid w) => MonadScoped b (WriterT w m) where
   scoped = lift . scoped
 
