@@ -1,3 +1,0 @@
-[submodule "clock"]
-	path = clock
-	url = git@github.com:phaazon/clock.git
