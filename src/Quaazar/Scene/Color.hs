@@ -49,7 +49,7 @@ import Linear.V3
 --   - *red*
 --   - *green*
 --   - *blue*
-newtype Color = Color { unColor :: V3 Float } deriving (Eq,Ord,Show,Storable)
+newtype Color = Color { unColor :: V3 Float } deriving (Floating,Fractional,Eq,Num,Ord,Show,Storable)
 
 instance FromJSON Color where
   parseJSON v = do

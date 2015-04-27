@@ -29,10 +29,9 @@ module Quaazar.Lighting.Light (
   ) where
 
 import Data.Aeson
-import Data.Monoid ( Monoid(..) )
 import Data.Semigroup ( Semigroup(..) )
 import Quaazar.Lighting.Shadow
-import Quaazar.Scene.Color ( Color )
+import Quaazar.Scene.Color ( Color, color )
 import Quaazar.System.Loader ( Load(..) )
 
 -- |'Ambient col pow' is the ambient lighting of
