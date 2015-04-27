@@ -16,6 +16,7 @@ module Quaazar.System.Resource (
   , HasCache(..)
     -- * Resource objects
   , Resource(..)
+  , retrieve_
   ) where
 
 import Control.Lens
@@ -89,6 +90,13 @@ class Resource r where
            => String
            -> Opt r 
            -> m r
+
+-- |If your 'r' resource type has no option (i.e. @Opt r = ()@), you can use
+-- 'retrieve_' without passing a dummy '()'.
+retrieve_ :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m,HasCache m,Resource r,Opt r ~ ())
+          => String
+          -> m r
+retrieve_ name = retrieve name ()
 
 instance Resource Mesh where
   type Opt Mesh = ()
