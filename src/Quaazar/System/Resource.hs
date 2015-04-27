@@ -116,7 +116,7 @@ instance Resource GPUMesh where
     case found of
       Just m -> pure m
       Nothing -> do
-        gmsh <- retrieve name () >>= gpuMesh
+        gmsh <- retrieve_ name >>= gpuMesh
         modifyCache $ cachedGPUMeshes . at name .~ Just gmsh
         pure gmsh
 
@@ -156,4 +156,3 @@ instance Resource PhongMaterial where
         let mat = PhongMaterial diffTex specTex glossTex
         modifyCache $ cachedPhongMaterials . at name .~ Just mat 
         pure mat
-
