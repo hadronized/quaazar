@@ -41,6 +41,7 @@ module Quaazar.Scene.Color (
 import Control.Lens
 import Data.Aeson
 import Data.Aeson.Types ( typeMismatch )
+import Data.Monoid ( Monoid(..) )
 import Data.Semigroup ( Semigroup(..) )
 import Foreign.Storable ( Storable )
 import Linear.V3
@@ -58,6 +59,10 @@ instance FromJSON Color where
     case a' of
       [r,g,b] -> return (color r g b)
       _         -> typeMismatch "color" v
+
+instance Monoid Color where
+  mempty = color 1 1 1
+  mappend = (<>)
 
 instance Semigroup Color where
   Color a <> Color b = Color $ a * b
