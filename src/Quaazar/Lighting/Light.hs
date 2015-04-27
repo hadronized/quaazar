@@ -29,6 +29,7 @@ module Quaazar.Lighting.Light (
   ) where
 
 import Data.Aeson
+import Data.Semigroup ( Semigroup(..) )
 import Quaazar.Lighting.Shadow
 import Quaazar.Scene.Color ( Color )
 import Quaazar.System.Loader ( Load(..) )
@@ -62,6 +63,9 @@ instance Load () Ambient where
   loadRoot = const "lights"
   loadExt = const "ylig"
 
+instance Semigroup Ambient where
+  Ambient ca pa <> Ambient cb pb = Ambient (ca <> cb) (pa * pb)
+  
 -- |'Omni col pow rad shadowLOD' is an omnidirectional light.
 --
 -- 'shadowLOD' is an object of type @Maybe ShadowLOD@. Feel free to read
