@@ -35,7 +35,7 @@ import Prelude hiding ( (.), id )
 
 newtype Compositor a b = Compositor {
     runCompositor :: VertexArray -- attribute-less vertex array
-                  -> Buffer -- ^ lighting buffer -- FIXME
+                  -> Buffer -- lighting buffer -- FIXME
                   -> Maybe (ShadowConf,Shadows) -- FIXME
                   -> a
                   -> IO b
