@@ -29,6 +29,7 @@ module Quaazar.Lighting.Light (
   ) where
 
 import Data.Aeson
+import Data.Monoid ( Monoid(..) )
 import Data.Semigroup ( Semigroup(..) )
 import Quaazar.Lighting.Shadow
 import Quaazar.Scene.Color ( Color )
@@ -62,6 +63,10 @@ instance FromJSON Ambient where
 instance Load () Ambient where
   loadRoot = const "lights"
   loadExt = const "ylig"
+
+instance Monoid Ambient where
+  mempty = Ambient mempty 1
+  mappend = (<>)
 
 instance Semigroup Ambient where
   Ambient ca pa <> Ambient cb pb = Ambient (ca <> cb) (pa * pb)
