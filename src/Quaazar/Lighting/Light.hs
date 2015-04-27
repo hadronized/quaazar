@@ -65,11 +65,11 @@ instance Load () Ambient where
   loadExt = const "ylig"
 
 instance Monoid Ambient where
-  mempty = Ambient mempty 1
+  mempty = Ambient (color 0 0 0) 0
   mappend = (<>)
 
 instance Semigroup Ambient where
-  Ambient ca pa <> Ambient cb pb = Ambient (ca <> cb) (pa * pb)
+  Ambient ca pa <> Ambient cb pb = Ambient (ca + cb) (pa + pb)
   
 -- |'Omni col pow rad shadowLOD' is an omnidirectional light.
 --
