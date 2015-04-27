@@ -21,6 +21,13 @@ import Quaazar.Scene.Hierarchy ( Instance(..) )
 import Quaazar.Scene.Transform ( transformPosition )
 
 data GPUCamera = GPUCamera {
+    -- |@runCamera pv pv1 eye@ send the camera to the GPU using uniforms.
+    --
+    -- 'pv' is a uniform for the /projection * view/.
+    --
+    -- 'pv1' is a uniform for the inverse of /projection * view/.
+    --
+    -- 'eye' is a uniform for the /position of the camera/.
     runCamera :: Uniform (M44 Float) -- ^ projection * view
               -> Uniform (M44 Float) -- ^ (projection * view)-1
               -> Uniform (V3 Float) -- ^ eye
