@@ -28,9 +28,9 @@ data GPUCamera = GPUCamera {
     -- 'pv1' is a uniform for the inverse of /projection * view/.
     --
     -- 'eye' is a uniform for the /position of the camera/.
-    runCamera :: Uniform (M44 Float) -- ^ projection * view
-              -> Uniform (M44 Float) -- ^ (projection * view)-1
-              -> Uniform (V3 Float) -- ^ eye
+    runCamera :: Uniform (M44 Float)
+              -> Uniform (M44 Float)
+              -> Uniform (V3 Float)
               -> IO ()
   , cameraProjection :: M44 Float
   }
