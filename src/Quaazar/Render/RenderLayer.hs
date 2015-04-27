@@ -41,9 +41,9 @@ import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
 newtype RenderLayer = RenderLayer {
-    unRenderLayer :: Framebuffer                -- ^ lighting framebuffer
-                  -> Buffer                     -- ^ omni light buffer
-                  -> Maybe (ShadowConf,Shadows) -- ^ shadows configuration
+    unRenderLayer :: Framebuffer                -- lighting framebuffer
+                  -> Buffer                     -- omni light buffer
+                  -> Maybe (ShadowConf,Shadows) -- shadows configuration
                   -> IO ()
   }
 
