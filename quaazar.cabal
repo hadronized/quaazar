@@ -23,6 +23,7 @@ library
 
   exposed-modules:     Quaazar
                      , Quaazar.Control
+                     , Quaazar.Control.Constraint
                      , Quaazar.Control.Monad
                      , Quaazar.Geometry
                      , Quaazar.Geometry.Mesh

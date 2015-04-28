@@ -10,7 +10,9 @@
 ----------------------------------------------------------------------------
 
 module Quaazar.Control (
-    module Quaazar.Control.Monad
+    module Quaazar.Control.Constraint
+  , module Quaazar.Control.Monad
   ) where
 
+import Quaazar.Control.Constraint
 import Quaazar.Control.Monad
