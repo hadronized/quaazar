@@ -44,9 +44,9 @@ instance Load () PhongMaterialManifest where
   loadRoot = const "materials"
   loadExt = const "qmat"
 
-phong :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
-      => m (Program' PhongMaterial)
-phong = do
+getPhong :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
+         => m (Program' PhongMaterial)
+getPhong = do
     prog <- buildProgram phongVS Nothing Nothing phongFS
     return (prog,semantics)
   where
