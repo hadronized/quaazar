@@ -28,6 +28,8 @@ shaderTemplate name = unlines
   , replicate 79 '-'
   , "module " ++ name ++ " where"
   , ""
+  , "import Quaazar.Render.GLSL"
+  , ""
   , "shaderStage :: String"
   , "shaderStage = unlines"
   , "  ["
