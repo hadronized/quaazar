@@ -58,7 +58,7 @@ class QuaazarMeshExporter(bpy.types.Operator, ExportHelper):
       print("E: no mesh selected")
     else:
       if self.yUp:
-        print("I: '" + msh.name + "' requires to flip the 3D frame to align the Y as up"
+        print("I: '" + msh.name + "' requires to flip the 3D frame to align the Y as up")
         bpy.ops.transform.rotate(value=-pi/2, axis=(1,0,0))
       msh = o.data
       if not hasOnlyTris(msh):
