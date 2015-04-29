@@ -167,7 +167,7 @@ phongFS = unlines
   , "    vec3 ligDir = normalize(ligToVertex);"
   , "    float distToLight = length(ligToVertex);"
   , "    vec3 r = normalize(reflect(-ligDir,vno));"
-  , "    vec3 spec = pow(max(0.,dot(r,v)), 1. + phongGloss * 1000.) * ligCol * phongSpec;"
+  , "    vec3 spec = pow(max(0.,dot(r,v)), 1. + phongGloss * 512.) * ligCol * phongSpec;"
   , "    vec3 diff = max(0.,dot(vno,ligDir)) * (ligCol - spec) * phongDiff;"
   , "    float atten = ligPow / (pow(1. + distToLight/ligRad,2.));"
          -- shadowing
