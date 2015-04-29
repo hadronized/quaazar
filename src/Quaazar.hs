@@ -89,6 +89,8 @@ initGL = do
   glEnable gl_DEPTH_TEST
   glEnable gl_TEXTURE_CUBE_MAP_SEAMLESS
   glEnable gl_FRAMEBUFFER_SRGB
+  glEnable gl_CULL_FACE
+  glCullFace gl_FRONT
   glClearColor 0 0 0 0
 
 setWindowTitle :: Window -> String -> IO ()
