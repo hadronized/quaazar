@@ -60,7 +60,7 @@ class QuaazarMeshExporter(bpy.types.Operator, ExportHelper):
     else:
       msh = o.data
       if self.yUp:
-        biasMatrix = mathutils.Matrix.Rotation(-pi/2, 3, 'X')
+        biasMatrix = mathutils.Matrix.Rotation(pi/2, 3, 'X')
       else:
         biasMatrix = mathutils.Matrix.Identity(3)
       if not hasOnlyTris(msh):
