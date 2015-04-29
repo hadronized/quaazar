@@ -15,6 +15,7 @@ bl_info = {
 }
 
 import bpy
+import mathutils
 from bpy_extras.io_utils import ExportHelper
 from bpy.props import BoolProperty
 from math import pi
@@ -58,19 +59,18 @@ class QuaazarMeshExporter(bpy.types.Operator, ExportHelper):
       print("E: no mesh selected")
     else:
       msh = o.data
-      if self.yUp:
-        print("I: '" + msh.name + "' requires to flip the 3D frame to align the Y as up")
-        bpy.ops.transform.rotate(value=-pi/2, axis=(1,0,0))
+      if yUp:
+        biasMatrix = mathutils.Matrix.Rotation(-pi/2, 3, 'X')
+      else:
+        biasMatrix = mathutils.Matrix.Identity(3)
       if not hasOnlyTris(msh):
         print("W: '" + msh.name + "' is not elegible to export, please convert quadrangles to triangles")
       else:
         print("I: exporting '" + msh.name + "'")
-        phmsh = toQuaazarMesh(msh, self.smoothNormals)
+        phmsh = toQuaazarMesh(msh, self.smoothNormals, biasMatrix)
         fp = open(self.filepath, "w")
         fp.write(phmsh.toJSON(self.sparse))
         fp.close()
-    if self.yUp:
-      bpy.ops.transform.rotate(value=pi/2, axis=(1,0,0))
     print("-- ----------------------- --")
     return {'FINISHED'}
 
@@ -101,8 +101,10 @@ def hasOnlyTris(msh):
   return True
 
 # Build a vertex.
-def createVertex(msh, vertID, triID, loopID, smoothNormals):
-  co = list(msh.vertices[vertID].co)
+def createVertex(msh, vertID, triID, loopID, smoothNormals, biasMatrix):
+  co = list(msh.vertices[vertID].co.rotate(biasMatrix))
+  if yUp:
+    # bpy.ops.transform.rotate(value=-pi/2, axis=(1,0,0))
 
   if smoothNormals:
     no = list(msh.vertices[vertID].normal)
@@ -135,7 +137,7 @@ def recordVertex(vertices, indices, vert):
 
   return vid
   
-def toQuaazarMesh(msh, smoothNormals):
+def toQuaazarMesh(msh, smoothNormals, biasMatrix):
   tris = msh.polygons
   vertices = []
   indices = []
@@ -144,9 +146,9 @@ def toQuaazarMesh(msh, smoothNormals):
     triID = tri.index
     loopIDs = list(tri.loop_indices)
     [a,b,c] = tri.vertices
-    a_ = createVertex(msh, a, triID, loopIDs[0], smoothNormals)
-    b_ = createVertex(msh, b, triID, loopIDs[1], smoothNormals)
-    c_ = createVertex(msh, c, triID, loopIDs[2], smoothNormals)
+    a_ = createVertex(msh, a, triID, loopIDs[0], smoothNormals, biasMatrix)
+    b_ = createVertex(msh, b, triID, loopIDs[1], smoothNormals, biasMatrix)
+    c_ = createVertex(msh, c, triID, loopIDs[2], smoothNormals, biasMatrix)
       
     aID = recordVertex(vertices, indices, a_)
     bID = recordVertex(vertices, indices, b_)
