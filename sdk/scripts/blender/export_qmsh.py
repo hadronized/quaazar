@@ -102,18 +102,23 @@ def hasOnlyTris(msh):
 
 # Build a vertex.
 def createVertex(msh, vertID, triID, loopID, smoothNormals, biasMatrix):
+  # position
   co = msh.vertices[vertID].co.copy()
   co.rotate(biasMatrix)
   co = list(co)
 
+  # normal
   if smoothNormals:
-    no = list(msh.vertices[vertID].normal)
+    no = msh.vertices[vertID].normal.copy()
   else:
-    no = list(msh.polygons[triID].normal)
+    no = msh.polygons[triID].normal.copy()
+  no.rotate(mathutils.Matrix.transposed(mathutils.Matrix.inverted(biasMatrix)))
+  no = list(no)
 
+  # uv
   uv_layers = msh.uv_layers
   if len(uv_layers) == 1:
-    uv = list(uv_layers[0].data[loopID].uv)
+    uv = list(uv_layers[0].data[loopID].uv.copy())
     uv[1] = 1 - uv[1]
   else:
     uv = []
