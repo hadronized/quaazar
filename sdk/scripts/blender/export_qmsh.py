@@ -102,7 +102,7 @@ def hasOnlyTris(msh):
 
 # Build a vertex.
 def createVertex(msh, vertID, triID, loopID, smoothNormals, biasMatrix):
-  co = msh.vertices[vertID].co
+  co = msh.vertices[vertID].co.copy()
   co.rotate(biasMatrix)
   co = list(co)
 
