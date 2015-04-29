@@ -35,8 +35,8 @@ data Vertex = Vertex {
     _vertexPosition :: Position
     -- |Normal.
   , _vertexNormal   :: Normal
-    -- |UV channels.
-  , _vertexUVChans  :: [UV]
+    -- |UV channel.
+  , _vertexUVChans  :: UV
   } deriving (Eq,Ord,Show)
 
 instance FromJSON Vertex where
@@ -57,7 +57,7 @@ makeLenses ''Vertex
 --     pack them in specific lists
 data Vertices
   = Interleaved [Vertex]
-  | Deinterleaved Natural [Position] [Normal] [[UV]]
+  | Deinterleaved Natural [Position] [Normal] [UV]
     deriving (Eq,Show)
 
 instance FromJSON Vertices where

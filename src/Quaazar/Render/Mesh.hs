@@ -18,7 +18,6 @@ import Foreign.Ptr ( nullPtr )
 import Foreign.Storable ( sizeOf )
 import Linear ( M44, V2, V3 )
 import Graphics.Rendering.OpenGL.Raw
-import Numeric.Natural ( Natural )
 import Quaazar.Geometry.Mesh hiding ( Line, Triangle )
 import Quaazar.Geometry.Normal
 import Quaazar.Geometry.Position
@@ -27,6 +26,7 @@ import Quaazar.Render.GL.Buffer
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Primitive
 import Quaazar.Render.GL.Shader ( Uniform, (@=) )
+import Quaazar.Render.GLSL
 import Quaazar.Render.GL.VertexArray
 import Quaazar.Render.Transform ( transformMatrix )
 import Quaazar.Scene.Transform ( Transform )
@@ -54,14 +54,13 @@ gpuMesh msh = case msh^.meshVertices of
         vbytes      = posBytes + normalBytes + uvsBytes
         posBytes    = fromIntegral vnb * sizeOf (undefined :: V3 Float)
         normalBytes = fromIntegral vnb * sizeOf (undefined :: V3 Float)
-        uvsBytes    = fromIntegral vnb * uvnb * sizeOf (undefined :: V2 Float)
-        uvnb        = if null uvs then 0 else length (head uvs)
+        uvsBytes    = fromIntegral vnb * sizeOf (undefined :: V2 Float)
 
       bindBuffer vb ArrayBuffer
       initBuffer ArrayBuffer (fromIntegral vbytes)
       bufferSubData ArrayBuffer 0 (fromIntegral posBytes) (map unPosition positions)
       bufferSubData ArrayBuffer posBytes (fromIntegral normalBytes) (map unNormal normals)
-      bufferSubData ArrayBuffer (fromIntegral $ posBytes + normalBytes) (fromIntegral uvsBytes) (concatMap (map unUV) uvs)
+      bufferSubData ArrayBuffer (fromIntegral $ posBytes + normalBytes) (fromIntegral uvsBytes) (map unUV uvs)
       unbindBuffer ArrayBuffer
 
       -- IBO
@@ -77,14 +76,14 @@ gpuMesh msh = case msh^.meshVertices of
       bindBuffer vb ArrayBuffer
 
       -- position
-      enableVertexAttrib (fromIntegral positionAttribute)
-      vertexAttribPointer (fromIntegral positionAttribute) 3 Floats False 0
+      enableVertexAttrib (fromIntegral coInput)
+      vertexAttribPointer (fromIntegral coInput) 3 Floats False 0
       -- normal
-      enableVertexAttrib (fromIntegral normalAttribute)
-      vertexAttribPointer (fromIntegral normalAttribute) 3 Floats True posBytes
-      -- uv 0 -- TODO: support all uvchans
-      enableVertexAttrib (fromIntegral uv0Attribute)
-      vertexAttribPointer (fromIntegral uv0Attribute) 2 Floats True (posBytes + normalBytes)
+      enableVertexAttrib (fromIntegral noInput)
+      vertexAttribPointer (fromIntegral noInput) 3 Floats True posBytes
+
+      enableVertexAttrib (fromIntegral uvInput)
+      vertexAttribPointer (fromIntegral uvInput) 2 Floats True (posBytes + normalBytes)
 
       unbindBuffer ArrayBuffer
 
@@ -93,8 +92,8 @@ gpuMesh msh = case msh^.meshVertices of
 
       unbindBuffer IndexBuffer
 
-      return . GPUMesh vb ib $ \modelSem trsf -> do
-        modelSem @= transformMatrix trsf
+      return . GPUMesh vb ib $ \model trsf -> do
+        model @= transformMatrix trsf
         bindVertexArray va
         glDrawElements (fromPrimitive prim) (fromIntegral verticesNb) gl_UNSIGNED_INT nullPtr
   where
@@ -109,12 +108,3 @@ toGLPrimitive vg = case vg of
     Triangles{}  -> Triangle
     SLines{}     -> SLine
     STriangles{} -> STriangle
-
-positionAttribute :: Natural
-positionAttribute = 0
-
-normalAttribute :: Natural
-normalAttribute = 1
-
-uv0Attribute :: Natural
-uv0Attribute = 2

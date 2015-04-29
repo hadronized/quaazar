@@ -32,7 +32,7 @@ instance FromJSON UV where
   parseJSON v' = do
     a <- parseJSON v'
     case a of
-      [[u,v]] -> return (uv u v)
+      [u,v] -> return (uv u v)
       _     -> typeMismatch "uv" v'
 
 -- |Build a 'UV' with /u/ and /v/ components.
