@@ -59,7 +59,7 @@ class QuaazarMeshExporter(bpy.types.Operator, ExportHelper):
       print("E: no mesh selected")
     else:
       msh = o.data
-      if yUp:
+      if self.yUp:
         biasMatrix = mathutils.Matrix.Rotation(-pi/2, 3, 'X')
       else:
         biasMatrix = mathutils.Matrix.Identity(3)
