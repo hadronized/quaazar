@@ -112,7 +112,7 @@ def createVertex(msh, vertID, triID, loopID, smoothNormals, biasMatrix):
     no = msh.vertices[vertID].normal.copy()
   else:
     no = msh.polygons[triID].normal.copy()
-  no.rotate(mathutils.Matrix.transposed(mathutils.Matrix.inverted(biasMatrix)))
+  no.rotate(biasMatrix)
   no = list(no)
 
   # uv
