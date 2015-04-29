@@ -58,7 +58,7 @@ class QuaazarMeshExporter(bpy.types.Operator, ExportHelper):
       print("E: no mesh selected")
     else:
       if self.yUp:
-        bpy.ops.transform.rotate(value=pi/2, axis=(1,0,0))
+        bpy.ops.transform.rotate(value=-pi/2, axis=(1,0,0))
       msh = o.data
       if not hasOnlyTris(msh):
         print("W: '" + msh.name + "' is not elegible to export, please convert quadrangles to triangles")
@@ -69,7 +69,7 @@ class QuaazarMeshExporter(bpy.types.Operator, ExportHelper):
         fp.write(phmsh.toJSON(self.sparse))
         fp.close()
     if self.yUp:
-      bpy.ops.transform.rotate(value=-pi/2, axis=(1,0,0))
+      bpy.ops.transform.rotate(value=pi/2, axis=(1,0,0))
     print("-- ----------------------- --")
     return {'FINISHED'}
 
