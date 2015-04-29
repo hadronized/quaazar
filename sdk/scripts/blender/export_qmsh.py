@@ -115,7 +115,7 @@ def createVertex(msh, vertID, triID, loopID, smoothNormals):
   else:
     uv = []
 
-  return [co,no,[uv]]
+  return [co,no,uv]
 
 # Look for a vertex. If it exists, return its ID. Otherwise, return None.
 def lookupVertex(vertices, vert):
