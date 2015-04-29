@@ -57,10 +57,10 @@ class QuaazarMeshExporter(bpy.types.Operator, ExportHelper):
     if o == None:
       print("E: no mesh selected")
     else:
+      msh = o.data
       if self.yUp:
         print("I: '" + msh.name + "' requires to flip the 3D frame to align the Y as up")
         bpy.ops.transform.rotate(value=-pi/2, axis=(1,0,0))
-      msh = o.data
       if not hasOnlyTris(msh):
         print("W: '" + msh.name + "' is not elegible to export, please convert quadrangles to triangles")
       else:
