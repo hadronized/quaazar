@@ -33,6 +33,7 @@ module Quaazar.Scene.Transform (
   , zAxis
     -- * Combinators
   , noScale
+  , uniScale
   , move
   , position
   , orient
@@ -103,6 +104,10 @@ zAxis = V3 0 0 1
 -- |No scale.
 noScale :: Scale
 noScale = Scale 1 1 1
+
+-- |Uniform scale.
+uniScale :: Float -> Scale
+uniScale s = Scale s s s
 
 -- |Accumulate a transform’s position with another.
 move :: Dir -> Transform -> Transform
