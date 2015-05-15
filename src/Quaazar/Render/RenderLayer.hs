@@ -18,7 +18,7 @@ import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.State ( evalState )
 import Control.Monad.Trans ( MonadIO )
 import Data.Bits ( (.|.) )
-import Data.Foldable ( for_, traverse_ )
+import Data.Foldable ( traverse_ )
 import Graphics.Rendering.OpenGL.Raw
 import Quaazar.Lighting.Light
 import Quaazar.Render.Camera ( GPUCamera(..), gpuCamera )
@@ -47,18 +47,14 @@ newtype RenderLayer = RenderLayer {
                   -> IO ()
   }
 
-data GPUModelGroup = forall mat. GPUModelGroup (Program' mat) [Instance (GPUMesh,mat)]
-
-modelGroup :: Program' mat -> [Instance (GPUMesh,mat)] -> GPUModelGroup
-modelGroup = GPUModelGroup
-
 renderLayer :: Instance Projection
             -> Viewport
             -> Ambient
             -> [Instance Omni]
-            -> [GPUModelGroup]
+            -> Program' mat
+            -> [Instance (GPUMesh,mat)]
             -> RenderLayer
-renderLayer cam vp ambient omnis models =
+renderLayer cam vp ambient omnis shader models =
   RenderLayer $ \fb omniBuffer shadowsConf -> do
     let Ambient ligAmbCol ligAmbPow = ambient
     (omnisWithShadows,maybeBindShadowmaps_) <- case shadowsConf of
@@ -76,7 +72,7 @@ renderLayer cam vp ambient omnis models =
     setViewport vp
     glClearColor 0 0 0 0
     glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
-    for_ models $ \group -> renderModelGroup group $ do
+    renderModels shader models $ do
       runCamera (gpuCamera cam) camProjViewUniform unused eyeUniform
       ligAmbColUniform @= ligAmbCol
       ligAmbPowUniform @= ligAmbPow
@@ -94,10 +90,8 @@ renderLayer cam vp ambient omnis models =
         omni = instCarried inst
         trsf = instTransform inst
       in (omni,0,trsf)
-    meshes = concatMap dropProgram models
-    dropProgram (GPUModelGroup _ mshs) = map (fmap fst) mshs
     genShadowmap_ shdws (omni,shadowmapIndex,trsf) =
-      genShadowmap omni shadowmapIndex trsf meshes shdws
+      genShadowmap omni shadowmapIndex trsf (map (fmap fst) models) shdws
 
 cleanShadows :: Shadows -> IO ()
 cleanShadows (Shadows _ low medium high) = do
@@ -118,8 +112,8 @@ bindShadowmaps (Shadows _ low medium high) = do
   mediumShadowmapsUniform @= (fst medium ^.cubeOffscreenArrayColormaps,Unit 4)
   highShadowmapsUniform @= (fst high ^.cubeOffscreenArrayColormaps,Unit 5)
 
-renderModelGroup :: GPUModelGroup -> IO () -> IO ()
-renderModelGroup (GPUModelGroup (prog,semantics) insts) sendUniforms = do
+renderModels :: Program' mat -> [Instance (GPUMesh,mat)] -> IO () -> IO ()
+renderModels (prog,semantics) insts sendUniforms = do
   useProgram prog
   sendUniforms
   traverse_ (renderMeshInstance semantics) insts
