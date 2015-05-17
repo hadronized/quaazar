@@ -126,10 +126,10 @@ renderMeshInstance semantics inst = do
     (gmesh,mat) = instCarried inst
     trsf  = instTransform inst
 
-renderLayerCompositor :: (MonadIO m,MonadScoped IO m,MonadError Log m)
-                      => Viewport
-                      -> m (Compositor RenderLayer (Texture2D,Texture2D))
-renderLayerCompositor vp = do
+newRLNode :: (MonadIO m,MonadScoped IO m,MonadError Log m)
+          => Viewport
+          -> m (Compositor RenderLayer (Texture2D,Texture2D))
+newRLNode vp = do
     Offscreen nodeColor nodeDepth nodeFB <- genOffscreen w h Nearest RGBA32F
     return . Compositor $ \_ omniBuffer shadowsConf rl -> do
       setViewport vp

@@ -86,12 +86,12 @@ instance (Semigroup b) => Semigroup (Compositor a b) where
 
 -- |This compositor node passes its input to its shader program and outputs both
 -- color and depth information as textures.
-renderNode :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
-           => Viewport
-           -> String
-           -> (a -> Semantics b)
-           -> m (Compositor a (Texture2D,Texture2D))
-renderNode vp shaderSrc semantics = do
+newNode :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
+        => Viewport
+        -> String
+        -> (a -> Semantics b)
+        -> m (Compositor a (Texture2D,Texture2D))
+newNode vp shaderSrc semantics = do
     Offscreen nodeColor nodeDepth nodeFB <- genOffscreen w h Nearest RGBA32F
     prog <- buildProgram copyVS Nothing Nothing shaderSrc
     return . Compositor $ \va _ _ a -> do
