@@ -28,6 +28,7 @@ import Quaazar.Render.GL.Texture ( Filter(..), InternalFormat(..), Texture2D )
 import Quaazar.Render.GL.VertexArray ( VertexArray, bindVertexArray )
 import Quaazar.Render.Light ( ShadowConf )
 import Quaazar.Render.Lighting ( Shadows )
+import Quaazar.Render.RenderLayer
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
@@ -105,6 +106,18 @@ newNode vp shaderSrc semantics = do
       glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
       setViewport vp
       glDrawArrays gl_TRIANGLE_STRIP 0 4
+      return (nodeColor,nodeDepth)
+  where
+    Viewport _ _ w h = vp
+
+newRLNode :: (MonadIO m,MonadScoped IO m,MonadError Log m)
+          => Viewport
+          -> m (Compositor RenderLayer (Texture2D,Texture2D))
+newRLNode vp = do
+    Offscreen nodeColor nodeDepth nodeFB <- genOffscreen w h Nearest RGBA32F
+    return . Compositor $ \_ omniBuffer shadowsConf rl -> do
+      setViewport vp
+      unRenderLayer rl nodeFB omniBuffer shadowsConf
       return (nodeColor,nodeDepth)
   where
     Viewport _ _ w h = vp

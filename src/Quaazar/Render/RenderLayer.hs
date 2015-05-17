@@ -14,31 +14,25 @@
 module Quaazar.Render.RenderLayer where
 
 import Control.Lens
-import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.State ( evalState )
-import Control.Monad.Trans ( MonadIO )
 import Data.Bits ( (.|.) )
 import Data.Foldable ( traverse_ )
 import Graphics.Rendering.OpenGL.Raw
 import Quaazar.Lighting.Light
 import Quaazar.Render.Camera ( GPUCamera(..), gpuCamera )
-import Quaazar.Render.Compositing
 import Quaazar.Render.Lighting
-import Quaazar.Render.Viewport ( Viewport(Viewport), setViewport )
+import Quaazar.Render.Viewport ( Viewport, setViewport )
 import Quaazar.Render.GL.Buffer ( Buffer )
 import Quaazar.Render.GL.Framebuffer ( Framebuffer, Target(..)
                                      , bindFramebuffer )
 import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Shader ( Program', Semantics(..), (@=), unused
                                 , useProgram )
-import Quaazar.Render.GL.Texture ( Filter(..), InternalFormat(..), Texture2D
-                                 , Unit(..) )
+import Quaazar.Render.GL.Texture ( Unit(..) )
 import Quaazar.Render.Light
 import Quaazar.Render.Mesh ( GPUMesh, renderMesh )
 import Quaazar.Render.Projection ( Projection )
 import Quaazar.Scene.Hierarchy ( Instance, instCarried, instTransform )
-import Quaazar.Utils.Log
-import Quaazar.Utils.Scoped
 
 newtype RenderLayer = RenderLayer {
     unRenderLayer :: Framebuffer                -- lighting framebuffer
@@ -125,15 +119,3 @@ renderMeshInstance semantics inst = do
   where
     (gmesh,mat) = instCarried inst
     trsf  = instTransform inst
-
-newRLNode :: (MonadIO m,MonadScoped IO m,MonadError Log m)
-          => Viewport
-          -> m (Compositor RenderLayer (Texture2D,Texture2D))
-newRLNode vp = do
-    Offscreen nodeColor nodeDepth nodeFB <- genOffscreen w h Nearest RGBA32F
-    return . Compositor $ \_ omniBuffer shadowsConf rl -> do
-      setViewport vp
-      unRenderLayer rl nodeFB omniBuffer shadowsConf
-      return (nodeColor,nodeDepth)
-  where
-    Viewport _ _ w h = vp
