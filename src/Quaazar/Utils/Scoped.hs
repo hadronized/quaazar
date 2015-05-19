@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns, StandaloneDeriving, UndecidableInstances #-}
+{-# LANGUAGE StandaloneDeriving, UndecidableInstances #-}
 
 -----------------------------------------------------------------------------
 -- |

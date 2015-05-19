@@ -51,7 +51,10 @@ library
                      , Quaazar.Scene.BoundingVolume
                      , Quaazar.Scene.Color
                      , Quaazar.Scene.Hierarchy
+                     , Quaazar.Scene.Model
+                     , Quaazar.Scene.Retina
                      , Quaazar.Scene.Transform
+                     , Quaazar.Scene.World
                      , Quaazar.System
                      , Quaazar.System.Event
                      , Quaazar.System.Loader
@@ -76,7 +79,8 @@ library
                      , Quaazar.Render.GL.VertexArray
                      , Quaazar.Render.Transform
 
-  default-extensions:  DefaultSignatures
+  default-extensions:  BangPatterns
+                     , DefaultSignatures
                      , DeriveFunctor
                      , FlexibleContexts
                      , FlexibleInstances
@@ -87,8 +91,7 @@ library
                      , TemplateHaskell
                      , TypeFamilies
 
-  other-extensions:    BangPatterns
-                     , ConstraintKinds
+  other-extensions:    ConstraintKinds
                      , OverloadedStrings
                      , RankNTypes
                      , TypeFamilies
