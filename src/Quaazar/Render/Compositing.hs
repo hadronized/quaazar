@@ -1,3 +1,5 @@
+{-# LANGUAGE ExistentialQuantification, GADTs, KindSignatures #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   : (C) 2015 Dimitri Sabadie
@@ -15,24 +17,47 @@ import Control.Arrow ( Arrow(..) )
 import Control.Category ( Category(..) ) 
 import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
+import Control.Monad.RWS ( RWS, get, modify, runRWS, tell )
 import Control.Monad.Trans ( MonadIO )
 import Data.Bits ( (.|.) )
+import Data.Function ( on )
+import Data.List ( groupBy, sortBy )
+import Data.Ord ( comparing )
+import Data.Vector ( Vector, (!?), fromList )
 import Data.Semigroup ( Semigroup(..) ) 
 import Graphics.Rendering.OpenGL.Raw
+import Numeric.Natural ( Natural )
 import Quaazar.Render.Viewport ( Viewport(Viewport), setViewport )
 import Quaazar.Render.GL.Buffer ( Buffer )
 import Quaazar.Render.GL.Framebuffer ( Target(..), bindFramebuffer ) 
 import Quaazar.Render.GL.Offscreen ( Offscreen(Offscreen), genOffscreen )
-import Quaazar.Render.GL.Shader ( Semantics(..), buildProgram, useProgram )
+import Quaazar.Render.GL.Shader ( Program', Semantics(..), buildProgram
+                                , useProgram )
 import Quaazar.Render.GL.Texture ( Filter(..), InternalFormat(..), Texture2D )
 import Quaazar.Render.GL.VertexArray ( VertexArray, bindVertexArray )
 import Quaazar.Render.Light ( ShadowConf )
 import Quaazar.Render.Lighting ( Shadows )
 import Quaazar.Render.RenderLayer
+import Quaazar.Scene.Retina ( Retina )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
-import Prelude hiding ( (.), id )
+import Prelude hiding ( (.), id, last, maximum )
+
+newtype Frame = Frame { frameID :: Natural } deriving (Eq,Ord,Show)
+
+-- |Typeclass used to extract frames from custom types.
+class HasFrames a where
+  extractFrames :: a -> [Frame]
+
+instance HasFrames Frame where
+  extractFrames frame = [frame]
+
+instance HasFrames (Frame,Frame) where
+  extractFrames (a,b) = [a,b]
+
+instance HasFrames (Frame,Frame,Frame) where
+  extractFrames (a,b,c) = [a,b,c]
 
 newtype Compositor a b = Compositor {
     runCompositor :: VertexArray -- attribute-less vertex array

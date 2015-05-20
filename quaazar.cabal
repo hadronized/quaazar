@@ -92,6 +92,7 @@ library
                      , TypeFamilies
 
   other-extensions:    ConstraintKinds
+                     , ExistentialQuantification
                      , OverloadedStrings
                      , RankNTypes
                      , TypeFamilies
