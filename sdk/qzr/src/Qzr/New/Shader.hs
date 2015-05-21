@@ -14,7 +14,6 @@ module Qzr.New.Shader (
     newShader
   ) where
 
-import Quaazar.Render.GLSL
 import System.FilePath ( (<.>) )
 
 newShader :: String -> IO ()

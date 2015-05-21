@@ -26,10 +26,11 @@ import Quaazar.Render.Viewport ( Viewport, setViewport )
 import Quaazar.Render.GL.Buffer ( Buffer )
 import Quaazar.Render.GL.Framebuffer ( Framebuffer, Target(..)
                                      , bindFramebuffer ) 
-import Quaazar.Render.GL.Shader ( Program', Semantics(..), (@=), useProgram )
+import Quaazar.Render.GL.Shader ( (@=), useProgram )
 import Quaazar.Render.GL.VertexArray ( VertexArray, bindVertexArray )
 import Quaazar.Render.Light ( ShadowConf )
 import Quaazar.Render.Lighting ( Shadows )
+import Quaazar.Render.Semantics
 import Quaazar.Render.RenderLayer
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped

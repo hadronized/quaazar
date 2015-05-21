@@ -30,9 +30,9 @@ import Quaazar.Render.GL.Shader ( Program, Uniform, (@=), buildProgram, uniform
                                 , useProgram )
 import Quaazar.Render.GL.Texture ( CubemapArray, Filter(..), InternalFormat(..)
                                  , Unit )
-import Quaazar.Render.GLSL
 import Quaazar.Render.Light
 import Quaazar.Render.Projection ( Projection(Perspective), projectionMatrix )
+import Quaazar.Render.Semantics
 import Quaazar.Render.Viewport
 import Quaazar.Lighting.Light ( Omni(..) )
 import Quaazar.Lighting.Shadow ( ShadowLOD(..) )

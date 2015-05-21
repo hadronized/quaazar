@@ -26,8 +26,8 @@ import Quaazar.Render.GL.Buffer
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Primitive
 import Quaazar.Render.GL.Shader ( Uniform, (@=) )
-import Quaazar.Render.GLSL
 import Quaazar.Render.GL.VertexArray
+import Quaazar.Render.Semantics
 import Quaazar.Render.Transform ( transformMatrix )
 import Quaazar.Scene.Transform ( Transform )
 

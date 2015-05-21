@@ -25,14 +25,13 @@ import Quaazar.Render.GL.Buffer ( Buffer )
 import Quaazar.Render.GL.Framebuffer ( Framebuffer, Target(..)
                                      , bindFramebuffer )
 import Quaazar.Render.GL.Offscreen
-import Quaazar.Render.GL.Shader ( Program', Semantics(..), Uniform
-                                , Uniformable(..), (@=), unused
+import Quaazar.Render.GL.Shader ( Uniform, Uniformable(..), (@=), unused
                                 , uniform, useProgram )
 import Quaazar.Render.GL.Texture ( Unit(..) )
-import Quaazar.Render.GLSL ( layerSem )
 import Quaazar.Render.Light
 import Quaazar.Render.Mesh ( GPUMesh, renderMesh )
 import Quaazar.Render.Projection ( Projection )
+import Quaazar.Render.Semantics
 import Quaazar.Scene.Hierarchy ( Instance, instCarried, instTransform )
 
 newtype Layer = Layer { layerID :: Natural } deriving (Eq,Ord,Show)

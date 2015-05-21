@@ -17,10 +17,9 @@ import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Data.Aeson
 import Numeric.Natural ( Natural )
-import Quaazar.Render.GL.Shader ( Program', ($=), buildProgram
-                                , uniform )
+import Quaazar.Render.GL.Shader ( buildProgram, uniform )
 import Quaazar.Render.GL.Texture ( Texture2D, Unit(..) )
-import Quaazar.Render.GLSL
+import Quaazar.Render.Semantics
 import Quaazar.System.Loader
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
