@@ -1,5 +1,3 @@
-{-# LANGUAGE ExistentialQuantification #-}
-
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   : (C) 2015 Dimitri Sabadie
@@ -18,6 +16,7 @@ import Control.Monad.State ( evalState )
 import Data.Bits ( (.|.) )
 import Data.Foldable ( traverse_ )
 import Graphics.Rendering.OpenGL.Raw
+import Numeric.Natural ( Natural )
 import Quaazar.Lighting.Light
 import Quaazar.Render.Camera ( GPUCamera(..), gpuCamera )
 import Quaazar.Render.Lighting
@@ -29,15 +28,19 @@ import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Shader ( Program', Semantics(..), (@=), unused
                                 , useProgram )
 import Quaazar.Render.GL.Texture ( Unit(..) )
+import Quaazar.Render.GLSL ( layerSem )
 import Quaazar.Render.Light
 import Quaazar.Render.Mesh ( GPUMesh, renderMesh )
 import Quaazar.Render.Projection ( Projection )
 import Quaazar.Scene.Hierarchy ( Instance, instCarried, instTransform )
 
+type Layer = Natural
+
 newtype RenderLayer = RenderLayer {
     unRenderLayer :: Framebuffer                -- lighting framebuffer
                   -> Buffer                     -- omni light buffer
                   -> Maybe (ShadowConf,Shadows) -- shadows configuration
+                  -> Layer
                   -> IO ()
   }
 
@@ -49,7 +52,7 @@ renderLayer :: Instance Projection
             -> [Instance (GPUMesh,mat)]
             -> RenderLayer
 renderLayer cam vp ambient omnis shader models =
-  RenderLayer $ \fb omniBuffer shadowsConf -> do
+  RenderLayer $ \fb omniBuffer shadowsConf layer -> do
     let Ambient ligAmbCol ligAmbPow = ambient
     (omnisWithShadows,maybeBindShadowmaps_) <- case shadowsConf of
       Just (conf,shdws) -> do 
@@ -71,6 +74,7 @@ renderLayer cam vp ambient omnis shader models =
       ligAmbColUniform @= ligAmbCol
       ligAmbPowUniform @= ligAmbPow
       pushOmnis omnisWithShadows omniBuffer
+      layerUniform @= layer
       maybeBindShadowmaps_
   where
     addShadowInfo_ lmax mmax hmax inst = do
@@ -119,3 +123,6 @@ renderMeshInstance semantics inst = do
   where
     (gmesh,mat) = instCarried inst
     trsf  = instTransform inst
+
+layerUniform :: Uniform Natural
+layerUniform = uniform layerSem
