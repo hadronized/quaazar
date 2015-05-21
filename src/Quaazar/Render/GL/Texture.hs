@@ -23,6 +23,7 @@ import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Log ( gllog )
+import Quaazar.Render.GL.Shader ( Uniformable(..) )
 import Quaazar.System.Loader ( Load(..), rootPath )
 import Quaazar.Utils.Log
 import System.FilePath ( (</>) )
@@ -67,6 +68,9 @@ data CompareFunc
 
 newtype Unit = Unit Natural deriving (Enum,Eq,Integral,Num,Ord,Real,Show)
 
+instance Uniformable Unit where
+  sendUniform l (Unit u) = sendUniform l u
+
 -- |This typeclass defines what a **texture** is. All textures have to
 -- implement that class, which exposes very basic texture features, such as
 -- texture ID, binding, parameters setting (wrap, filters, depth comparison
@@ -97,6 +101,11 @@ class IsTexture t where
   setTextureBaseLevel :: (MonadIO m) => t -> Natural -> m ()
   -- |Set the texture’s mipmap max level.
   setTextureMaxLevel :: (MonadIO m) => t -> Natural -> m ()
+
+instance (IsTexture t) => Uniformable (t,Unit) where
+  sendUniform l (tex,texUnit) = do
+    bindTextureAt tex texUnit
+    sendUniform l texUnit
 
 -- |Unlayered textures.
 --

@@ -43,6 +43,7 @@ import Data.Aeson
 import Data.Aeson.Types ( typeMismatch )
 import Foreign.Storable ( Storable )
 import Linear.V3
+import Quaazar.Render.GL.Shader ( Uniformable(..) ) 
 
 -- |A color is a 3-float vector. The four channels are:
 --
@@ -57,6 +58,9 @@ instance FromJSON Color where
     case a' of
       [r,g,b] -> return (color r g b)
       _         -> typeMismatch "color" v
+
+instance Uniformable Color where
+  sendUniform l = sendUniform l . unColor
 
 color :: Float -> Float -> Float -> Color
 color r g b = Color (V3 r g b)

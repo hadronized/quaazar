@@ -19,6 +19,7 @@ module Quaazar.Geometry.Position (
 import Data.Aeson
 import Data.Aeson.Types ( typeMismatch )
 import Linear ( V3(..) )
+import Quaazar.Render.GL.Shader ( Uniformable(..) )
 
 -- |Position in space a.k.a. space coordinates.
 newtype Position = Position { unPosition :: V3 Float } deriving (Eq,Ord,Show)
@@ -29,6 +30,9 @@ instance FromJSON Position where
     case a of
       [x,y,z] -> return (pos x y z)
       _       -> typeMismatch "position" v
+
+instance Uniformable Position where
+  sendUniform l = sendUniform l . unPosition
 
 -- |Build a 'Position' from /x/, /y/ and /z/ components.
 pos :: Float -> Float -> Float -> Position

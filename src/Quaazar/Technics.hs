@@ -10,9 +10,7 @@
 ----------------------------------------------------------------------------
 
 module Quaazar.Technics (
-    module Quaazar.Technics.Compositing
-  , module Quaazar.Technics.Lighting
+    module Quaazar.Technics.Lighting
   ) where
 
-import Quaazar.Technics.Compositing
 import Quaazar.Technics.Lighting

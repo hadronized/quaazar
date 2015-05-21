@@ -60,7 +60,6 @@ library
                      , Quaazar.System.Loader
                      , Quaazar.System.Resource
                      , Quaazar.Technics
-                     , Quaazar.Technics.Compositing
                      , Quaazar.Technics.Lighting.Phong
                      , Quaazar.Utils
                      , Quaazar.Utils.Directory
