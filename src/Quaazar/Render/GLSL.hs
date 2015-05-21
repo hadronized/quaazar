@@ -75,6 +75,9 @@ mediumShadowmapsSem = 17
 highShadowmapsSem :: Natural
 highShadowmapsSem = 18
 
+layerSem :: Natural
+layerSem = 19
+
 --------------------------------------------------------------------------------
 -- GLSL uniform block binding points
 declUniformBlock :: Natural -> String -> String
