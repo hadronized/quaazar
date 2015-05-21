@@ -52,9 +52,7 @@ library
                      , Quaazar.Scene.Color
                      , Quaazar.Scene.Hierarchy
                      , Quaazar.Scene.Model
-                     , Quaazar.Scene.Retina
                      , Quaazar.Scene.Transform
-                     , Quaazar.Scene.World
                      , Quaazar.System
                      , Quaazar.System.Event
                      , Quaazar.System.Loader
