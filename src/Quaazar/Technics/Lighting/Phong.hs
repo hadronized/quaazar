@@ -68,6 +68,7 @@ phongVS :: String
 phongVS = unlines
   [
     "#version 430 core"
+  , "#extension AMD_vertex_shader_layer : require"
 
   , "layout (location = 0) in vec3 co;"
   , "layout (location = 1) in vec3 no;"
@@ -75,6 +76,7 @@ phongVS = unlines
 
   , declUniform camProjViewSem "mat4 projView"
   , declUniform modelSem "mat4 model"
+  , declUniform layerSem "int layer;"
 
   , "out vec3 vco;"
   , "out vec3 vno;"
@@ -84,6 +86,7 @@ phongVS = unlines
   , "  vco = (model * vec4(co,1.)).xyz;"
   , "  vno = normalize((transpose(inverse(model)) * vec4(no,1.)).xyz);"
   , "  vuv = uv;"
+  , "  gl_Layer = layer;"
   , "  gl_Position = projView * vec4(vco,1.);"
   , "}"
   ]
