@@ -19,23 +19,18 @@ import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO, lift )
 import Control.Monad.Trans.State ( StateT, get, modify )
 import Data.Bits ( (.|.) )
-import Data.Function ( on )
 import Data.Semigroup ( Semigroup(..) ) 
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
-import Quaazar.Render.Viewport ( Viewport(Viewport), setViewport )
+import Quaazar.Render.Viewport ( Viewport, setViewport )
 import Quaazar.Render.GL.Buffer ( Buffer )
 import Quaazar.Render.GL.Framebuffer ( Framebuffer, Target(..)
                                      , bindFramebuffer ) 
-import Quaazar.Render.GL.Offscreen ( Offscreen(Offscreen), genOffscreen )
-import Quaazar.Render.GL.Shader ( Program', Semantics(..), (@=), buildProgram
-                                , useProgram )
-import Quaazar.Render.GL.Texture ( Filter(..), InternalFormat(..), Texture2D )
+import Quaazar.Render.GL.Shader ( Program', Semantics(..), (@=), useProgram )
 import Quaazar.Render.GL.VertexArray ( VertexArray, bindVertexArray )
 import Quaazar.Render.Light ( ShadowConf )
 import Quaazar.Render.Lighting ( Shadows )
 import Quaazar.Render.RenderLayer
-import Quaazar.Scene.Retina ( Retina )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
@@ -118,8 +113,6 @@ newNode vp (prog,semantics) = do
         setViewport vp
         glDrawArrays gl_TRIANGLE_STRIP 0 4
         pure layer
-  where
-    Viewport _ _ w h = vp
 
 -- |This compositor node absorbs a 'RenderLayer'.
 newRLNode :: (MonadIO m,MonadScoped IO m,MonadError Log m)
@@ -135,8 +128,6 @@ newRLNode vp = do
         setViewport vp
         unRenderLayer rl fb omniBuffer shadowsConf layer
         pure layer
-  where
-    Viewport _ _ w h = vp
 
 copyVS :: String
 copyVS = unlines
