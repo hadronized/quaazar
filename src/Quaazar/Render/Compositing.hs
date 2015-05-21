@@ -41,8 +41,6 @@ import Quaazar.Utils.Scoped
 
 import Prelude hiding ( (.), id, last, maximum )
 
-type Layer = Natural
-
 newtype Compositor a b = Compositor {
     runCompositor :: VertexArray -- attribute-less vertex array
                   -> Buffer -- lighting buffer -- FIXME
