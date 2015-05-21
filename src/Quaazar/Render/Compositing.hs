@@ -1,5 +1,3 @@
-{-# LANGUAGE ExistentialQuantification, GADTs, KindSignatures #-}
-
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   : (C) 2015 Dimitri Sabadie
@@ -23,7 +21,6 @@ import Data.Bits ( (.|.) )
 import Data.Function ( on )
 import Data.List ( groupBy, sortBy )
 import Data.Ord ( comparing )
-import Data.Vector ( Vector, (!?), fromList )
 import Data.Semigroup ( Semigroup(..) ) 
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
@@ -44,70 +41,58 @@ import Quaazar.Utils.Scoped
 
 import Prelude hiding ( (.), id, last, maximum )
 
-newtype Frame = Frame { frameID :: Natural } deriving (Eq,Ord,Show)
-
--- |Typeclass used to extract frames from custom types.
-class HasFrames a where
-  extractFrames :: a -> [Frame]
-
-instance HasFrames Frame where
-  extractFrames frame = [frame]
-
-instance HasFrames (Frame,Frame) where
-  extractFrames (a,b) = [a,b]
-
-instance HasFrames (Frame,Frame,Frame) where
-  extractFrames (a,b,c) = [a,b,c]
+type Layer = Natural
 
 newtype Compositor a b = Compositor {
     runCompositor :: VertexArray -- attribute-less vertex array
                   -> Buffer -- lighting buffer -- FIXME
                   -> Maybe (ShadowConf,Shadows) -- FIXME
+                  -> Layer -- layer to write to
                   -> a
                   -> IO b
   }
 
 instance Applicative (Compositor a) where
-  pure x = Compositor $ \_ _ _ _ -> pure x
-  Compositor f <*> Compositor x = Compositor $ \va b s a -> do
-    f' <- f va b s a
-    x' <- x va b s a
+  pure = arr . const
+  Compositor f <*> Compositor x = Compositor $ \va b s l a -> do
+    f' <- f va b s l a
+    x' <- x va b s l a
     pure (f' x')
 
 instance Arrow Compositor where
-  arr f = Compositor $ \_ _ _ a -> pure (f a)
-  first (Compositor f) = Compositor $ \va b s (x,y) -> do
-    x' <- f va b s x
+  arr f = Compositor $ \_ _ _ _ a -> pure (f a)
+  first (Compositor f) = Compositor $ \va b s l (x,y) -> do
+    x' <- f va b s l x
     pure (x',y)
-  second (Compositor s) = Compositor $ \va b shdw (x,y) -> do
-    y' <- s va b shdw y
+  second (Compositor s) = Compositor $ \va b shdw l (x,y) -> do
+    y' <- s va b shdw l y
     pure (x,y')
 
 instance Category Compositor where
-  id = Compositor $ \_ _ _ a -> pure a
-  Compositor f . Compositor g = Compositor $ \va b s a -> g va b s a >>= f va b s
+  id = Compositor $ \_ _ _ _ a -> pure a
+  Compositor f . Compositor g = Compositor $ \va b s l -> g va b s l >=> f va b s l
 
 instance Functor (Compositor a) where
-  fmap f (Compositor g) = Compositor $ \va b s a -> fmap f (g va b s a)
+  fmap f (Compositor g) = Compositor $ \va b s l a -> fmap f (g va b s l a)
 
 instance Monad (Compositor a) where
   return = pure
-  Compositor x >>= f = Compositor $ \va b s a -> do
-    x' <- x va b s a
-    runCompositor (f x') va b s a
+  Compositor x >>= f = Compositor $ \va b s l a -> do
+    x' <- x va b s l a
+    runCompositor (f x') va b s l a
 
 instance Profunctor Compositor where
-  dimap l r (Compositor f) = Compositor $ \va b s a -> do
-    fmap r $ f va b s (l a)
+  dimap l r (Compositor f) = Compositor $ \va b s layer a -> do
+    fmap r $ f va b s layer (l a)
 
 instance (Semigroup b,Monoid b) => Monoid (Compositor a b) where
-  mempty = Compositor $ \_ _ _ _ -> pure mempty
+  mempty = Compositor $ \_ _ _ _ _ -> pure mempty
   mappend = (<>)
 
 instance (Semigroup b) => Semigroup (Compositor a b) where
-  Compositor x <> Compositor y = Compositor $ \va b s a -> do
-    x' <- x va b s a
-    y' <- y va b s a
+  Compositor x <> Compositor y = Compositor $ \va b s l a -> do
+    x' <- x va b s l a
+    y' <- y va b s l a
     pure (x' <> y')
 
 -- |This compositor node passes its input to its shader program and outputs both
@@ -120,10 +105,11 @@ newNode :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
 newNode vp shaderSrc semantics = do
     Offscreen nodeColor nodeDepth nodeFB <- genOffscreen w h Nearest RGBA32F
     prog <- buildProgram copyVS Nothing Nothing shaderSrc
-    return . Compositor $ \va _ _ a -> do
+    return . Compositor $ \va _ _ layer a -> do
       -- use the node’s program and send input
       useProgram prog
       _ <- runSemantics $ semantics a
+      layerUniform @= layer
       -- bind the VA
       bindVertexArray va
       -- bind the node’s framebuffer
@@ -140,9 +126,9 @@ newRLNode :: (MonadIO m,MonadScoped IO m,MonadError Log m)
           -> m (Compositor RenderLayer (Texture2D,Texture2D))
 newRLNode vp = do
     Offscreen nodeColor nodeDepth nodeFB <- genOffscreen w h Nearest RGBA32F
-    return . Compositor $ \_ omniBuffer shadowsConf rl -> do
+    return . Compositor $ \_ omniBuffer shadowsConf layer rl -> do
       setViewport vp
-      unRenderLayer rl nodeFB omniBuffer shadowsConf
+      unRenderLayer rl nodeFB omniBuffer shadowsConf layer
       return (nodeColor,nodeDepth)
   where
     Viewport _ _ w h = vp
