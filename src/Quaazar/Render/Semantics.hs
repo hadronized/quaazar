@@ -15,24 +15,24 @@ import Numeric.Natural ( Natural )
 import Quaazar.Render.GL.Shader
 
 --------------------------------------------------------------------------------
--- Semantics
+-- Shader Semantics
 
--- |Semantics are used by the user to customize shaders. It basically
+-- |Shader semantics are used by the user to customize shaders. It basically
 -- exposes all 'Uniformable' instances, but constraint them into pure code.
 --
--- See '($=)' for building 'Semantics'.
-newtype Semantics a = Semantics {
+-- See '($=)' for building 'ShaderSemantics'.
+newtype ShaderSemantics a = ShaderSemantics {
     -- |Update all semantics into the currently bound shader program.ã
-    runSemantics :: IO a
+    runShaderSemantics :: IO a
   } deriving (Applicative,Functor,Monad)
 
 -- |Map a semantic to its value.
-($=) :: (Uniformable a) => Uniform a -> a -> Semantics ()
-s $= a = Semantics $ s @= a
+($=) :: (Uniformable a) => Uniform a -> a -> ShaderSemantics ()
+s $= a = ShaderSemantics $ s @= a
 
 -- FIXME: needs a better name
 -- |'Program' with its 'Semantic's.
-type Program' a = (Program,a -> Semantics ())
+type Program' a = (Program,a -> ShaderSemantics ())
 
 --------------------------------------------------------------------------------
 -- GLSL inputs

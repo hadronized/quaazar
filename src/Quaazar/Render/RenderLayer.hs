@@ -119,9 +119,9 @@ renderModels (prog,semantics) insts sendUniforms = do
   sendUniforms
   traverse_ (renderMeshInstance semantics) insts
 
-renderMeshInstance :: (mat -> Semantics ()) -> Instance (GPUMesh,mat) -> IO ()
+renderMeshInstance :: (mat -> ShaderSemantics ()) -> Instance (GPUMesh,mat) -> IO ()
 renderMeshInstance semantics inst = do
-    runSemantics $ semantics mat
+    runShaderSemantics $ semantics mat
     renderMesh gmesh modelUniform trsf
   where
     (gmesh,mat) = instCarried inst

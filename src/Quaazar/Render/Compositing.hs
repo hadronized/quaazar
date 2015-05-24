@@ -104,7 +104,7 @@ newNode vp (prog,semantics) = do
       lift $ do
         -- use the node’s program and send input
         useProgram prog
-        _ <- runSemantics $ semantics a
+        _ <- runShaderSemantics $ semantics a
         layerUniform @= layer
         -- bind the VA & the compositing framebuffer
         bindVertexArray va
