@@ -257,8 +257,8 @@ genShadowmapVS = unlines
   [
     "#version 430 core"
 
-  , declInput coInput "vec3 co"
-  , declInput noInput "vec3 no"
+  , declInput CoInput "vec3 co"
+  , declInput CoInput "vec3 no"
 
   , declUniform modelSem "mat4 model"
 
