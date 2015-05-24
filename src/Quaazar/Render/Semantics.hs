@@ -36,14 +36,14 @@ type Program' a = (Program,a -> ShaderSemantics ())
 
 --------------------------------------------------------------------------------
 -- GLSL inputs
-declInput :: GLSLInput -> String -> String
-declInput i n = "layout (location = " ++ show (fromGLSLInput i) ++ ") in " ++ n ++ ";"
-
 data GLSLInput
   = CoInput
   | NoInput
   | UVInput
     deriving (Enum,Eq,Ord,Show)
+
+declInput :: GLSLInput -> String -> String
+declInput i n = "layout (location = " ++ show (fromGLSLInput i) ++ ") in " ++ n ++ ";"
 
 fromGLSLInput :: GLSLInput -> Natural
 fromGLSLInput = fromIntegral . fromEnum
