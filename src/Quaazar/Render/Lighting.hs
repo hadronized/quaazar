@@ -258,11 +258,7 @@ genShadowmapVS = unlines
     "#version 430 core"
 
   , declInput CoInput "vec3 co"
-<<<<<<< HEAD
-  , declInput CoInput "vec3 no"
-=======
   , declInput NoInput "vec3 no"
->>>>>>> 13915f1... GLSLInput.
 
   , declUniform modelSem "mat4 model"
 
