@@ -26,7 +26,7 @@ import Quaazar.Render.GL.Framebuffer as FB ( AttachmentPoint(..), Target(..)
                                            , bindFramebuffer )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Offscreen
-import Quaazar.Render.GL.Shader ( Program, Uniform, (@=), buildProgram, uniform
+import Quaazar.Render.GL.Shader ( Program, Uniform, (@=), buildProgram
                                 , useProgram )
 import Quaazar.Render.GL.Texture ( CubemapArray, Filter(..), InternalFormat(..)
                                  , Unit )
@@ -103,43 +103,43 @@ getShadows cubeSize d =
     <*> pure (Viewport 0 0 cubeSize cubeSize)
 
 camProjViewUniform :: Uniform (M44 Float)
-camProjViewUniform = uniform camProjViewSem
+camProjViewUniform = toUniform CamProjViewSem
 
 modelUniform :: Uniform (M44 Float)
-modelUniform = uniform modelSem
+modelUniform = toUniform ModelSem
 
 eyeUniform :: Uniform (V3 Float)
-eyeUniform = uniform eyeSem
+eyeUniform = toUniform EyeSem
 
 ligAmbColUniform :: Uniform Color
-ligAmbColUniform = uniform ligAmbColSem
+ligAmbColUniform = toUniform LigAmbColSem
 
 ligAmbPowUniform :: Uniform Float
-ligAmbPowUniform = uniform ligAmbPowSem
+ligAmbPowUniform = toUniform LigAmbPowSem
 
 ligOmniNbUniform :: Uniform Word32
-ligOmniNbUniform = uniform ligOmniNbSem
+ligOmniNbUniform = toUniform LigOmniNbSem
 
 ligProjViewsUniform :: Uniform [M44 Float]
-ligProjViewsUniform = uniform ligProjViewsSem
+ligProjViewsUniform = toUniform LigProjViewsSem
 
 ligPosUniform :: Uniform (V3 Float)
-ligPosUniform = uniform ligPosSem
+ligPosUniform = toUniform LigPosSem
 
 ligIRadUniform :: Uniform Float
-ligIRadUniform = uniform ligIRadSem
+ligIRadUniform = toUniform LigIRadSem
 
 shadowmapIndexUniform :: Uniform Word32
-shadowmapIndexUniform = uniform shadowmapIndexSem
+shadowmapIndexUniform = toUniform ShadowmapIndexSem
 
 lowShadowmapsUniform :: Uniform (CubemapArray,Unit)
-lowShadowmapsUniform = uniform lowShadowmapsSem
+lowShadowmapsUniform = toUniform LowShadowmapsSem
 
 mediumShadowmapsUniform :: Uniform (CubemapArray,Unit)
-mediumShadowmapsUniform = uniform mediumShadowmapsSem
+mediumShadowmapsUniform = toUniform MediumShadowmapsSem
 
 highShadowmapsUniform :: Uniform (CubemapArray,Unit)
-highShadowmapsUniform = uniform highShadowmapsSem
+highShadowmapsUniform = toUniform HighShadowmapsSem
 
 -- |ProjView matrix used to generate shadowmaps.
 omniProjViews :: Float -> Float -> [M44 Float]
@@ -260,7 +260,7 @@ genShadowmapVS = unlines
   , declInput CoInput "vec3 co"
   , declInput NoInput "vec3 no"
 
-  , declUniform modelSem "mat4 model"
+  , declUniform ModelSem "mat4 model"
 
   , "void main() {"
   , "  gl_Position = model * vec4(co,1.);"
@@ -283,9 +283,9 @@ genShadowmapGS = unlines
 
   , "out vec3 gco;"
 
-  , declUniform ligProjViewsSem "mat4 ligProjViews[6]"
-  , declUniform ligPosSem "vec3 ligPos"
-  , declUniform shadowmapIndexSem "uint shadowmapIndex"
+  , declUniform LigProjViewsSem "mat4 ligProjViews[6]"
+  , declUniform LigPosSem "vec3 ligPos"
+  , declUniform ShadowmapIndexSem "uint shadowmapIndex"
 
   , "void main() {"
   , "  for (uint layerFaceID = shadowmapIndex * 6, faceID = 0; faceID < 6; ++layerFaceID, ++faceID) {"
@@ -309,8 +309,8 @@ genShadowmapFS = unlines
   , "in vec3 gco;"
   , "out float outDistance;"
 
-  , declUniform ligPosSem "vec3 ligPos"
-  , declUniform ligIRadSem "float ligIRad"
+  , declUniform LigPosSem "vec3 ligPos"
+  , declUniform LigIRadSem "float ligIRad"
 
   , "void main() {"
   , "  outDistance = distance(ligPos,gco) * ligIRad;"

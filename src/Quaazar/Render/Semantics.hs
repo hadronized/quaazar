@@ -36,68 +36,82 @@ type Program' a = (Program,a -> ShaderSemantics ())
 
 --------------------------------------------------------------------------------
 -- GLSL inputs
-data GLSLInput
+data InputSem
   = CoInput
   | NoInput
   | UVInput
     deriving (Enum,Eq,Ord,Show)
 
-declInput :: GLSLInput -> String -> String
-declInput i n = "layout (location = " ++ show (fromGLSLInput i) ++ ") in " ++ n ++ ";"
+declInput :: InputSem -> String -> String
+declInput i n = "layout (location = " ++ show (fromInputSem i) ++ ") in " ++ n ++ ";"
 
-fromGLSLInput :: GLSLInput -> Natural
-fromGLSLInput = fromIntegral . fromEnum
+fromInputSem :: InputSem -> Natural
+fromInputSem = fromIntegral . fromEnum
 
 --------------------------------------------------------------------------------
 -- GLSL uniform semantics
-declUniform :: Natural -> String -> String
-declUniform s n = "layout (location = " ++ show s ++ ") uniform " ++ n ++ ";"
+data UniformSem
+  = CamProjViewSem
+  | ModelSem
+  | EyeSem
+  | LigAmbColSem
+  | LigAmbPowSem
+  | LigOmniNbSem
+  | LigProjViewsSem
+  | LigPosSem
+  | LigIRadSem
+  | ShadowmapIndexSem
+  | LowShadowmapsSem
+  | MediumShadowmapsSem
+  | HighShadowmapsSem
+  | LayerSem
+  | ExtendSem Int 
 
-camProjViewSem :: Natural 
-camProjViewSem = 0
+instance Enum UniformSem where
+  fromEnum u = case u of
+    CamProjViewSem -> 0
+    ModelSem -> 1
+    EyeSem -> 2
+    LigAmbColSem -> 3
+    LigAmbPowSem -> 4
+    LigOmniNbSem -> 5
+    LigProjViewsSem -> 6
+    LigPosSem -> 7
+    LigIRadSem -> 8
+    ShadowmapIndexSem -> 14
+    LowShadowmapsSem -> 15
+    MediumShadowmapsSem -> 16
+    HighShadowmapsSem -> 17
+    LayerSem -> 18
+    ExtendSem sem -> 19 + fromIntegral sem
+  toEnum i
+    | i == 0 = CamProjViewSem
+    | i == 1 = ModelSem
+    | i == 2 = EyeSem
+    | i == 3 = LigAmbColSem
+    | i == 4 = LigAmbPowSem
+    | i == 5 = LigOmniNbSem
+    | i == 6 = LigProjViewsSem
+    | i == 7 = LigPosSem
+    | i == 8 = LigIRadSem
+    | i == 14 = ShadowmapIndexSem
+    | i == 15 = LowShadowmapsSem
+    | i == 16 = MediumShadowmapsSem
+    | i == 17 = HighShadowmapsSem
+    | i == 18 = LayerSem
+    | otherwise = ExtendSem $ 19 + fromIntegral i
 
-modelSem :: Natural 
-modelSem = 1
+declUniform :: UniformSem -> String -> String
+declUniform s n = "layout (location = " ++ show (fromUniformSem s) ++ ") uniform " ++ n ++ ";"
 
-eyeSem :: Natural 
-eyeSem = 2
+fromUniformSem :: UniformSem -> Natural
+fromUniformSem = fromIntegral . fromEnum
 
-ligAmbColSem :: Natural 
-ligAmbColSem = 3
+toUniform :: (Uniformable a) => UniformSem -> Uniform a
+toUniform = uniform . fromUniformSem
 
-ligAmbPowSem :: Natural 
-ligAmbPowSem = 4
-
-ligOmniNbSem :: Natural 
-ligOmniNbSem = 5
-
--- Since there’re 6 matrices, they take locations 6, 7, 8, 9, 10 and 11.
-ligProjViewsSem :: Natural
-ligProjViewsSem = 6
-
-ligPosSem :: Natural
-ligPosSem = 12
-
-ligRadSem :: Natural
-ligRadSem = 13
-
-ligIRadSem :: Natural
-ligIRadSem = 14
-
-shadowmapIndexSem :: Natural
-shadowmapIndexSem = 15
-
-lowShadowmapsSem :: Natural
-lowShadowmapsSem = 16
-
-mediumShadowmapsSem :: Natural
-mediumShadowmapsSem = 17
-
-highShadowmapsSem :: Natural
-highShadowmapsSem = 18
-
-layerSem :: Natural
-layerSem = 19
+extendUniformSem :: (Enum s) => s -> UniformSem
+extendUniformSem = ExtendSem . fromEnum
 
 --------------------------------------------------------------------------------
 -- GLSL uniform block binding points

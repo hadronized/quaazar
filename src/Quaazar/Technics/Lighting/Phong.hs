@@ -16,8 +16,7 @@ module Quaazar.Technics.Lighting.Phong where
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Data.Aeson
-import Numeric.Natural ( Natural )
-import Quaazar.Render.GL.Shader ( buildProgram, uniform )
+import Quaazar.Render.GL.Shader ( buildProgram )
 import Quaazar.Render.GL.Texture ( Texture2D, Unit(..) )
 import Quaazar.Render.Semantics
 import Quaazar.System.Loader
@@ -50,18 +49,15 @@ getPhong = do
     return (prog,semantics)
   where
     semantics mat = do
-      uniform phongDiffMapSem $= (diffuseMap mat,Unit 0)
-      uniform phongSpecMapSem $= (specularMap mat,Unit 1)
-      uniform phongGlossMapSem $= (glossMap mat,Unit 2)
+      toUniform (extendUniformSem PhongDiffMapSem) $= (diffuseMap mat,Unit 0)
+      toUniform (extendUniformSem PhongSpecMapSem) $= (specularMap mat,Unit 1)
+      toUniform (extendUniformSem PhongGlossMapSem) $= (glossMap mat,Unit 2)
 
-phongDiffMapSem :: Natural
-phongDiffMapSem = 128
-
-phongSpecMapSem :: Natural
-phongSpecMapSem = 129
-
-phongGlossMapSem :: Natural
-phongGlossMapSem = 130
+data PhongMaterialSem
+  = PhongDiffMapSem
+  | PhongSpecMapSem
+  | PhongGlossMapSem
+    deriving (Enum,Eq,Ord,Show)
 
 phongVS :: String
 phongVS = unlines
@@ -73,9 +69,9 @@ phongVS = unlines
   , "layout (location = 1) in vec3 no;"
   , "layout (location = 2) in vec2 uv;"
 
-  , declUniform camProjViewSem "mat4 projView"
-  , declUniform modelSem "mat4 model"
-  , declUniform layerSem "int layer;"
+  , declUniform CamProjViewSem "mat4 projView"
+  , declUniform ModelSem "mat4 model"
+  , declUniform LayerSem "int layer;"
 
   , "out vec3 vco;"
   , "out vec3 vno;"
@@ -99,13 +95,13 @@ phongFS = unlines
   , "in vec3 vno;"
   , "in vec2 vuv;"
 
-  , declUniform eyeSem "vec3 eye"
-  , declUniform phongDiffMapSem "sampler2D phongDiffMap"
-  , declUniform phongSpecMapSem "sampler2D phongSpecMap"
-  , declUniform phongGlossMapSem "sampler2D phongGlossMap"
+  , declUniform EyeSem "vec3 eye"
+  , declUniform (extendUniformSem PhongDiffMapSem) "sampler2D phongDiffMap"
+  , declUniform (extendUniformSem PhongSpecMapSem) "sampler2D phongSpecMap"
+  , declUniform (extendUniformSem PhongGlossMapSem) "sampler2D phongGlossMap"
     -- ambient lighting
-  , declUniform ligAmbColSem "vec3 ligAmbCol"
-  , declUniform ligAmbPowSem "float ligAmbPow"
+  , declUniform LigAmbColSem "vec3 ligAmbCol"
+  , declUniform LigAmbPowSem "float ligAmbPow"
     -- omni lights
   , "struct Omni {"
   , "  vec3 pos;"
@@ -116,12 +112,12 @@ phongFS = unlines
   , "  uint shadowmapIndex;"
   , " };"
     -- shadows
-  , declUniform lowShadowmapsSem "samplerCubeArray lowShadowmaps"
-  , declUniform mediumShadowmapsSem "samplerCubeArray mediumShadowmaps"
-  , declUniform highShadowmapsSem "samplerCubeArray highShadowmaps"
+  , declUniform LowShadowmapsSem "samplerCubeArray lowShadowmaps"
+  , declUniform MediumShadowmapsSem "samplerCubeArray mediumShadowmaps"
+  , declUniform HighShadowmapsSem "samplerCubeArray highShadowmaps"
 
   , declUniformBlock ligOmniSSBOBP "OmniBuffer { Omni ligs[]; } omniBuffer"
-  , declUniform ligOmniNbSem "uint ligOmniNb"
+  , declUniform LigOmniNbSem "uint ligOmniNb"
 
   , "out vec4 frag;"
 

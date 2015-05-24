@@ -76,14 +76,14 @@ gpuMesh msh = case msh^.meshVertices of
       bindBuffer vb ArrayBuffer
 
       -- position
-      enableVertexAttrib (fromGLSLInput CoInput)
-      vertexAttribPointer (fromGLSLInput CoInput) 3 Floats False 0
+      enableVertexAttrib (fromInputSem CoInput)
+      vertexAttribPointer (fromInputSem CoInput) 3 Floats False 0
       -- normal
-      enableVertexAttrib (fromGLSLInput NoInput)
-      vertexAttribPointer (fromGLSLInput NoInput) 3 Floats True posBytes
+      enableVertexAttrib (fromInputSem NoInput)
+      vertexAttribPointer (fromInputSem NoInput) 3 Floats True posBytes
 
-      enableVertexAttrib (fromGLSLInput UVInput)
-      vertexAttribPointer (fromGLSLInput UVInput) 2 Floats True (posBytes + normalBytes)
+      enableVertexAttrib (fromInputSem UVInput)
+      vertexAttribPointer (fromInputSem UVInput) 2 Floats True (posBytes + normalBytes)
 
       unbindBuffer ArrayBuffer
 

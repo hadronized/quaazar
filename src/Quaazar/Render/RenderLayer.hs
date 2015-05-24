@@ -26,7 +26,7 @@ import Quaazar.Render.GL.Framebuffer ( Framebuffer, Target(..)
                                      , bindFramebuffer )
 import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Shader ( Uniform, Uniformable(..), (@=), unused
-                                , uniform, useProgram )
+                                , useProgram )
 import Quaazar.Render.GL.Texture ( Unit(..) )
 import Quaazar.Render.Light
 import Quaazar.Render.Mesh ( GPUMesh, renderMesh )
@@ -128,4 +128,4 @@ renderMeshInstance semantics inst = do
     trsf  = instTransform inst
 
 layerUniform :: Uniform Layer 
-layerUniform = uniform layerSem
+layerUniform = toUniform LayerSem
