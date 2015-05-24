@@ -99,7 +99,7 @@ instance Enum UniformSem where
     | i == 16 = MediumShadowmapsSem
     | i == 17 = HighShadowmapsSem
     | i == 18 = LayerSem
-    | otherwise = ExtendSem $ 19 + fromIntegral i
+    | otherwise = ExtendSem $ fromIntegral i - 19
 
 declUniform :: UniformSem -> String -> String
 declUniform s n = "layout (location = " ++ show (fromUniformSem s) ++ ") uniform " ++ n ++ ";"
