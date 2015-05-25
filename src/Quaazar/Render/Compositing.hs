@@ -15,7 +15,8 @@ import Control.Arrow ( Arrow(..) )
 import Control.Category ( Category(..) ) 
 import Control.Lens
 import Control.Monad ( (>=>) )
-import Control.Monad.Trans ( lift )
+import Control.Monad.Error.Class ( MonadError )
+import Control.Monad.Trans ( MonadIO, lift )
 import Control.Monad.Trans.State ( StateT, get, modify )
 import Data.Bits ( (.|.) )
 import Data.Semigroup ( Semigroup(..) ) 
@@ -32,6 +33,8 @@ import Quaazar.Render.Light ( ShadowConf )
 import Quaazar.Render.Lighting ( Shadows )
 import Quaazar.Render.Semantics
 import Quaazar.Render.RenderLayer
+import Quaazar.Utils.Log
+import Quaazar.Utils.Scoped
 
 import Prelude hiding ( (.), id, last, maximum )
 
@@ -89,6 +92,10 @@ instance (Semigroup b) => Semigroup (Compositor a b) where
 
 -- |This compositor node passes its input to its shader program and outputs both
 -- color and depth information as textures.
+--
+-- **Important note**: you’re advised not to use 'buildProgram' to build the
+-- shader program. You should use 'buildPostProcessProgram' as it automatically
+-- handles the node’s layer and has a better interface.
 postProcessNode :: Viewport -> Program' a -> Compositor a Layer
 postProcessNode vp (prog,semantics) = Compositor $ \compositing va _ _ a -> do
   -- get the next layer
@@ -110,6 +117,14 @@ postProcessNode vp (prog,semantics) = Compositor $ \compositing va _ _ a -> do
     setViewport vp
     glDrawArrays gl_TRIANGLE_STRIP 0 4
     pure layer
+
+-- |Help users to build a post-process shader program.
+buildPostProcessProgram :: (MonadIO m,MonadScoped IO m,MonadError Log m,MonadLogger m)
+                        => String
+                        -> (a -> ShaderSemantics ())
+                        -> m (Program' a)
+buildPostProcessProgram fs semantics =
+  (,semantics) <$> buildProgram ppCopyVS Nothing Nothing fs
 
 -- |This compositor node absorbs a 'RenderLayer'.
 renderNode :: Viewport -> Compositor RenderLayer Layer
@@ -155,5 +170,25 @@ copyFS = unlines
 
   , "void main() {"
   , " frag = texelFetch(sources, ivec3(gl_FragCoord.xy,layer), 0);"
+  , "}"
+  ]
+
+ppCopyVS :: String
+ppCopyVS = unlines
+  [
+    "#version 430 core"
+  , "#extension AMD_vertex_shader_layer : require"
+
+  , declUniform LayerSem "int layer"
+
+  , "vec2[4] v = vec2[]("
+  , "   vec2(-1, 1)"
+  , " , vec2( 1, 1)"
+  , " , vec2(-1, -1)"
+  , " , vec2( 1, -1)"
+  , " );"
+  , "void main() {"
+  , " gl_Layer = layer;"
+  , " gl_Position = vec4(v[gl_VertexID], 0., 1.);"
   , "}"
   ]

@@ -86,6 +86,7 @@ library
                      , MultiParamTypeClasses
                      , ScopedTypeVariables
                      , TemplateHaskell
+                     , TupleSections
                      , TypeFamilies
 
   other-extensions:    ConstraintKinds
