@@ -71,7 +71,7 @@ phongVS = unlines
 
   , declUniform CamProjViewSem "mat4 projView"
   , declUniform ModelSem "mat4 model"
-  , declUniform LayerSem "int layer;"
+  , declUniform LayerSem "int layer"
 
   , "out vec3 vco;"
   , "out vec3 vno;"

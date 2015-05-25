@@ -111,9 +111,7 @@ postProcessNode vp (prog,semantics) = Compositor $ \compositing va _ _ a -> do
     compositingDepthmapsUniform @= (compositing^.offscreenArrayDepthmaps,Unit 1)
     -- bind the VA & the compositing framebuffer
     bindVertexArray va
-    bindFramebuffer (compositing^.offscreenArrayFB) ReadWrite
     -- render the shit
-    glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
     setViewport vp
     glDrawArrays gl_TRIANGLE_STRIP 0 4
     pure layer
