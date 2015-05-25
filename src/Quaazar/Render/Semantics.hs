@@ -79,8 +79,8 @@ instance Enum UniformSem where
     LigAmbPowSem -> 4
     LigOmniNbSem -> 5
     LigProjViewsSem -> 6
-    LigPosSem -> 7
-    LigIRadSem -> 8
+    LigPosSem -> 12
+    LigIRadSem -> 13
     ShadowmapIndexSem -> 14
     LowShadowmapsSem -> 15
     MediumShadowmapsSem -> 16
@@ -97,8 +97,8 @@ instance Enum UniformSem where
     | i == 4 = LigAmbPowSem
     | i == 5 = LigOmniNbSem
     | i == 6 = LigProjViewsSem
-    | i == 7 = LigPosSem
-    | i == 8 = LigIRadSem
+    | i == 12 = LigPosSem
+    | i == 13 = LigIRadSem
     | i == 14 = ShadowmapIndexSem
     | i == 15 = LowShadowmapsSem
     | i == 16 = MediumShadowmapsSem
