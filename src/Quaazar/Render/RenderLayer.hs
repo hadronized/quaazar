@@ -114,9 +114,9 @@ bindShadowmaps (Shadows _ low medium high) = do
   highShadowmapsUniform @= (fst high ^.cubeOffscreenArrayColormaps,Unit 5)
 
 renderModels :: Program' mat -> [Instance (GPUMesh,mat)] -> IO () -> IO ()
-renderModels (prog,semantics) insts sendUniforms = do
+renderModels (prog,semantics) insts beforeRender = do
   useProgram prog
-  sendUniforms
+  beforeRender 
   traverse_ (renderMeshInstance semantics) insts
 
 renderMeshInstance :: (mat -> ShaderSemantics ()) -> Instance (GPUMesh,mat) -> IO ()
