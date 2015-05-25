@@ -33,17 +33,7 @@ import Quaazar.Render.RenderLayer ( Layer, layerUniform )
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
-data Renderer = Renderer {
-    _frCopyProgram :: Program
-  , _frLighting    :: Lighting
-  , _frVA          :: VertexArray
-  , _frOff         :: OffscreenArray
-  , _frWindow      :: Window
-  }
-
-makeLenses ''Renderer
-
-getRenderer :: (Applicative m,MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
+getRenderer :: (Applicative m,MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m,MonadIO q)
             => Float
             -> Float
             -> Natural
@@ -52,30 +42,36 @@ getRenderer :: (Applicative m,MonadScoped IO m,MonadIO m,MonadLogger m,MonadErro
             -> Maybe ShadowConf
             -> Natural
             -> Window
-            -> m Renderer
-getRenderer znear zfar w h lightMaxNb shadowConf layerMaxNb window =
-  Renderer
-    <$> getCopyProgram
-    <*> getLighting znear zfar w h lightMaxNb shadowConf
-    <*> genAttributelessVertexArray
-    <*> genOffscreenArray w h layerMaxNb Nearest RGBA32F (ColorAttachment 0)
-          Depth32F DepthAttachment
-    <*> pure window
+            -> m (a -> Compositor a Layer -> q())
+getRenderer znear zfar w h lightMaxNb shadowConf layerMaxNb window = do
+  copyProg <- getCopyProgram
+  lighting <- getLighting znear zfar w h lightMaxNb shadowConf
+  va <- genAttributelessVertexArray
+  compositingOff <- genOffscreenArray w h layerMaxNb Nearest RGBA32F
+    (ColorAttachment 0) Depth32F DepthAttachment
+  pure $ display copyProg lighting va compositingOff window
 
 getCopyProgram :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
                => m Program
 getCopyProgram = buildProgram copyVS Nothing Nothing copyFS
 
-display :: (MonadIO m) => Renderer -> a -> Compositor a Layer -> m ()
-display rdr a compt = liftIO $ do
-  layer <- flip evalStateT 0 $ runCompositor compt
-    (rdr^.frOff) (rdr^.frVA) (rdr^.frLighting.lightOmniBuffer)
-    (rdr^.frLighting.shadows) a
-  useProgram (rdr^.frCopyProgram)
+display :: (MonadIO m)
+        => Program
+        -> Lighting
+        -> VertexArray
+        -> OffscreenArray
+        -> Window
+        -> a
+        -> Compositor a Layer
+        -> m ()
+display copyProg lighting va compositingOff window a compt = liftIO $ do
+  layer <- flip evalStateT 0 $ runCompositor compt compositingOff va 
+    (lighting^.lightOmniBuffer) (lighting^.shadows) a
+  useProgram copyProg
   unbindFramebuffer ReadWrite
   glClearColor 0 0 0 0
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
-  bindVertexArray (rdr^.frVA)
+  bindVertexArray va
   layerUniform @= layer
   glDrawArrays gl_TRIANGLE_STRIP 0 4
-  liftIO $ swapBuffers (rdr^.frWindow)
+  liftIO $ swapBuffers window
