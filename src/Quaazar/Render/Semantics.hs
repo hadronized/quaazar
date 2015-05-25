@@ -120,21 +120,3 @@ declUniformBlock bp block = "layout (std430,binding = " ++ show bp ++ ") buffer 
 
 ligOmniSSBOBP :: Natural
 ligOmniSSBOBP = 0
-
---------------------------------------------------------------------------------
--- Texture units
-data TextureUnitSem
-  = CompositingLayersSem
-  | DepthmapSem
-  | ExtendTextureUnitSem Int
-    deriving (Eq,Show)
-
-instance Enum TextureUnitSem where
-  fromEnum sem = case sem of
-    CompositingLayersSem -> 0
-    DepthmapSem -> 1
-    ExtendTextureUnitSem i -> 2 + i
-  toEnum i
-    | i == 0 = CompositingLayersSem
-    | i == 1 = DepthmapSem
-    | otherwise = ExtendTextureUnitSem $ i - 2

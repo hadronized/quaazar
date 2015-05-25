@@ -26,6 +26,7 @@ import Quaazar.Render.Viewport ( Viewport, setViewport )
 import Quaazar.Render.GL.Buffer ( Buffer )
 import Quaazar.Render.GL.Framebuffer ( Framebuffer, Target(..)
                                      , bindFramebuffer ) 
+import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Shader ( (@=), useProgram )
 import Quaazar.Render.GL.VertexArray ( VertexArray, bindVertexArray )
 import Quaazar.Render.Light ( ShadowConf )
@@ -38,7 +39,7 @@ import Quaazar.Utils.Scoped
 import Prelude hiding ( (.), id, last, maximum )
 
 newtype Compositor a b = Compositor {
-    runCompositor :: Framebuffer -- compositing framebuffer
+    runCompositor :: OffscreenArray -- compositing offscreen
                   -> VertexArray -- attribute-less vertex array
                   -> Buffer -- lighting buffer -- FIXME
                   -> Maybe (ShadowConf,Shadows) -- FIXME
@@ -96,7 +97,7 @@ newNode :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
         -> Program' a 
         -> m (Compositor a Layer)
 newNode vp (prog,semantics) = do
-    pure . Compositor $ \fb va _ _ a -> do
+    pure . Compositor $ \compositing va _ _ a -> do
       -- get the next layer
       layer <- fmap Layer get
       modify succ
@@ -108,7 +109,7 @@ newNode vp (prog,semantics) = do
         layerUniform @= layer
         -- bind the VA & the compositing framebuffer
         bindVertexArray va
-        bindFramebuffer fb ReadWrite
+        bindFramebuffer (compositing^.offscreenArrayFB) ReadWrite
         -- render the shit
         glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
         setViewport vp
@@ -120,14 +121,14 @@ newRLNode :: (MonadIO m,MonadScoped IO m,MonadError Log m)
           => Viewport
           -> m (Compositor RenderLayer Layer)
 newRLNode vp = do
-    pure . Compositor $ \fb _ omniBuffer shadowsConf rl -> do
+    pure . Compositor $ \compositing _ omniBuffer shadowsConf rl -> do
       -- get next layer 
       layer <- fmap Layer get
       modify succ
       -- use it
       lift $ do
         setViewport vp
-        unRenderLayer rl fb omniBuffer shadowsConf layer
+        unRenderLayer rl (compositing^.offscreenArrayFB) omniBuffer shadowsConf layer
         pure layer
 
 copyVS :: String

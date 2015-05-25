@@ -69,7 +69,7 @@ getCopyProgram = buildProgram copyVS Nothing Nothing copyFS
 display :: (MonadIO m) => Renderer -> a -> Compositor a Layer -> m ()
 display rdr a compt = liftIO $ do
   layer <- flip evalStateT 0 $ runCompositor compt
-    (rdr^.frOff.offscreenArrayFB) (rdr^.frVA) (rdr^.frLighting.lightOmniBuffer)
+    (rdr^.frOff) (rdr^.frVA) (rdr^.frLighting.lightOmniBuffer)
     (rdr^.frLighting.shadows) a
   useProgram (rdr^.frCopyProgram)
   unbindFramebuffer ReadWrite
