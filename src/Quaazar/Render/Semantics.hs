@@ -68,6 +68,7 @@ data UniformSem
   | CompositingColormapsSem
   | CompositingDepthmapsSem
   | ExtendSem Int 
+    deriving (Eq,Ord,Show)
 
 instance Enum UniformSem where
   fromEnum u = case u of
