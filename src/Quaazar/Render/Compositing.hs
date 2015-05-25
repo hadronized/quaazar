@@ -27,7 +27,8 @@ import Quaazar.Render.GL.Buffer ( Buffer )
 import Quaazar.Render.GL.Framebuffer ( Framebuffer, Target(..)
                                      , bindFramebuffer ) 
 import Quaazar.Render.GL.Offscreen
-import Quaazar.Render.GL.Shader ( (@=), useProgram )
+import Quaazar.Render.GL.Shader
+import Quaazar.Render.GL.Texture
 import Quaazar.Render.GL.VertexArray ( VertexArray, bindVertexArray )
 import Quaazar.Render.Light ( ShadowConf )
 import Quaazar.Render.Lighting ( Shadows )
@@ -97,24 +98,26 @@ newNode :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
         -> Program' a 
         -> m (Compositor a Layer)
 newNode vp (prog,semantics) = do
-    pure . Compositor $ \compositing va _ _ a -> do
-      -- get the next layer
-      layer <- fmap Layer get
-      modify succ
-      -- use it
-      lift $ do
-        -- use the node’s program and send input
-        useProgram prog
-        _ <- runShaderSemantics $ semantics a
-        layerUniform @= layer
-        -- bind the VA & the compositing framebuffer
-        bindVertexArray va
-        bindFramebuffer (compositing^.offscreenArrayFB) ReadWrite
-        -- render the shit
-        glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
-        setViewport vp
-        glDrawArrays gl_TRIANGLE_STRIP 0 4
-        pure layer
+  pure . Compositor $ \compositing va _ _ a -> do
+    -- get the next layer
+    layer <- fmap Layer get
+    modify succ
+    -- use it
+    lift $ do
+      -- use the node’s program and send input
+      useProgram prog
+      _ <- runShaderSemantics $ semantics a
+      layerUniform @= layer
+      compositingColormapsUniform @= (compositing^.offscreenArrayColormaps,Unit 0)
+      compositingDepthmapsUniform @= (compositing^.offscreenArrayDepthmaps,Unit 1)
+      -- bind the VA & the compositing framebuffer
+      bindVertexArray va
+      bindFramebuffer (compositing^.offscreenArrayFB) ReadWrite
+      -- render the shit
+      glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
+      setViewport vp
+      glDrawArrays gl_TRIANGLE_STRIP 0 4
+      pure layer
 
 -- |This compositor node absorbs a 'RenderLayer'.
 newRLNode :: (MonadIO m,MonadScoped IO m,MonadError Log m)
@@ -130,6 +133,12 @@ newRLNode vp = do
         setViewport vp
         unRenderLayer rl (compositing^.offscreenArrayFB) omniBuffer shadowsConf layer
         pure layer
+
+compositingColormapsUniform :: Uniform (Texture2DArray,Unit)
+compositingColormapsUniform = toUniform CompositingColormapsSem
+
+compositingDepthmapsUniform :: Uniform (Texture2DArray,Unit)
+compositingDepthmapsUniform = toUniform CompositingDepthmapsSem
 
 copyVS :: String
 copyVS = unlines
