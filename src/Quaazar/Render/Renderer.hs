@@ -19,7 +19,7 @@ import Data.Bits ( (.|.) )
 import Graphics.Rendering.OpenGL.Raw
 import Graphics.UI.GLFW ( Window, swapBuffers )
 import Numeric.Natural ( Natural )
-import Quaazar.Render.Compositing ( Compositor(..), copyVS, copyFS )
+import Quaazar.Render.Compositing
 import Quaazar.Render.GL.Framebuffer
 import Quaazar.Render.GL.Shader
 import Quaazar.Render.GL.Offscreen
@@ -64,14 +64,16 @@ display :: (MonadIO m)
         -> a
         -> Compositor a Layer
         -> m ()
-display copyProg lighting va compositingOff window a compt = liftIO $ do
-  layer <- flip evalStateT 0 $ runCompositor compt compositingOff va 
+display copyProg lighting va compositing window a compt = liftIO $ do
+  layer <- flip evalStateT 0 $ runCompositor compt compositing va 
     (lighting^.lightOmniBuffer) (lighting^.shadows) a
   useProgram copyProg
   unbindFramebuffer ReadWrite
-  glClearColor 0 0 0 0
+  glClearColor 0 1 0 0
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
   bindVertexArray va
   layerUniform @= layer
+  compositingColormapsUniform @= (compositing^.offscreenArrayColormaps,Unit 0)
+  compositingDepthmapsUniform @= (compositing^.offscreenArrayDepthmaps,Unit 1)
   glDrawArrays gl_TRIANGLE_STRIP 0 4
   liftIO $ swapBuffers window

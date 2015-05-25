@@ -149,8 +149,11 @@ copyFS = unlines
   [
     "#version 430 core"
   , "out vec4 frag;"
-  , "layout (location = 0) uniform sampler2D source;"
+
+  , declUniform CompositingColormapsSem "sampler2DArray sources"
+  , declUniform LayerSem "int layer"
+
   , "void main() {"
-  , " frag = texelFetch(source, ivec2(gl_FragCoord.xy), 0);"
+  , " frag = texelFetch(sources, ivec3(gl_FragCoord.xy,layer), 0);"
   , "}"
   ]
