@@ -15,8 +15,7 @@ import Control.Arrow ( Arrow(..) )
 import Control.Category ( Category(..) ) 
 import Control.Lens
 import Control.Monad ( (>=>) )
-import Control.Monad.Error.Class ( MonadError )
-import Control.Monad.Trans ( MonadIO, lift )
+import Control.Monad.Trans ( lift )
 import Control.Monad.Trans.State ( StateT, get, modify )
 import Data.Bits ( (.|.) )
 import Data.Semigroup ( Semigroup(..) ) 
@@ -24,8 +23,7 @@ import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Quaazar.Render.Viewport ( Viewport, setViewport )
 import Quaazar.Render.GL.Buffer ( Buffer )
-import Quaazar.Render.GL.Framebuffer ( Framebuffer, Target(..)
-                                     , bindFramebuffer ) 
+import Quaazar.Render.GL.Framebuffer ( Target(..), bindFramebuffer ) 
 import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Shader
 import Quaazar.Render.GL.Texture
@@ -34,8 +32,6 @@ import Quaazar.Render.Light ( ShadowConf )
 import Quaazar.Render.Lighting ( Shadows )
 import Quaazar.Render.Semantics
 import Quaazar.Render.RenderLayer
-import Quaazar.Utils.Log
-import Quaazar.Utils.Scoped
 
 import Prelude hiding ( (.), id, last, maximum )
 
@@ -93,46 +89,39 @@ instance (Semigroup b) => Semigroup (Compositor a b) where
 
 -- |This compositor node passes its input to its shader program and outputs both
 -- color and depth information as textures.
-newNode :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
-        => Viewport
-        -> Program' a 
-        -> m (Compositor a Layer)
-newNode vp (prog,semantics) = do
-  pure . Compositor $ \compositing va _ _ a -> do
-    -- get the next layer
-    layer <- fmap Layer get
-    modify succ
-    -- use it
-    lift $ do
-      -- use the node’s program and send input
-      useProgram prog
-      _ <- runShaderSemantics $ semantics a
-      layerUniform @= layer
-      compositingColormapsUniform @= (compositing^.offscreenArrayColormaps,Unit 0)
-      compositingDepthmapsUniform @= (compositing^.offscreenArrayDepthmaps,Unit 1)
-      -- bind the VA & the compositing framebuffer
-      bindVertexArray va
-      bindFramebuffer (compositing^.offscreenArrayFB) ReadWrite
-      -- render the shit
-      glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
-      setViewport vp
-      glDrawArrays gl_TRIANGLE_STRIP 0 4
-      pure layer
+postProcessNode :: Viewport -> Program' a -> Compositor a Layer
+postProcessNode vp (prog,semantics) = Compositor $ \compositing va _ _ a -> do
+  -- get the next layer
+  layer <- fmap Layer get
+  modify succ
+  -- use it
+  lift $ do
+    -- use the node’s program and send input
+    useProgram prog
+    _ <- runShaderSemantics $ semantics a
+    layerUniform @= layer
+    compositingColormapsUniform @= (compositing^.offscreenArrayColormaps,Unit 0)
+    compositingDepthmapsUniform @= (compositing^.offscreenArrayDepthmaps,Unit 1)
+    -- bind the VA & the compositing framebuffer
+    bindVertexArray va
+    bindFramebuffer (compositing^.offscreenArrayFB) ReadWrite
+    -- render the shit
+    glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
+    setViewport vp
+    glDrawArrays gl_TRIANGLE_STRIP 0 4
+    pure layer
 
 -- |This compositor node absorbs a 'RenderLayer'.
-newRLNode :: (MonadIO m,MonadScoped IO m,MonadError Log m)
-          => Viewport
-          -> m (Compositor RenderLayer Layer)
-newRLNode vp = do
-    pure . Compositor $ \compositing _ omniBuffer shadowsConf rl -> do
-      -- get next layer 
-      layer <- fmap Layer get
-      modify succ
-      -- use it
-      lift $ do
-        setViewport vp
-        unRenderLayer rl (compositing^.offscreenArrayFB) omniBuffer shadowsConf layer
-        pure layer
+renderNode :: Viewport -> Compositor RenderLayer Layer
+renderNode vp = Compositor $ \compositing _ omniBuffer shadowsConf rl -> do
+  -- get next layer 
+  layer <- fmap Layer get
+  modify succ
+  -- use it
+  lift $ do
+    setViewport vp
+    unRenderLayer rl (compositing^.offscreenArrayFB) omniBuffer shadowsConf layer
+    pure layer
 
 compositingColormapsUniform :: Uniform (Texture2DArray,Unit)
 compositingColormapsUniform = toUniform CompositingColormapsSem
