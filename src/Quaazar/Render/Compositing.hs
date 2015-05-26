@@ -103,6 +103,8 @@ postProcessNode vp (prog,semantics) = Compositor $ \compositing va _ _ a -> do
   modify succ
   -- use it
   lift $ do
+    bindFramebuffer (compositing^.offscreenArrayFB) ReadWrite
+    glClear gl_DEPTH_BUFFER_BIT
     -- use the node’s program and send input
     useProgram prog
     _ <- runShaderSemantics $ semantics a
@@ -122,7 +124,7 @@ buildPostProcessProgram :: (MonadIO m,MonadScoped IO m,MonadError Log m,MonadLog
                         -> (a -> ShaderSemantics ())
                         -> m (Program' a)
 buildPostProcessProgram fs semantics =
-  (,semantics) <$> buildProgram ppCopyVS Nothing Nothing fs
+  (,semantics) <$> buildProgram copyVS Nothing (Just ppCopyGS) fs
 
 -- |This compositor node absorbs a 'RenderLayer'.
 renderNode :: Viewport -> Compositor RenderLayer Layer
@@ -171,22 +173,22 @@ copyFS = unlines
   , "}"
   ]
 
-ppCopyVS :: String
-ppCopyVS = unlines
+ppCopyGS :: String
+ppCopyGS = unlines
   [
     "#version 430 core"
-  , "#extension AMD_vertex_shader_layer : require"
+
+  , "layout (triangles) in;"
+  , "layout (triangle_strip, max_vertices=3) out;"
 
   , declUniform LayerSem "int layer"
 
-  , "vec2[4] v = vec2[]("
-  , "   vec2(-1, 1)"
-  , " , vec2( 1, 1)"
-  , " , vec2(-1, -1)"
-  , " , vec2( 1, -1)"
-  , " );"
   , "void main() {"
-  , " gl_Layer = layer;"
-  , " gl_Position = vec4(v[gl_VertexID], 0., 1.);"
+  , "  for (int i = 0; i < 3; ++i) {"
+  , "    gl_Layer = layer;"
+  , "    gl_Position = gl_in[i].gl_Position;"
+  , "    EmitVertex();"
+  , "  }"
+  , " EndPrimitive();"
   , "}"
   ]
