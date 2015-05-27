@@ -115,7 +115,7 @@ postProcessNode vp (prog,semantics) = Compositor $ \compositing va _ _ a -> do
     -- render the shit
     setViewport vp
     glDrawArrays gl_TRIANGLE_STRIP 0 4
-    glFinish
+    glMemoryBarrier gl_TEXTURE_FETCH_BARRIER_BIT
     pure layer
 
 -- |Help users to build a post-process shader program.
@@ -136,7 +136,7 @@ renderNode vp = Compositor $ \compositing _ omniBuffer shadowsConf rl -> do
   lift $ do
     setViewport vp
     unRenderLayer rl (compositing^.offscreenArrayFB) omniBuffer shadowsConf layer
-    glFinish
+    glMemoryBarrier gl_TEXTURE_FETCH_BARRIER_BIT
     pure layer
 
 compositingColormapsUniform :: Uniform (Texture2DArray,Unit)
