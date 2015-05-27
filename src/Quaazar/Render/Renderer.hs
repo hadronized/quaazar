@@ -66,17 +66,14 @@ display :: (MonadIO m)
         -> m ()
 display copyProg lighting va compositing window a compt = liftIO $ do
   bindFramebuffer (compositing^.offscreenArrayFB) ReadWrite
-  glClearColor 0 0 0 0
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
-  layer <- flip evalStateT 0 $ runCompositor compt compositing va 
+  lastLayer <- flip evalStateT 0 $ runCompositor compt compositing va 
     (lighting^.lightOmniBuffer) (lighting^.shadows) a
   useProgram copyProg
   unbindFramebuffer ReadWrite
-  glClearColor 0 0 0 0
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
   bindVertexArray va
-  layerUniform @= layer
+  layerUniform @= lastLayer
   compositingColormapsUniform @= (compositing^.offscreenArrayColormaps,Unit 0)
-  compositingDepthmapsUniform @= (compositing^.offscreenArrayDepthmaps,Unit 1)
   glDrawArrays gl_TRIANGLE_STRIP 0 4
   liftIO $ swapBuffers window

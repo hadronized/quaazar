@@ -104,7 +104,6 @@ postProcessNode vp (prog,semantics) = Compositor $ \compositing va _ _ a -> do
   -- use it
   lift $ do
     bindFramebuffer (compositing^.offscreenArrayFB) ReadWrite
-    glClear gl_DEPTH_BUFFER_BIT
     -- use the node’s program and send input
     useProgram prog
     _ <- runShaderSemantics $ semantics a
@@ -116,6 +115,7 @@ postProcessNode vp (prog,semantics) = Compositor $ \compositing va _ _ a -> do
     -- render the shit
     setViewport vp
     glDrawArrays gl_TRIANGLE_STRIP 0 4
+    glFinish
     pure layer
 
 -- |Help users to build a post-process shader program.
@@ -136,6 +136,7 @@ renderNode vp = Compositor $ \compositing _ omniBuffer shadowsConf rl -> do
   lift $ do
     setViewport vp
     unRenderLayer rl (compositing^.offscreenArrayFB) omniBuffer shadowsConf layer
+    glFinish
     pure layer
 
 compositingColormapsUniform :: Uniform (Texture2DArray,Unit)
@@ -148,12 +149,14 @@ copyVS :: String
 copyVS = unlines
   [
     "#version 430 core"
+
   , "vec2[4] v = vec2[]("
   , "   vec2(-1, 1)"
   , " , vec2( 1, 1)"
   , " , vec2(-1, -1)"
   , " , vec2( 1, -1)"
   , " );"
+
   , "void main() {"
   , " gl_Position = vec4(v[gl_VertexID], 0., 1.);"
   , "}"
@@ -169,7 +172,7 @@ copyFS = unlines
   , declUniform LayerSem "int layer"
 
   , "void main() {"
-  , " frag = texelFetch(sources, ivec3(gl_FragCoord.xy,layer), 0);"
+  , " frag = texelFetch(sources, ivec3(gl_FragCoord.xy, layer), 0);"
   , "}"
   ]
 

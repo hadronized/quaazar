@@ -70,7 +70,6 @@ renderLayer cam vp ambient omnis shader models =
       Nothing -> return (map addNoShadows omnis,return ())
     bindFramebuffer fb ReadWrite
     setViewport vp
-    glClear gl_DEPTH_BUFFER_BIT
     renderModels shader models $ do
       runCamera (gpuCamera cam) camProjViewUniform unused eyeUniform
       ligAmbColUniform @= ligAmbCol
