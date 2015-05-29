@@ -1,3 +1,5 @@
+{-# LANGUAGE ExistentialQuantification #-}
+
 -----------------------------------------------------------------------------
 -- |
 -- Copyright   : (C) 2015 Dimitri Sabadie
@@ -14,7 +16,7 @@ module Quaazar.Render.RenderLayer where
 import Control.Lens
 import Control.Monad.State ( evalState )
 import Data.Bits ( (.|.) )
-import Data.Foldable ( traverse_ )
+import Data.Foldable ( for_, traverse_ )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Quaazar.Lighting.Light
@@ -47,14 +49,15 @@ newtype RenderLayer = RenderLayer {
                   -> IO ()
   }
 
+data GroupModel = forall mat. GroupModel (Program' mat) [Instance (GPUMesh,mat)]
+
 renderLayer :: Instance Projection
             -> Viewport
             -> Ambient
             -> [Instance Omni]
-            -> Program' mat
-            -> [Instance (GPUMesh,mat)]
+            -> [GroupModel]
             -> RenderLayer
-renderLayer cam vp ambient omnis shader models =
+renderLayer cam vp ambient omnis groups =
   RenderLayer $ \fb omniBuffer shadowsConf layer -> do
     let Ambient ligAmbCol ligAmbPow = ambient
     (omnisWithShadows,maybeBindShadowmaps_) <- case shadowsConf of
@@ -70,7 +73,7 @@ renderLayer cam vp ambient omnis shader models =
       Nothing -> return (map addNoShadows omnis,return ())
     bindFramebuffer fb ReadWrite
     setViewport vp
-    renderModels shader models $ do
+    for_ groups $ \group -> renderGroupModel group $ do
       runCamera (gpuCamera cam) camProjViewUniform unused eyeUniform
       ligAmbColUniform @= ligAmbCol
       ligAmbPowUniform @= ligAmbPow
@@ -85,12 +88,14 @@ renderLayer cam vp ambient omnis shader models =
       (omni',i) <- addShadowInfo lmax mmax hmax omni
       return (omni',i,trsf)
     addNoShadows inst =
-      let
-        omni = instCarried inst
-        trsf = instTransform inst
+      let omni = instCarried inst
+          trsf = instTransform inst
       in (omni,0,trsf)
     genShadowmap_ shdws (omni,shadowmapIndex,trsf) =
-      genShadowmap omni shadowmapIndex trsf (map (fmap fst) models) shdws
+      genShadowmap omni shadowmapIndex trsf (concatMap dropProgram groups) shdws
+
+dropProgram :: GroupModel -> [Instance GPUMesh]
+dropProgram (GroupModel _ i) = map (fmap fst) i
 
 cleanShadows :: Shadows -> IO ()
 cleanShadows (Shadows _ low medium high) = do
@@ -111,8 +116,8 @@ bindShadowmaps (Shadows _ low medium high) = do
   mediumShadowmapsUniform @= (fst medium ^.cubeOffscreenArrayColormaps,Unit 4)
   highShadowmapsUniform @= (fst high ^.cubeOffscreenArrayColormaps,Unit 5)
 
-renderModels :: Program' mat -> [Instance (GPUMesh,mat)] -> IO () -> IO ()
-renderModels (prog,semantics) insts beforeRender = do
+renderGroupModel :: GroupModel -> IO () -> IO ()
+renderGroupModel (GroupModel (prog,semantics) insts) beforeRender = do
   useProgram prog
   beforeRender 
   traverse_ (renderMeshInstance semantics) insts
