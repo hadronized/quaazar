@@ -26,9 +26,10 @@ import Quaazar.Render.Viewport ( Viewport, setViewport )
 import Quaazar.Render.GL.Buffer ( Buffer )
 import Quaazar.Render.GL.Framebuffer ( Target(..), bindFramebuffer ) 
 import Quaazar.Render.GL.Offscreen
+import Quaazar.Render.GL.Primitive
 import Quaazar.Render.GL.Shader
 import Quaazar.Render.GL.Texture
-import Quaazar.Render.GL.VertexArray ( VertexArray, bindVertexArray )
+import Quaazar.Render.GL.VertexArray
 import Quaazar.Render.Light ( ShadowConf )
 import Quaazar.Render.Lighting ( Shadows )
 import Quaazar.Render.Semantics
@@ -114,7 +115,7 @@ postProcessNode vp (prog,semantics) = Compositor $ \compositing va _ _ a -> do
     bindVertexArray va
     -- render the shit
     setViewport vp
-    glDrawArrays gl_TRIANGLE_STRIP 0 4
+    drawArrays STriangle 0 4
     glMemoryBarrier gl_TEXTURE_FETCH_BARRIER_BIT
     pure layer
 

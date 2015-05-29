@@ -23,9 +23,9 @@ import Quaazar.Render.Compositing
 import Quaazar.Render.GL.Framebuffer
 import Quaazar.Render.GL.Shader
 import Quaazar.Render.GL.Offscreen
+import Quaazar.Render.GL.Primitive
 import Quaazar.Render.GL.Texture
-import Quaazar.Render.GL.VertexArray ( VertexArray, bindVertexArray
-                                     , genAttributelessVertexArray )
+import Quaazar.Render.GL.VertexArray
 import Quaazar.Render.Light
 import Quaazar.Render.Lighting ( Lighting, getLighting, lightOmniBuffer
                                , shadows )
@@ -75,5 +75,5 @@ display copyProg lighting va compositing window a compt = liftIO $ do
   bindVertexArray va
   layerUniform @= lastLayer
   compositingColormapsUniform @= (compositing^.offscreenArrayColormaps,Unit 0)
-  glDrawArrays gl_TRIANGLE_STRIP 0 4
+  drawArrays STriangle 0 4
   liftIO $ swapBuffers window
