@@ -19,6 +19,7 @@ import Foreign.Ptr ( Ptr, nullPtr )
 import Graphics.Rendering.OpenGL.Raw
 import Numeric.Natural ( Natural )
 import Quaazar.Render.GL.GLObject
+import Quaazar.Render.GL.Primitive
 
 newtype VertexArray = VertexArray { unVertexArray :: GLuint } deriving (Eq,Ord,Show)
 
@@ -56,6 +57,39 @@ vertexAttribPointer attrib size atype normalized offset = liftIO $
     atype' = fromAttribType atype
     ptr    = nullPtr `advancePtr` offset :: Ptr Word8
 
+drawArrays :: (MonadIO m) => Primitive -> Natural -> Natural -> m ()
+drawArrays prim start count = liftIO $
+  glDrawArrays (fromPrimitive prim) (fromIntegral start) (fromIntegral count)
+
+drawArraysInstanced :: (MonadIO m)
+                    => Primitive
+                    -> Natural 
+                    -> Natural
+                    -> Natural 
+                    -> m ()
+drawArraysInstanced prim start count instNb = liftIO $
+  glDrawArraysInstanced (fromPrimitive prim) (fromIntegral start)
+    (fromIntegral count) (fromIntegral instNb)
+
+drawElements :: (MonadIO m) 
+             => Primitive 
+             -> Natural 
+             -> Int 
+             -> m ()
+drawElements prim count offset = liftIO $
+  glDrawElements (fromPrimitive prim) (fromIntegral count) gl_UNSIGNED_INT
+    ((nullPtr :: Ptr Word8) `advancePtr` offset)
+
+drawElementsInstanced :: (MonadIO m)
+                      => Primitive
+                      -> Natural
+                      -> Int
+                      -> Natural
+                      -> m ()
+drawElementsInstanced prim count offset instNb = liftIO $
+  glDrawElementsInstanced (fromPrimitive prim) (fromIntegral count)
+    gl_UNSIGNED_INT ((nullPtr :: Ptr Word8) `advancePtr` offset)
+    (fromIntegral instNb)
 fromAttribType :: AttribType -> GLenum
 fromAttribType attrib = case attrib of
   Ints   -> gl_INT
