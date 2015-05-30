@@ -20,6 +20,7 @@ module Quaazar.Scene.Hierarchy (
   , instCarried
   , instTransform
   , instantiate
+  , instantiateLoner
   ) where
 
 import Control.Monad.Reader ( Reader, ask, local, runReader )
@@ -59,7 +60,14 @@ data Instance a = Instance {
   , instTransform :: Transform
   } deriving (Eq,Functor,Show)
 
--- |Instantiate a value in the current 'Hierarchy'. That function is the only
--- way to get instances – i.e. @Instance a@.
+-- |Instantiate a value in the current 'Hierarchy'.
 instantiate :: a -> Transform -> Hierarchy (Instance a)
 instantiate a t = fmap (Instance a . (<> t)) above
+
+-- |Instantiate a loner object. We don’t need any hierarchy for that.
+--
+-- **Important**: keep in mind that hierarchies have a runtime cost. If you
+-- don’t level your objects – i.e. you only have one flat level – consider
+-- using that function to generate instances, as it’s faster and simpler to use.
+instantiateLoner :: a -> Transform -> Instance a
+instantiateLoner = Instance
