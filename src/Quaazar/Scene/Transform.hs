@@ -40,6 +40,7 @@ module Quaazar.Scene.Transform (
   , orientation
   , rescale
   , scale
+  , transformation
   ) where
 
 import Control.Lens
@@ -133,3 +134,8 @@ rescale (Scale x' y' z') = transformScale %~ \(Scale x y z) -> Scale (x*x') (y*y
 scale :: Scale -> Transform -> Transform
 scale = set transformScale
 
+-- |Build a new 'Transform' out of a transformation function
+-- (@Transform -> Transform@). That function is nice when you want to create a
+-- transform which is the composition of several transformations.
+transformation :: (Transform -> Transform) -> Transform
+transformation = ($ mempty)
