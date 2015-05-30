@@ -30,10 +30,6 @@ newtype ShaderSemantics a = ShaderSemantics {
 ($=) :: (Uniformable a) => Uniform a -> a -> ShaderSemantics ()
 s $= a = ShaderSemantics $ s @= a
 
--- FIXME: needs a better name
--- |'Program' with its 'Semantic's.
-type Program' a = (Program,a -> ShaderSemantics ())
-
 --------------------------------------------------------------------------------
 -- GLSL inputs
 data InputSem

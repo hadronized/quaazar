@@ -24,11 +24,9 @@ import Quaazar.Render.Camera ( GPUCamera(..), gpuCamera )
 import Quaazar.Render.Lighting
 import Quaazar.Render.Viewport ( Viewport, setViewport )
 import Quaazar.Render.GL.Buffer ( Buffer )
-import Quaazar.Render.GL.Framebuffer ( Framebuffer, Target(..)
-                                     , bindFramebuffer )
+import Quaazar.Render.GL.Framebuffer
 import Quaazar.Render.GL.Offscreen
-import Quaazar.Render.GL.Shader ( Uniform, Uniformable(..), (@=), unused
-                                , useProgram )
+import Quaazar.Render.GL.Shader
 import Quaazar.Render.GL.Texture ( Unit(..) )
 import Quaazar.Render.Light
 import Quaazar.Render.Mesh ( GPUMesh, renderMesh )
@@ -49,7 +47,21 @@ newtype RenderLayer = RenderLayer {
                   -> IO ()
   }
 
-data GroupModel = forall mat. GroupModel (Program' mat) [Instance (GPUMesh,mat)]
+-- |'GroupModel' is used to gather models that uses the same shader program.
+-- A 'GroupModel' owns two kind 'ShaderSemantics':
+--
+--   - one gets executed only once for a whole 'GroupModel': that’s very
+--     convenient for shared and relatively constant values, like time over a
+--     frame, the resolution of the screen, and so on and so forth;
+--   - the other one runs for each model and is considered to be a thin analogy
+--     to /materials/.
+data GroupModel =
+  forall mat.
+    GroupModel
+      Program
+      (ShaderSemantics ())
+      (mat -> ShaderSemantics ())
+      [Instance (GPUMesh,mat)]
 
 renderLayer :: Instance Projection
             -> Viewport
@@ -95,7 +107,7 @@ renderLayer cam vp ambient omnis groups =
       genShadowmap omni shadowmapIndex trsf (concatMap dropProgram groups) shdws
 
 dropProgram :: GroupModel -> [Instance GPUMesh]
-dropProgram (GroupModel _ i) = map (fmap fst) i
+dropProgram (GroupModel _ _ _ i) = map (fmap fst) i
 
 cleanShadows :: Shadows -> IO ()
 cleanShadows (Shadows _ low medium high) = do
@@ -117,10 +129,11 @@ bindShadowmaps (Shadows _ low medium high) = do
   highShadowmapsUniform @= (fst high ^.cubeOffscreenArrayColormaps,Unit 5)
 
 renderGroupModel :: GroupModel -> IO () -> IO ()
-renderGroupModel (GroupModel (prog,semantics) insts) beforeRender = do
+renderGroupModel (GroupModel prog gmSemantics matSemantics insts) beforeRender = do
   useProgram prog
+  runShaderSemantics gmSemantics
   beforeRender 
-  traverse_ (renderMeshInstance semantics) insts
+  traverse_ (renderMeshInstance matSemantics) insts
 
 renderMeshInstance :: (mat -> ShaderSemantics ()) -> Instance (GPUMesh,mat) -> IO ()
 renderMeshInstance semantics inst = do

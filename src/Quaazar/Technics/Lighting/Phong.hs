@@ -16,7 +16,7 @@ module Quaazar.Technics.Lighting.Phong where
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
 import Data.Aeson
-import Quaazar.Render.GL.Shader ( buildProgram )
+import Quaazar.Render.GL.Shader
 import Quaazar.Render.GL.Texture ( Texture2D, Unit(..) )
 import Quaazar.Render.Semantics
 import Quaazar.System.Loader
@@ -43,7 +43,7 @@ instance Load () PhongMaterialManifest where
   loadExt = const "qmat"
 
 getPhong :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
-         => m (Program' PhongMaterial)
+         => m (Program,PhongMaterial -> ShaderSemantics())
 getPhong = do
     prog <- buildProgram phongVS Nothing (Just phongGS) phongFS
     return (prog,semantics)

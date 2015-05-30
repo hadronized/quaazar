@@ -97,8 +97,8 @@ instance (Semigroup b) => Semigroup (Compositor a b) where
 -- **Important note**: you’re advised not to use 'buildProgram' to build the
 -- shader program. You should use 'buildPostProcessProgram' as it automatically
 -- handles the node’s layer and has a better interface.
-postProcessNode :: Viewport -> Program' a -> Compositor a Layer
-postProcessNode vp (prog,semantics) = Compositor $ \compositing va _ _ a -> do
+postProcessNode :: Viewport -> Program -> (a -> ShaderSemantics ()) -> Compositor a Layer
+postProcessNode vp prog semantics = Compositor $ \compositing va _ _ a -> do
   -- get the next layer
   layer <- fmap Layer get
   modify succ
@@ -123,7 +123,7 @@ postProcessNode vp (prog,semantics) = Compositor $ \compositing va _ _ a -> do
 buildPostProcessProgram :: (MonadIO m,MonadScoped IO m,MonadError Log m,MonadLogger m)
                         => String
                         -> (a -> ShaderSemantics ())
-                        -> m (Program' a)
+                        -> m (Program,a -> ShaderSemantics ())
 buildPostProcessProgram fs semantics =
   (,semantics) <$> buildProgram copyVS Nothing (Just ppCopyGS) fs
 
