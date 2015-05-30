@@ -106,10 +106,6 @@ zAxis = V3 0 0 1
 noScale :: Scale
 noScale = Scale 1 1 1
 
--- |Uniform scale.
-uniScale :: Float -> Scale
-uniScale s = Scale s s s
-
 -- |Accumulate a transform’s position with another.
 move :: Dir -> Transform -> Transform
 move dir = transformPosition %~ (+dir)
@@ -133,6 +129,10 @@ rescale (Scale x' y' z') = transformScale %~ \(Scale x y z) -> Scale (x*x') (y*y
 -- |Reset the scale of a transform.
 scale :: Scale -> Transform -> Transform
 scale = set transformScale
+
+-- |Uniform scale.
+uniScale :: Float -> Transform -> Transform
+uniScale s = scale $ Scale s s s
 
 -- |Build a new 'Transform' out of a transformation function
 -- (@Transform -> Transform@). That function is nice when you want to create a
