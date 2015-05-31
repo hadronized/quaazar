@@ -13,6 +13,7 @@ module Quaazar.Scene (
     module Quaazar.Scene.BoundingVolume
   , module Quaazar.Scene.Color
   , module Quaazar.Scene.Hierarchy
+  , module Quaazar.Scene.Model
   , module Quaazar.Scene.Transform
   ) where
 
@@ -20,4 +21,5 @@ module Quaazar.Scene (
 import Quaazar.Scene.BoundingVolume
 import Quaazar.Scene.Color
 import Quaazar.Scene.Hierarchy
+import Quaazar.Scene.Model
 import Quaazar.Scene.Transform
