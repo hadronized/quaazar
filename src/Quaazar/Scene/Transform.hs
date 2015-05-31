@@ -115,12 +115,12 @@ position :: Position -> Transform -> Transform
 position = set transformPosition
 
 -- |Accumulate a transform’s orientation with another.
-orient :: Orientation -> Transform -> Transform
-orient o = transformOrientation %~ (normalize . (o*))
+orient :: V3 Float -> Float -> Transform -> Transform
+orient axis phi = transformOrientation %~ (normalize . (axisAngle axis phi *))
 
 -- |Reset the orientation of a transform.
-orientation :: Orientation -> Transform -> Transform
-orientation = set transformOrientation
+orientation :: V3 Float -> Float -> Transform -> Transform
+orientation axis phi = set transformOrientation $ axisAngle axis phi 
 
 -- |Accumulate a transform’s scale with another.
 rescale :: Scale -> Transform -> Transform
