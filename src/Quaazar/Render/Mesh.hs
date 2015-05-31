@@ -14,10 +14,8 @@ module Quaazar.Render.Mesh where
 import Control.Lens
 import Control.Monad.Trans ( MonadIO(..) )
 import Data.Word ( Word32 )
-import Foreign.Ptr ( nullPtr )
 import Foreign.Storable ( sizeOf )
 import Linear ( M44, V2, V3 )
-import Graphics.Rendering.OpenGL.Raw
 import Quaazar.Geometry.Mesh hiding ( Line, Triangle )
 import Quaazar.Geometry.Normal
 import Quaazar.Geometry.Position
