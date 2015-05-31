@@ -33,6 +33,7 @@ import Quaazar.Render.Mesh ( GPUMesh, renderMesh )
 import Quaazar.Render.Projection ( Projection )
 import Quaazar.Render.Semantics
 import Quaazar.Scene.Hierarchy ( Instance, instCarried, instTransform )
+import Quaazar.Scene.Model
 
 newtype Layer = Layer { layerID :: Natural } deriving (Eq,Ord,Show)
 
@@ -61,7 +62,7 @@ data GroupModel =
       Program
       (ShaderSemantics ())
       (mat -> ShaderSemantics ())
-      [Instance (GPUMesh,mat)]
+      [Instance (Model mat)]
 
 renderLayer :: Instance Projection
             -> Viewport
@@ -107,7 +108,7 @@ renderLayer cam vp ambient omnis groups =
       genShadowmap omni shadowmapIndex trsf (concatMap dropProgram groups) shdws
 
 dropProgram :: GroupModel -> [Instance GPUMesh]
-dropProgram (GroupModel _ _ _ i) = map (fmap fst) i
+dropProgram (GroupModel _ _ _ i) = map (fmap $ fst . unModel) i
 
 cleanShadows :: Shadows -> IO ()
 cleanShadows (Shadows _ low medium high) = do
@@ -135,12 +136,12 @@ renderGroupModel (GroupModel prog gmSemantics matSemantics insts) beforeRender =
   beforeRender 
   traverse_ (renderMeshInstance matSemantics) insts
 
-renderMeshInstance :: (mat -> ShaderSemantics ()) -> Instance (GPUMesh,mat) -> IO ()
+renderMeshInstance :: (mat -> ShaderSemantics ()) -> Instance (Model mat) -> IO ()
 renderMeshInstance semantics inst = do
     runShaderSemantics $ semantics mat
     renderMesh gmesh modelUniform trsf
   where
-    (gmesh,mat) = instCarried inst
+    (gmesh,mat) = unModel $ instCarried inst
     trsf  = instTransform inst
 
 layerUniform :: Uniform Layer 
