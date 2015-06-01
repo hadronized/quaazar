@@ -38,7 +38,7 @@ makeLenses ''Offscreen
 -- |'genOffscreen w h flt texift' generates an 'Offscreen' which
 -- width is 'w', heigh is 'h', the texture min and mag filters are
 -- 'flt' and the internal format is 'texift'.
-genOffscreen :: (MonadScoped IO m,MonadIO m,MonadError Log m)
+genOffscreen :: (MonadIO m,MonadScoped IO m,MonadError Log m)
              => Natural
              -> Natural
              -> Filter

@@ -45,7 +45,7 @@ instance Load () PhongMaterialManifest where
 getPhong :: (MonadScoped IO m,MonadIO m,MonadLogger m,MonadError Log m)
          => m (Program,PhongMaterial -> ShaderSemantics())
 getPhong = do
-    prog <- buildProgram phongVS Nothing (Just phongGS) phongFS
+    prog <- buildProgram phongVS Nothing Nothing phongFS
     return (prog,semantics)
   where
     semantics mat = do
@@ -83,45 +83,14 @@ phongVS = unlines
   , "}"
   ]
 
-phongGS :: String
-phongGS = unlines
-  [
-    "#version 430 core"
-
-  , "layout (triangles) in;"
-  , "layout (triangle_strip, max_vertices=3) out;"
-
-  , declUniform LayerSem "int layer"
- 
-  , "in vec3 vco[];"
-  , "in vec3 vno[];"
-  , "in vec2 vuv[];"
-
-  , "out vec3 gco;"
-  , "out vec3 gno;"
-  , "out vec2 guv;"
-
-  , "void main() {"
-  , "  for (int i = 0; i < 3; ++i) {"
-  , "    gl_Layer = layer;"
-  , "    gco = vco[i];"
-  , "    gno = vno[i];"
-  , "    guv = vuv[i];"
-  , "    gl_Position = gl_in[i].gl_Position;"
-  , "    EmitVertex();"
-  , "  }"
-  , "  EndPrimitive();"
-  , "}"
-  ]
-
 phongFS :: String
 phongFS = unlines
   [
     "#version 430 core"
 
-  , "in vec3 gco;"
-  , "in vec3 gno;"
-  , "in vec2 guv;"
+  , "in vec3 vco;"
+  , "in vec3 vno;"
+  , "in vec2 vuv;"
 
   , declUniform EyeSem "vec3 eye"
   , declUniform (extendUniformSem PhongDiffMapSem) "sampler2D phongDiffMap"
@@ -172,10 +141,10 @@ phongFS = unlines
   , "}"
 
   , "void main() {"
-  , "  vec3 phongDiff = texture(phongDiffMap, guv).rgb;"
-  , "  vec3 phongSpec = texture(phongSpecMap, guv).rgb;"
-  , "  float phongGloss = texture(phongGlossMap, guv).r;"
-  , "  vec3 v = normalize(eye - gco);"
+  , "  vec3 phongDiff = texture(phongDiffMap, vuv).rgb;"
+  , "  vec3 phongSpec = texture(phongSpecMap, vuv).rgb;"
+  , "  float phongGloss = texture(phongGlossMap, vuv).r;"
+  , "  vec3 v = normalize(eye - vco);"
 
     -- ambient lighting
   , "  vec3 ambient = ligAmbCol * phongDiff * ligAmbPow;"
@@ -189,12 +158,12 @@ phongFS = unlines
   , "    float ligRad = omniBuffer.ligs[i].rad;"
   , "    uint shadowLOD = omniBuffer.ligs[i].shadowLOD;"
   , "    uint shadowmapIndex = omniBuffer.ligs[i].shadowmapIndex;"
-  , "    vec3 ligToVertex = omniBuffer.ligs[i].pos - gco;"
+  , "    vec3 ligToVertex = omniBuffer.ligs[i].pos - vco;"
   , "    vec3 ligDir = normalize(ligToVertex);"
   , "    float distToLight = length(ligToVertex);"
-  , "    vec3 r = normalize(reflect(-ligDir,gno));"
+  , "    vec3 r = normalize(reflect(-ligDir,vno));"
   , "    vec3 spec = pow(max(0.,dot(r,v)), 1. + phongGloss * 512.) * ligCol * phongSpec;"
-  , "    vec3 diff = max(0.,dot(gno,ligDir)) * (ligCol - spec) * phongDiff;"
+  , "    vec3 diff = max(0.,dot(vno,ligDir)) * (ligCol - spec) * phongDiff;"
   , "    float atten = ligPow / (pow(1. + distToLight/ligRad,2.));"
          -- shadowing
   , "    float shadow = shadowLOD == 0u ? 1. : computeShadow(shadowLOD, shadowmapIndex, -ligDir, ligRad, distToLight);"

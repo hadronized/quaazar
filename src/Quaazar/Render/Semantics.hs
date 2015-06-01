@@ -60,9 +60,8 @@ data UniformSem
   | LowShadowmapsSem
   | MediumShadowmapsSem
   | HighShadowmapsSem
-  | LayerSem
-  | CompositingColormapsSem
-  | CompositingDepthmapsSem
+  | ColormapSem
+  | DepthmapSem
   | ExtendSem Int 
     deriving (Eq,Ord,Show)
 
@@ -81,10 +80,9 @@ instance Enum UniformSem where
     LowShadowmapsSem -> 15
     MediumShadowmapsSem -> 16
     HighShadowmapsSem -> 17
-    LayerSem -> 18
-    CompositingColormapsSem -> 19
-    CompositingDepthmapsSem -> 20
-    ExtendSem sem -> 21 + fromIntegral sem
+    ColormapSem -> 18
+    DepthmapSem -> 19
+    ExtendSem sem -> 20 + fromIntegral sem
   toEnum i
     | i == 0 = CamProjViewSem
     | i == 1 = ModelSem
@@ -99,10 +97,9 @@ instance Enum UniformSem where
     | i == 15 = LowShadowmapsSem
     | i == 16 = MediumShadowmapsSem
     | i == 17 = HighShadowmapsSem
-    | i == 18 = LayerSem
-    | i == 19 = CompositingColormapsSem
-    | i == 20 = CompositingDepthmapsSem
-    | otherwise = ExtendSem $ i - 21
+    | i == 18 = ColormapSem
+    | i == 19 = DepthmapSem
+    | otherwise = ExtendSem $ i - 20
 
 declUniform :: UniformSem -> String -> String
 declUniform s n = "layout (location = " ++ show (fromUniformSem s) ++ ") uniform " ++ n ++ ";"

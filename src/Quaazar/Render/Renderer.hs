@@ -29,7 +29,7 @@ import Quaazar.Render.GL.VertexArray
 import Quaazar.Render.Light
 import Quaazar.Render.Lighting ( Lighting, getLighting, lightOmniBuffer
                                , shadows )
-import Quaazar.Render.RenderLayer ( Layer, layerUniform )
+import Quaazar.Render.RenderLayer
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
@@ -40,16 +40,13 @@ getRenderer :: (Applicative m,MonadScoped IO m,MonadIO m,MonadLogger m,MonadErro
             -> Natural
             -> Natural
             -> Maybe ShadowConf
-            -> Natural
             -> Window
-            -> m (a -> Compositor a Layer -> q())
-getRenderer znear zfar w h lightMaxNb shadowConf layerMaxNb window = do
+            -> m (a -> Compositor a Texture2D -> q())
+getRenderer znear zfar w h lightMaxNb shadowConf window = do
   copyProg <- getCopyProgram
   lighting <- getLighting znear zfar w h lightMaxNb shadowConf
   va <- genAttributelessVertexArray
-  compositingOff <- genOffscreenArray w h layerMaxNb Nearest RGBA32F
-    (ColorAttachment 0) Depth32F DepthAttachment
-  pure $ display copyProg lighting va compositingOff window
+  pure $ display copyProg lighting va window
 
 getCopyProgram :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
                => m Program
@@ -59,21 +56,17 @@ display :: (MonadIO m)
         => Program
         -> Lighting
         -> VertexArray
-        -> OffscreenArray
         -> Window
         -> a
-        -> Compositor a Layer
+        -> Compositor a Texture2D
         -> m ()
-display copyProg lighting va compositing window a compt = liftIO $ do
-  bindFramebuffer (compositing^.offscreenArrayFB) ReadWrite
-  glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
-  lastLayer <- flip evalStateT 0 $ runCompositor compt compositing va 
-    (lighting^.lightOmniBuffer) (lighting^.shadows) a
+display copyProg lighting va window a compt = liftIO $ do
+  image <- runCompositor compt va  (lighting^.lightOmniBuffer)
+    (lighting^.shadows) a
   useProgram copyProg
   unbindFramebuffer ReadWrite
   glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
+  colormapUniform @= (image,Unit 0)
   bindVertexArray va
-  layerUniform @= lastLayer
-  compositingColormapsUniform @= (compositing^.offscreenArrayColormaps,Unit 0)
   drawArrays STriangle 0 4
   liftIO $ swapBuffers window

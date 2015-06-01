@@ -35,16 +35,10 @@ import Quaazar.Render.Semantics
 import Quaazar.Scene.Hierarchy ( Instance, instCarried, instTransform )
 import Quaazar.Scene.Model
 
-newtype Layer = Layer { layerID :: Natural } deriving (Eq,Ord,Show)
-
-instance Uniformable Layer where
-  sendUniform l (Layer i) = sendUniform l i
-
 newtype RenderLayer = RenderLayer {
     unRenderLayer :: Framebuffer                -- output framebuffer
                   -> Buffer                     -- omni light buffer
                   -> Maybe (ShadowConf,Shadows) -- shadows configuration
-                  -> Layer
                   -> IO ()
   }
 
@@ -71,7 +65,7 @@ renderLayer :: Instance Projection
             -> [GroupModel]
             -> RenderLayer
 renderLayer cam vp ambient omnis groups =
-  RenderLayer $ \fb omniBuffer shadowsConf layer -> do
+  RenderLayer $ \fb omniBuffer shadowsConf -> do
     let Ambient ligAmbCol ligAmbPow = ambient
     (omnisWithShadows,maybeBindShadowmaps_) <- case shadowsConf of
       Just (conf,shdws) -> do 
@@ -85,13 +79,13 @@ renderLayer cam vp ambient omnis groups =
         return (omnisWithShadows,bindShadowmaps shdws)
       Nothing -> return (map addNoShadows omnis,return ())
     bindFramebuffer fb ReadWrite
+    glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT
     setViewport vp
     for_ groups $ \group -> renderGroupModel group $ do
       runCamera (gpuCamera cam) camProjViewUniform unused eyeUniform
       ligAmbColUniform @= ligAmbCol
       ligAmbPowUniform @= ligAmbPow
       pushOmnis omnisWithShadows omniBuffer
-      layerUniform @= layer
       maybeBindShadowmaps_
   where
     addShadowInfo_ lmax mmax hmax inst = do
@@ -143,6 +137,3 @@ renderMeshInstance semantics inst = do
   where
     (gmesh,mat) = unModel $ instCarried inst
     trsf  = instTransform inst
-
-layerUniform :: Uniform Layer 
-layerUniform = toUniform LayerSem
