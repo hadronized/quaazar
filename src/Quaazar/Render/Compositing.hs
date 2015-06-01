@@ -16,13 +16,10 @@ import Control.Category ( Category(..) )
 import Control.Lens
 import Control.Monad ( (>=>) )
 import Control.Monad.Error.Class ( MonadError )
-import Control.Monad.Trans ( MonadIO, lift )
-import Control.Monad.Trans.State ( StateT, get, modify )
+import Control.Monad.Trans ( MonadIO )
 import Data.Bits ( (.|.) )
 import Data.Semigroup ( Semigroup(..) ) 
 import Graphics.Rendering.OpenGL.Raw
-import Numeric.Natural ( Natural )
-import Quaazar.Render.Viewport ( Viewport, setViewport )
 import Quaazar.Render.GL.Buffer ( Buffer )
 import Quaazar.Render.GL.Framebuffer ( Target(..), bindFramebuffer ) 
 import Quaazar.Render.GL.Offscreen
@@ -103,7 +100,7 @@ postProcessNode :: (MonadIO m,MonadScoped IO m,MonadError Log m)
                 -> (a -> ShaderSemantics ())
                 -> m (Compositor a Texture2D)
 postProcessNode vp prog semantics = do
-    Offscreen colormap depthmap fb <- genOffscreen w h Linear RGBA32F
+    Offscreen colormap _ fb <- genOffscreen w h Linear RGBA32F
     pure . Compositor $ \va _ _ a -> do
       bindFramebuffer fb ReadWrite
       glClear $ gl_COLOR_BUFFER_BIT .|. gl_DEPTH_BUFFER_BIT

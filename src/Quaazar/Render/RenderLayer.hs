@@ -18,7 +18,6 @@ import Control.Monad.State ( evalState )
 import Data.Bits ( (.|.) )
 import Data.Foldable ( for_, traverse_ )
 import Graphics.Rendering.OpenGL.Raw
-import Numeric.Natural ( Natural )
 import Quaazar.Lighting.Light
 import Quaazar.Render.Camera ( GPUCamera(..), gpuCamera )
 import Quaazar.Render.Lighting

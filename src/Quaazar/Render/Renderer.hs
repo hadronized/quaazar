@@ -14,7 +14,6 @@ module Quaazar.Render.Renderer where
 import Control.Lens
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) )
-import Control.Monad.Trans.State ( evalStateT )
 import Data.Bits ( (.|.) )
 import Graphics.Rendering.OpenGL.Raw
 import Graphics.UI.GLFW ( Window, swapBuffers )
@@ -22,14 +21,12 @@ import Numeric.Natural ( Natural )
 import Quaazar.Render.Compositing
 import Quaazar.Render.GL.Framebuffer
 import Quaazar.Render.GL.Shader
-import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Primitive
 import Quaazar.Render.GL.Texture
 import Quaazar.Render.GL.VertexArray
 import Quaazar.Render.Light
 import Quaazar.Render.Lighting ( Lighting, getLighting, lightOmniBuffer
                                , shadows )
-import Quaazar.Render.RenderLayer
 import Quaazar.Utils.Log
 import Quaazar.Utils.Scoped
 
