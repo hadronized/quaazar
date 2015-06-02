@@ -40,6 +40,7 @@ library
                      , Quaazar.Render.Compositing
                      , Quaazar.Render.GL.Shader
                      , Quaazar.Render.GL.Texture
+                     , Quaazar.Render.Glyph
                      , Quaazar.Render.Semantics
                      , Quaazar.Render.Light
                      , Quaazar.Render.Mesh
