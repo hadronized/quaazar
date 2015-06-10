@@ -49,6 +49,7 @@ library
                      , Quaazar.Render.Viewport
                      , Quaazar.Scene
                      , Quaazar.Scene.BoundingVolume
+                     , Quaazar.Scene.Camera
                      , Quaazar.Scene.Color
                      , Quaazar.Scene.Hierarchy
                      , Quaazar.Scene.Model

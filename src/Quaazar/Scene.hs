@@ -11,6 +11,7 @@
 
 module Quaazar.Scene (
     module Quaazar.Scene.BoundingVolume
+  , module Quaazar.Scene.Camera
   , module Quaazar.Scene.Color
   , module Quaazar.Scene.Hierarchy
   , module Quaazar.Scene.Model
@@ -19,6 +20,7 @@ module Quaazar.Scene (
 
 
 import Quaazar.Scene.BoundingVolume
+import Quaazar.Scene.Camera
 import Quaazar.Scene.Color
 import Quaazar.Scene.Hierarchy
 import Quaazar.Scene.Model
