@@ -25,6 +25,7 @@ library
                      , Quaazar.Control
                      , Quaazar.Control.Constraint
                      , Quaazar.Control.Monad
+                     , Quaazar.Control.Trans
                      , Quaazar.Geometry
                      , Quaazar.Geometry.Mesh
                      , Quaazar.Geometry.Normal
