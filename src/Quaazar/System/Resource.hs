@@ -20,6 +20,7 @@ module Quaazar.System.Resource (
   ) where
 
 import Control.Lens
+import Control.Monad ( unless )
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO(..) ) 
 import Control.Monad.Trans.State ( StateT, get, modify, put )
@@ -90,6 +91,11 @@ class Resource r where
            => String
            -> Opt r 
            -> m r
+  -- |Manually inject a resource in the 'Cache'. This can be done to track
+  -- generated resources, such as procedurally generated textures and meshes.
+  --
+  -- Trying to override a resource has no effect.
+  inject :: (HasCache m) => String -> r -> m ()
 
 -- |If your 'r' resource type has no option (i.e. @Opt r = ()@), you can use
 -- 'retrieve_' without passing a dummy '()'.
@@ -108,6 +114,9 @@ instance Resource Mesh where
         loaded <- load_ name
         modifyCache $ cachedMeshes . at name .~ Just loaded
         pure loaded
+  inject name r = do
+    found <- fmap (has (ix name) . _cachedMeshes) getCache
+    unless found . modifyCache $ cachedMeshes . at name .~ Just r
 
 instance Resource GPUMesh where
   type Opt GPUMesh = ()
@@ -119,6 +128,9 @@ instance Resource GPUMesh where
         gmsh <- retrieve_ name >>= gpuMesh
         modifyCache $ cachedGPUMeshes . at name .~ Just gmsh
         pure gmsh
+  inject name r = do
+    found <- fmap (has (ix name) . _cachedGPUMeshes) getCache
+    unless found . modifyCache $ cachedGPUMeshes . at name .~ Just r
 
 instance Resource Texture2D where
   type Opt Texture2D = (Wrap,Filter,Maybe CompareFunc,Natural,Natural)
@@ -130,6 +142,9 @@ instance Resource Texture2D where
         loaded <- load name opt
         modifyCache $ cachedTexture2Ds . at name .~ Just loaded
         pure loaded
+  inject name r = do
+    found <- fmap (has (ix name) . _cachedTexture2Ds) getCache
+    unless found . modifyCache $ cachedTexture2Ds . at name .~ Just r
 
 instance Resource Omni where
   type Opt Omni = ()
@@ -141,6 +156,9 @@ instance Resource Omni where
         loaded <- load_ name 
         modifyCache $ cachedOmnis . at name .~ Just loaded
         pure loaded
+  inject name r = do
+    found <- fmap (has (ix name) . _cachedOmnis) getCache
+    unless found . modifyCache $ cachedOmnis . at name .~ Just r
 
 instance Resource PhongMaterial where
   type Opt PhongMaterial = (Wrap,Filter,Maybe CompareFunc,Natural,Natural)
@@ -156,3 +174,6 @@ instance Resource PhongMaterial where
         let mat = PhongMaterial diffTex specTex glossTex
         modifyCache $ cachedPhongMaterials . at name .~ Just mat 
         pure mat
+  inject name r = do
+    found <- fmap (has (ix name) . _cachedOmnis) getCache
+    unless found . modifyCache $ cachedPhongMaterials . at name .~ Just r
