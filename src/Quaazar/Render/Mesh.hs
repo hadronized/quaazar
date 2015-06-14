@@ -12,7 +12,6 @@
 module Quaazar.Render.Mesh where
 
 import Control.Lens
-import Control.Monad.Trans ( MonadIO(..) )
 import Data.Word ( Word32 )
 import Foreign.Storable ( sizeOf )
 import Linear ( M44, V2, V3 )
@@ -28,6 +27,7 @@ import Quaazar.Render.GL.VertexArray
 import Quaazar.Render.Semantics
 import Quaazar.Render.Transform ( transformMatrix )
 import Quaazar.Scene.Transform ( Transform )
+import Quaazar.System.Resource
 
 data GPUMesh = GPUMesh {
     vertexBuffer :: Buffer
@@ -106,3 +106,12 @@ toGLPrimitive vg = case vg of
     Triangles{}  -> Triangle
     SLines{}     -> SLine
     STriangles{} -> STriangle
+
+getGPUMeshManager :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
+                  => (String -> m Mesh)
+                  -> m (String -> m GPUMesh)
+getGPUMeshManager retrieveMesh = do
+  resMap <- getResourceMap
+  pure $ \name -> do
+    mesh <- retrieveMesh name
+    lookupRes resMap name >>= maybe (gpuMesh mesh) pure

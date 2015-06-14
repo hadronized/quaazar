@@ -25,14 +25,16 @@
 module Quaazar.Lighting.Light (
     -- * Lights
     Ambient(..)
+  , getAmbientManager
   , Omni(..)
+  , getOmniManager
   ) where
 
 import Data.Aeson
 import Data.Semigroup ( Semigroup(..) )
 import Quaazar.Lighting.Shadow
 import Quaazar.Scene.Color ( Color, color )
-import Quaazar.System.Loader ( Load(..) )
+import Quaazar.System.Resource
 
 -- |'Ambient col pow' is the ambient lighting of
 -- scene.
@@ -70,6 +72,10 @@ instance Monoid Ambient where
 instance Semigroup Ambient where
   Ambient ca pa <> Ambient cb pb = Ambient (ca + cb) (pa + pb)
   
+getAmbientManager :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
+                  => m (String -> m Ambient)
+getAmbientManager = getSimpleManager
+
 -- |'Omni col pow rad shadowLOD' is an omnidirectional light.
 --
 -- 'shadowLOD' is an object of type @Maybe ShadowLOD@. Feel free to read
@@ -94,3 +100,7 @@ instance FromJSON Omni where
 instance Load () Omni where
   loadRoot = const "lights"
   loadExt = const "qlig"
+
+getOmniManager :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
+               => m (String -> m Omni)
+getOmniManager = getSimpleManager

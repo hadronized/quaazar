@@ -25,6 +25,7 @@ import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Log ( gllog )
 import Quaazar.Render.GL.Shader ( Uniformable(..) )
 import Quaazar.System.Loader ( Load(..), rootPath )
+import Quaazar.System.Resource
 import Quaazar.Utils.Log
 import System.FilePath ( (</>) )
 
@@ -432,3 +433,11 @@ rgba8Converter (PixelRGBA8 r g b a) = map ((*imax8) . realToFrac) [r,g,b,a]
 
 rgba16Converter :: PixelRGBA16 -> [Float]
 rgba16Converter (PixelRGBA16 r g b a) = map ((*imax16) . realToFrac) [r,g,b,a]
+
+getTexture2DManager :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
+                    => m (String -> Wrap -> Filter -> Maybe CompareFunc -> Natural -> Natural -> m Texture2D)
+getTexture2DManager = do
+  resMap <- getResourceMap
+  pure $ \name wrap flt cmpf minlvl maxlvl ->
+    lookupRes resMap name >>= maybe (load name (wrap,flt,cmpf,minlvl,maxlvl)) pure
+
