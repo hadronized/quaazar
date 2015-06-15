@@ -84,6 +84,7 @@ library
                      , FlexibleContexts
                      , FlexibleInstances
                      , FunctionalDependencies
+                     , LambdaCase
                      , GeneralizedNewtypeDeriving
                      , MultiParamTypeClasses
                      , ScopedTypeVariables
