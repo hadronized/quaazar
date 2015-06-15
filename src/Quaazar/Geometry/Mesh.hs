@@ -18,6 +18,7 @@ module Quaazar.Geometry.Mesh (
     Mesh(Mesh)
   , meshVertices
   , meshVGroup
+  , getMeshManager
     -- * Re-exported modules
   , module Quaazar.Geometry.Vertex
   , module Quaazar.Geometry.VGroup

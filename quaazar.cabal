@@ -58,6 +58,7 @@ library
                      , Quaazar.System
                      , Quaazar.System.Event
                      , Quaazar.System.Loader
+                     , Quaazar.System.Managers
                      , Quaazar.System.Resource
                      , Quaazar.Technics
                      , Quaazar.Technics.Lighting.Phong
