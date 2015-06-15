@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase, RankNTypes #-}
+{-# LANGUAGE RankNTypes #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -16,6 +16,7 @@ module Quaazar.System.Resource (
     ResourceMap(..)
   , getResourceMap
   , getSimpleManager
+  , mkResourceManager
     -- * Re-exported
   , module Control.Monad.Error.Class
   , module Control.Monad.Trans
