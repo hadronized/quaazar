@@ -436,8 +436,11 @@ rgba16Converter (PixelRGBA16 r g b a) = map ((*imax16) . realToFrac) [r,g,b,a]
 
 getTexture2DManager :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
                     => m (String -> Wrap -> Filter -> Maybe CompareFunc -> Natural -> Natural -> m Texture2D)
-getTexture2DManager = do
-  resMap <- getResourceMap
-  pure $ \name wrap flt cmpf minlvl maxlvl ->
-    lookupRes resMap name >>= maybe (load name (wrap,flt,cmpf,minlvl,maxlvl)) pure
+getTexture2DManager = mkResourceManager $ \insert lkp ->
+  pure $ \name wrap flt cmpf minlvl maxlvl -> lkp name >>= \case
+    Just r -> pure r
+    Nothing -> do
+      r <- load name (wrap,flt,cmpf,minlvl,maxlvl)
+      insert name r
+      pure r
 
