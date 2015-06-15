@@ -13,15 +13,12 @@
 
 module Quaazar.Technics.Lighting.Phong where
 
-import Control.Monad.Error.Class ( MonadError )
-import Control.Monad.Trans ( MonadIO(..) )
 import Data.Aeson
+import Numeric.Natural ( Natural )
 import Quaazar.Render.GL.Shader
-import Quaazar.Render.GL.Texture ( Texture2D, Unit(..) )
+import Quaazar.Render.GL.Texture
 import Quaazar.Render.Semantics
-import Quaazar.System.Loader
-import Quaazar.Utils.Log
-import Quaazar.Utils.Scoped
+import Quaazar.System.Resource
 
 data PhongMaterial = PhongMaterial {
     diffuseMap  :: Texture2D
@@ -174,3 +171,18 @@ phongFS = unlines
   , "  frag = clamp(vec4(ambient + omni,1.), vec4(0.,0.,0.,0.), vec4(1.,1.,1.,1.));"
   , "}"
   ]
+
+getPhongMaterialManager :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
+                        => (String -> Wrap -> Filter -> Maybe CompareFunc -> Natural -> Natural -> m Texture2D)
+                        -> m (String -> m PhongMaterial)
+getPhongMaterialManager getTex2D = mkResourceManager $ \insert lkp ->
+  pure $ \name -> lkp name >>= \case
+    Just r -> pure r
+    Nothing -> do
+      PhongMaterialManifest dname sname gname <- load_ name
+      diff <- getTex2D dname ClampToEdge Linear Nothing 0 0
+      spec <- getTex2D sname ClampToEdge Linear Nothing 0 0
+      gloss <- getTex2D gname ClampToEdge Linear Nothing 0 0
+      let mat = PhongMaterial diff spec gloss
+      insert name mat
+      pure mat
