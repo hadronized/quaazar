@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE LambdaCase, RankNTypes #-}
 
 -----------------------------------------------------------------------------
 -- |
@@ -57,6 +57,10 @@ mkResourceManager builder = do
 -- Simple manager with default implementation for simple managed objects.
 getSimpleManager :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m,Load () a)
                  => m (String -> m a)
-getSimpleManager = do
-  resMap <- getResourceMap
-  pure $ \name -> lookupRes resMap name >>= maybe (load_ name) pure
+getSimpleManager = mkResourceManager $ \insert lkp ->
+    pure $ \name -> lkp name >>= \case
+      Just r -> pure r
+      Nothing -> do
+        r <- load_ name
+        insert name r
+        pure r
