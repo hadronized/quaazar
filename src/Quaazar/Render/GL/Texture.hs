@@ -345,7 +345,7 @@ imageToTexture :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
                -> DynamicImage
                -> m Texture2D
 imageToTexture wrap flt cmpf baseLvl maxLvl dynimg = do
-  info CoreLog $ "texture type is " ++ showImageFormat dynimg
+  info DebLog $ "texture type is " ++ showImageFormat dynimg
   case dynimg of
     ImageY8 img -> convertImage_ y8Converter img wrap flt cmpf baseLvl maxLvl
     ImageY16 img -> convertImage_ y16Converter img wrap flt cmpf baseLvl maxLvl
