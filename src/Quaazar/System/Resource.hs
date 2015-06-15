@@ -33,6 +33,7 @@ import Quaazar.System.Loader
 import Quaazar.Utils.Log ( Log, MonadLogger )
 import Quaazar.Utils.Scoped ( MonadScoped )
 
+-- IO resource map with reference semantic. Can be shared between computations.
 data ResourceMap a = ResourceMap {
     insertRes :: forall m. (MonadIO m) => String -> a -> m ()
   , lookupRes :: forall m. (MonadIO m) => String -> m (Maybe a)
@@ -46,6 +47,14 @@ getResourceMap = do
     inject_ ref name r = liftIO . modifyIORef ref $ at name .~ Just r
     retrieve_ ref name = liftIO . fmap (view $ at name) $ readIORef ref
 
+mkResourceManager :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
+                  => ((String -> a -> m ()) -> (String -> m (Maybe a)) -> m b)
+                  -> m b
+mkResourceManager builder = do
+  resMap <- getResourceMap
+  builder (insertRes resMap) (lookupRes resMap)
+
+-- Simple manager with default implementation for simple managed objects.
 getSimpleManager :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m,Load () a)
                  => m (String -> m a)
 getSimpleManager = do
