@@ -46,10 +46,10 @@ class QuaazarKeyframesExporter(bpy.types.Operator, ExportHelper):
     return {'FINISHED'}
 
 def register():
-  bpy.utils.register_class(QuaazarMeshExporter)
+  bpy.utils.register_class(QuaazarKeyframesExporter)
 
 def unregister():
-  bpy.utils.unregister_class(QuaazarMeshExporter)
+  bpy.utils.unregister_class(QuaazarKeyframesExporter)
 
 if __name__ == "__main__":
   register()
