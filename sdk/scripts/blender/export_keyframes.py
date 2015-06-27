@@ -21,6 +21,7 @@ from bpy.props import BoolProperty
 from math import pi
 import json
 
+# Dump digits after the 6th one in order to make output less heavy.
 def round_(x):
   return round(x,6)
 
@@ -45,7 +46,7 @@ class QuaazarKeyframesExporter(bpy.types.Operator, ExportHelper):
       co = (0,0,0) # origin is the default
       orient = (0,0,0,-1) # -Z axis is the default
       scale = (1,1,1) # identity scale
-      print(action.name)
+      print ("exporting action " + action.name)
 
       # Check whether we only have LocRotScale group
       if not action.groups['LocRotScale'] or len(action.groups) != 1:
@@ -67,6 +68,8 @@ class QuaazarKeyframesExporter(bpy.types.Operator, ExportHelper):
       if len(channels) != 10:
         self.report({'ERROR'}, action.name + " doesn’t have enough channels")
         return {}
+
+      # Get the curves and the keyframe points.
       locXCurve = channels[0]
       locYCurve = channels[1]
       locZCurve = channels[2]
@@ -74,9 +77,23 @@ class QuaazarKeyframesExporter(bpy.types.Operator, ExportHelper):
       rotXCurve = channels[4]
       rotYCurve = channels[5]
       rotZCurve = channels[6]
-      scaX      = channels[7]
-      scaY      = channels[8]
-      scaZ      = channels[9]
+      scaXCurve = channels[7]
+      scaYCurve = channels[8]
+      scaZCurve = channels[9]
+      locXKeys = locXCurve.keyframe_points
+      locYKeys = locYCurve.keyframe_points
+      locZKeys = locZCurve.keyframe_points
+      rotWKeys = rotWCurve.keyframe_points
+      rotXKeys = rotXCurve.keyframe_points
+      rotYKeys = rotYCurve.keyframe_points
+      rotZKeys = rotZCurve.keyframe_points
+      scaXKeys = scaXCurve.keyframe_points
+      scaYKeys = scaYCurve.keyframe_points
+      scaZKeys = scaZCurve.keyframe_points
+
+      # Shrink the location curves into a single curves
+
+
     return {'FINISHED'}
 
 def register():
