@@ -25,6 +25,22 @@ import json
 def round_(x):
   return round(x,6)
 
+class Action:
+  def __init__(self, name, curves):
+    self.name = name
+    self.curves = curves
+
+class Curve:
+  def __init__(self, name, keys):
+    self.name = name
+    self.keys = keys
+
+class Key:
+  def __init__(self, interpolation, t, v):
+    self.interpolation = interpolation
+    self.index = t
+    self.value = v
+
 class QuaazarKeyframesExporter(bpy.types.Operator, ExportHelper):
   """Quaazar Keyframes Exporter Script"""
   bl_idname      = "object.quaazar_keyframes_exporter"
@@ -42,10 +58,8 @@ class QuaazarKeyframesExporter(bpy.types.Operator, ExportHelper):
 
   def execute(self, context):
     actions = bpy.data.actions
+    acts = []
     for action in actions:
-      co = (0,0,0) # origin is the default
-      orient = (0,0,0,-1) # -Z axis is the default
-      scale = (1,1,1) # identity scale
       print ("exporting action " + action.name)
 
       # Check whether we only have LocRotScale group
@@ -91,9 +105,37 @@ class QuaazarKeyframesExporter(bpy.types.Operator, ExportHelper):
       scaYKeys = scaYCurve.keyframe_points
       scaZKeys = scaZCurve.keyframe_points
 
-      # Shrink the location curves into a single curves
+      # Shrink the location curves into a single curve
+      locKeys = []
+      for i in range(0, len(locXKeys)):
+        p = (round_(locXKeys[i].co.y),round_(locYKeys[i].co.y),round_(locZKeys[i].co.y))
+        locKeys.append(Key(locXKeys[i].interpolation, round_(locXKeys[i].co.x), p).__dict__)
+      locCurve = Curve('position', locKeys).__dict__
 
+      # Shrink the rotation curves into a single curve
+      rotKeys = []
+      for i in range(0, len(rotWKeys)):
+        o = (round_(rotWKeys[i].co.y),round_(rotXKeys[i].co.y),round_(rotYKeys[i].co.y),round_(rotZKeys[i].co.y))
+        rotKeys.append(Key(rotWKeys[i].interpolation, round_(rotWKeys[i].co.x), o).__dict__)
+      rotCurve = Curve('orientation', rotKeys).__dict__
 
+      # Shrink the scale curves into a single curve
+      scaKeys = []
+      for i in range (0, len(scaXKeys)):
+        s = (round_(scaXKeys[i].co.y),round_(scaYKeys[i].co.y),round_(scaZKeys[i].co.y))
+        scaKeys.append(Key(scaXKeys[i].interpolation, round_(scaXKeys[i].co.x), s).__dict__)
+      scaCurve = Curve('scale', scaKeys).__dict__
+
+      # Build the action
+      act = Action(action.name, [locCurve,rotCurve,scaCurve]).__dict__
+      acts.append(act)
+
+    fp = open(self.filepath, "w")
+    i = None
+    if self.sparse:
+      i = 1
+    json.dump(acts, fp, sort_keys=True, indent=i)
+    fp.close()
     return {'FINISHED'}
 
 def register():
