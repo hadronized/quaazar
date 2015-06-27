@@ -15,14 +15,7 @@ module Quaazar (
   , setWindowTitle
     -- * Re-exported
   , Window
-  , module Quaazar.Control
-  , module Quaazar.Geometry
-  , module Quaazar.Lighting
-  , module Quaazar.Render
-  , module Quaazar.Scene
-  , module Quaazar.System
-  , module Quaazar.Technics
-  , module Quaazar.Utils
+  , module X
   ) where
 
 import Control.Concurrent.STM ( TVar, atomically, modifyTVar, newTVarIO
@@ -32,15 +25,15 @@ import Graphics.Rendering.OpenGL.Raw
 import Graphics.UI.GLFW as GLFW hiding ( setWindowTitle )
 import qualified Graphics.UI.GLFW as GLFW ( setWindowTitle )
 import Numeric.Natural ( Natural )
-import Quaazar.Control
-import Quaazar.Geometry
-import Quaazar.Lighting
-import Quaazar.Render
-import Quaazar.Scene
-import Quaazar.System
+import Quaazar.Control as X
+import Quaazar.Geometry as X
+import Quaazar.Lighting as X
+import Quaazar.Render as X
+import Quaazar.Scene as X
+import Quaazar.System as X
 import Quaazar.System.Event as E
-import Quaazar.Technics
-import Quaazar.Utils
+import Quaazar.Technics as X
+import Quaazar.Utils as X
 
 withQuaazar :: Natural -- ^ Width of the window
             -> Natural -- ^ Height of the window
@@ -62,7 +55,7 @@ withQuaazar w h full title app = do
         Nothing -> print (Log ErrorLog CoreLog "unable to create window :(")
       print (Log InfoLog CoreLog "bye!")
       terminate
-      else do
+      else
         print (Log ErrorLog CoreLog "unable to init :(")
 
 withWindow :: Window -> (Window -> IO [Event] -> IO ()) -> IO ()

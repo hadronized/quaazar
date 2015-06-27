@@ -10,11 +10,9 @@
 ----------------------------------------------------------------------------
 
 module Quaazar.System (
-    module Quaazar.System.Loader
-  , module Quaazar.System.Managers
-  , module Quaazar.System.Resource
+    module X
   ) where
 
-import Quaazar.System.Loader
-import Quaazar.System.Managers
-import Quaazar.System.Resource
+import Quaazar.System.Loader as X
+import Quaazar.System.Managers as X
+import Quaazar.System.Resource as X

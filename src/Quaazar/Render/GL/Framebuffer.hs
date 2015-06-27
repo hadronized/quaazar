@@ -124,7 +124,7 @@ buildFramebuffer target f = do
     fb <- genObject
     bindFramebuffer fb target
     void (f fb)
-    checkFramebufferStatus >>= return . maybe (Right fb) onError
+    fmap (maybe (Right fb) onError) checkFramebufferStatus
   where
     onError = Left . Log ErrorLog gllog
 

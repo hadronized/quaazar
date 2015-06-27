@@ -10,10 +10,8 @@
 ----------------------------------------------------------------------------
 
 module Quaazar.Lighting (
-    module Quaazar.Lighting.Light
-  , module Quaazar.Lighting.Shadow
+    module X
   ) where
 
-
-import Quaazar.Lighting.Light
-import Quaazar.Lighting.Shadow
+import Quaazar.Lighting.Light as X
+import Quaazar.Lighting.Shadow as X

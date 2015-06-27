@@ -10,13 +10,10 @@
 ----------------------------------------------------------------------------
 
 module Quaazar.Utils (
-    module Quaazar.Utils.Directory
-  , module Quaazar.Utils.Log
-  , module Quaazar.Utils.Scoped
-  , module Quaazar.Utils.TimePoint
+    module X
   ) where
 
-import Quaazar.Utils.Directory
-import Quaazar.Utils.Log
-import Quaazar.Utils.Scoped
-import Quaazar.Utils.TimePoint
+import Quaazar.Utils.Directory as X
+import Quaazar.Utils.Log as X
+import Quaazar.Utils.Scoped as X
+import Quaazar.Utils.TimePoint as X

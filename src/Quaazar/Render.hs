@@ -10,29 +10,18 @@
 ----------------------------------------------------------------------------
 
 module Quaazar.Render (
-    module Quaazar.Render.Camera
-  , module Quaazar.Render.Compositing
-  , module Quaazar.Render.GL.Shader
-  , module Quaazar.Render.GL.Texture
-  , module Quaazar.Render.Light
-  , module Quaazar.Render.Lighting
-  , module Quaazar.Render.Mesh
-  , module Quaazar.Render.Projection
-  , module Quaazar.Render.Renderer
-  , module Quaazar.Render.RenderLayer
-  , module Quaazar.Render.Semantics
-  , module Quaazar.Render.Viewport
+    module X
   ) where
 
-import Quaazar.Render.Camera
-import Quaazar.Render.Compositing
-import Quaazar.Render.GL.Shader
-import Quaazar.Render.GL.Texture
-import Quaazar.Render.Light
-import Quaazar.Render.Lighting
-import Quaazar.Render.Mesh
-import Quaazar.Render.Projection
-import Quaazar.Render.Renderer
-import Quaazar.Render.RenderLayer
-import Quaazar.Render.Semantics
-import Quaazar.Render.Viewport
+import Quaazar.Render.Camera as X
+import Quaazar.Render.Compositing as X
+import Quaazar.Render.GL.Shader as X
+import Quaazar.Render.GL.Texture as X
+import Quaazar.Render.Light as X
+import Quaazar.Render.Lighting as X
+import Quaazar.Render.Mesh as X
+import Quaazar.Render.Projection as X
+import Quaazar.Render.Renderer as X
+import Quaazar.Render.RenderLayer as X
+import Quaazar.Render.Semantics as X
+import Quaazar.Render.Viewport as X

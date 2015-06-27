@@ -38,7 +38,7 @@ data Line = Line Word32 Word32 deriving (Eq,Read,Show)
 
 instance FromJSON Line where
   parseJSON = withArray "line" $ \ar -> case toList ar of
-    [Number x,Number y] -> case sequence (map toBoundedInteger [x,y]) of
+    [Number x,Number y] -> case traverse toBoundedInteger [x,y] of
       Just [a,b] -> return (Line a b)
       _ -> fail "incorrect line type"
     _ -> fail" incorrect line format"
@@ -48,7 +48,7 @@ data Triangle = Triangle Word32 Word32 Word32 deriving (Eq,Read,Show)
 
 instance FromJSON Triangle where
   parseJSON = withArray "triangle" $ \ar -> case toList ar of
-    [Number x,Number y,Number z] -> case sequence (map toBoundedInteger [x,y,z]) of
+    [Number x,Number y,Number z] -> case traverse toBoundedInteger [x,y,z] of
       Just [a,b,c] -> return (Triangle a b c)
       _ -> fail "incorrect triangle type"
     _ -> fail "incorrect triangle format"

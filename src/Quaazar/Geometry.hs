@@ -10,17 +10,12 @@
 ----------------------------------------------------------------------------
 
 module Quaazar.Geometry (
-    module Quaazar.Geometry.Mesh
-  , module Quaazar.Geometry.Normal
-  , module Quaazar.Geometry.Position
-  , module Quaazar.Geometry.UV
-  , module Quaazar.Geometry.Vertex
-  , module Quaazar.Geometry.VGroup
+    module X
   ) where
 
-import Quaazar.Geometry.Mesh
-import Quaazar.Geometry.Normal
-import Quaazar.Geometry.Position
-import Quaazar.Geometry.UV
-import Quaazar.Geometry.Vertex
-import Quaazar.Geometry.VGroup
+import Quaazar.Geometry.Mesh as X
+import Quaazar.Geometry.Normal as X
+import Quaazar.Geometry.Position as X
+import Quaazar.Geometry.UV as X
+import Quaazar.Geometry.Vertex as X
+import Quaazar.Geometry.VGroup as X

@@ -18,21 +18,17 @@ module Quaazar.System.Resource (
   , getSimpleManager
   , mkResourceManager
     -- * Re-exported
-  , module Control.Monad.Error.Class
-  , module Control.Monad.Trans
-  , module Quaazar.System.Loader
-  , module Quaazar.Utils.Log
-  , module Quaazar.Utils.Scoped
+  , module X
   ) where
 
 import Control.Lens
-import Control.Monad.Error.Class ( MonadError )
-import Control.Monad.Trans ( MonadIO(..) )
+import Control.Monad.Error.Class as X ( MonadError )
+import Control.Monad.Trans as X ( MonadIO(..) )
 import Data.IORef
 import Data.Map as M ( Map, empty )
-import Quaazar.System.Loader
-import Quaazar.Utils.Log ( Log, MonadLogger )
-import Quaazar.Utils.Scoped ( MonadScoped )
+import Quaazar.System.Loader as X
+import Quaazar.Utils.Log as X ( Log, MonadLogger )
+import Quaazar.Utils.Scoped as X ( MonadScoped )
 
 -- IO resource map with reference semantic. Can be shared between computations.
 data ResourceMap a = ResourceMap {

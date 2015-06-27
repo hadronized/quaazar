@@ -12,16 +12,16 @@
 module Quaazar.Render.Compositing where
 
 import Control.Arrow ( Arrow(..) )
-import Control.Category ( Category(..) ) 
+import Control.Category ( Category(..) )
 import Control.Lens
 import Control.Monad ( (>=>) )
 import Control.Monad.Error.Class ( MonadError )
 import Control.Monad.Trans ( MonadIO )
 import Data.Bits ( (.|.) )
-import Data.Semigroup ( Semigroup(..) ) 
+import Data.Semigroup ( Semigroup(..) )
 import Graphics.Rendering.OpenGL.Raw
 import Quaazar.Render.GL.Buffer ( Buffer )
-import Quaazar.Render.GL.Framebuffer ( Target(..), bindFramebuffer ) 
+import Quaazar.Render.GL.Framebuffer ( Target(..), bindFramebuffer )
 import Quaazar.Render.GL.Offscreen
 import Quaazar.Render.GL.Primitive
 import Quaazar.Render.GL.Shader
@@ -75,8 +75,8 @@ instance Monad (Compositor a) where
     runCompositor (f x') va b s a
 
 instance Profunctor Compositor where
-  dimap l r (Compositor f) = Compositor $ \va b s a -> do
-    fmap r $ f va b s (l a)
+  dimap l r (Compositor f) = Compositor $ \va b s a ->
+    r <$> f va b s (l a)
 
 instance (Semigroup b,Monoid b) => Monoid (Compositor a b) where
   mempty = Compositor $ \_ _ _ _ -> pure mempty
@@ -95,8 +95,8 @@ instance (Semigroup b) => Semigroup (Compositor a b) where
 -- **Note**: you’re advised to use the 'buildPostProcessProgram' function to
 -- generate the node program.
 postProcessNode :: (MonadIO m,MonadScoped IO m,MonadError Log m)
-                => Viewport 
-                -> Program 
+                => Viewport
+                -> Program
                 -> (a -> ShaderSemantics ())
                 -> m (Compositor a Texture2D)
 postProcessNode vp prog semantics = do
@@ -126,7 +126,7 @@ buildPostProcessProgram fs semantics =
 
 -- |This compositor node absorbs a 'RenderLayer'.
 renderNode :: (MonadIO m,MonadScoped IO m,MonadError Log m)
-           => Viewport 
+           => Viewport
            -> m (Compositor RenderLayer (Texture2D,Texture2D))
 renderNode vp = do
     Offscreen colormap depthmap fb <- genOffscreen w h Linear RGBA32F

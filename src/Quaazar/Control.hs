@@ -10,11 +10,9 @@
 ----------------------------------------------------------------------------
 
 module Quaazar.Control (
-    module Quaazar.Control.Constraint
-  , module Quaazar.Control.Monad
-  , module Quaazar.Control.Trans
+    module X
   ) where
 
-import Quaazar.Control.Constraint
-import Quaazar.Control.Monad
-import Quaazar.Control.Trans
+import Quaazar.Control.Constraint as X
+import Quaazar.Control.Monad as X
+import Quaazar.Control.Trans as X

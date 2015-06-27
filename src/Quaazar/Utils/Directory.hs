@@ -23,5 +23,5 @@ import System.Directory ( doesDirectoryExist, doesFileExist )
 partitionFileDir :: [FilePath] -> IO ([FilePath],[FilePath])
 partitionFileDir files = do
     (f,r) <- partitionM doesFileExist files
-    d <- fmap fst $ partitionM doesDirectoryExist r
+    d <- fst <$> partitionM doesDirectoryExist r
     return (f,d)

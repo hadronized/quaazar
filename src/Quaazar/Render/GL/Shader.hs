@@ -15,7 +15,7 @@ import Control.Applicative
 import Control.Monad ( unless )
 import Control.Monad.Trans ( MonadIO(..) )
 import Control.Monad.Error.Class ( MonadError(..) )
-import Data.Foldable ( traverse_ )
+import Data.Foldable ( for_, traverse_ )
 import Data.Int ( Int32 )
 import Data.Word ( Word32 )
 import Foreign.C.String ( peekCString, withCString )
@@ -141,7 +141,7 @@ newtype Program = Program { unProgram :: GLuint } deriving (Eq,Show)
 
 instance GLObject Program where
   genObject = do
-    p <- liftBase $ glCreateProgram
+    p <- liftBase glCreateProgram
     scoped $ glDeleteProgram p
     return $ Program p
 
@@ -177,7 +177,7 @@ buildProgram vsSrc tcstesSrc gsSrc fsSrc = do
   fs :: FragmentShader <- genObject
   sequence_ [compile vs vsSrc,compile fs fsSrc]
   liftIO $ sequence_ [attach program vs,attach program fs]
-  flip traverse_ tcstesSrc $ \(tcsSrc,tesSrc) -> do
+  for_ tcstesSrc $ \(tcsSrc,tesSrc) -> do
     tcs :: TessCtrlShader <- genObject
     tes :: TessEvalShader <- genObject
     sequence_ [compile tcs tcsSrc,compile tes tesSrc]

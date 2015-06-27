@@ -99,7 +99,7 @@ loadJSON root path = do
     deb CoreLog $ "parsing '" ++ path ++ "'"
     (st,r,et) <- liftIO $ do
       st <- timePoint
-      !r <- (catch (fmap eitherDecode . B.readFile $ root </> path) onError)
+      !r <- catch (fmap eitherDecode . B.readFile $ root </> path) onError
       et <- timePoint
       return (st,r,et)
     deb CoreLog $ "parsing time: " ++ show (et - st)

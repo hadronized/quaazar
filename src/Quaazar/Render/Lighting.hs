@@ -97,7 +97,7 @@ getShadows :: (MonadIO m,MonadScoped IO m,MonadLogger m,MonadError Log m)
            => Natural
            -> Natural
            -> m (CubeOffscreenArray,Viewport)
-getShadows cubeSize d = 
+getShadows cubeSize d =
   (,)
     <$> genCubeOffscreenArray cubeSize d Linear R32F (ColorAttachment 0) Depth32F DepthAttachment
     <*> pure (Viewport 0 0 cubeSize cubeSize)
@@ -151,7 +151,7 @@ omniProjViews znear radius =
       , axisAngle xAxis (-pi/2) -- positive y
       , axisAngle xAxis (pi/2) -- negative y
       , axisAngle yAxis pi * axisAngle zAxis pi -- positive z
-      , axisAngle zAxis (pi) -- negative z
+      , axisAngle zAxis pi -- negative z
       ]
   where
     proj = projectionMatrix $ Perspective (pi/2) 1 znear radius
@@ -243,7 +243,7 @@ genShadowmap (Omni _ _ rad shadowLOD) shadowmapIndex lightTrsf meshes shdws =
       ligPosUniform @= lightTrsf^.transformPosition
       shadowmapIndexUniform @= (fromIntegral shadowmapIndex :: Word32)
       ligIRadUniform @= 1 / rad
-      traverse_ renderMesh_ meshes   
+      traverse_ renderMesh_ meshes
   where
     renderMesh_ meshInst = do
       let

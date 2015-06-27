@@ -272,7 +272,7 @@ setTextureFilters_ t filt = liftIO $ do
     filt'  = fromIntegral (fromFilter filt)
 
 transferPixels_ :: (MonadIO m,Storable a) => GLenum -> Natural -> Natural -> Format -> [a] -> m ()
-transferPixels_ t w h ft texels = liftIO $ do
+transferPixels_ t w h ft texels = liftIO $
     withArray texels (glTexSubImage2D t 0 0 0 (fromIntegral w) (fromIntegral h) ft' gl_FLOAT)
   where
     ft' = fromFormat ft
@@ -402,7 +402,7 @@ convertImage_ converter image@(Image w h _) wrap flt cmpf baseLvl maxLvl =
       3 -> (RGB,RGB32F)
       4 -> (RGBA,RGBA32F)
       _ -> error "convertImage_: more-than-4-components pixel"
-    texels = concat $ [converter $ pixelAt image x y | y <- [0..h-1], x <- [0..w-1]]
+    texels = concat [converter $ pixelAt image x y | y <- [0..h-1], x <- [0..w-1]]
 
 y8Converter :: Pixel8 -> [Float]
 y8Converter y = [imax8 * realToFrac y]
@@ -443,4 +443,3 @@ getTexture2DManager = mkResourceManager $ \insert lkp ->
       r <- load name (wrap,flt,cmpf,minlvl,maxlvl)
       insert name r
       pure r
-
