@@ -13,11 +13,13 @@
 module Quaazar.Animation.Key (
     -- * Key
     Key(..)
+    -- * Re-exported
+  , module X
   ) where
 
 import Data.Aeson
 import Linear
-import Quaazar.Animation.Interpolation
+import Quaazar.Animation.Interpolation as X
 
 data Key t a = Key {
     -- |

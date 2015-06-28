@@ -22,6 +22,7 @@ library
   hs-source-dirs:      src
 
   exposed-modules:     Quaazar
+                     , Quaazar.Animation.Curve
                      , Quaazar.Animation.Interpolation
                      , Quaazar.Animation.Key
                      , Quaazar.Control
