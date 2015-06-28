@@ -36,10 +36,12 @@ class Curve:
     self.keys = keys
 
 class Key:
-  def __init__(self, interpolation, t, v):
+  def __init__(self, interpolation, t, v, left=None, right=None):
     self.interpolation = interpolation
     self.index = t
     self.value = v
+    self.left = left
+    self.right = right
 
 class QuaazarKeyframesExporter(bpy.types.Operator, ExportHelper):
   """Quaazar Keyframes Exporter Script"""
@@ -53,7 +55,7 @@ class QuaazarKeyframesExporter(bpy.types.Operator, ExportHelper):
   sparse = BoolProperty (
       name        = "Sparse output"
     , description = "Should the output file be sparse?"
-    , default     = False
+    , default     = True
     , )
 
   def execute(self, context):
@@ -83,51 +85,22 @@ class QuaazarKeyframesExporter(bpy.types.Operator, ExportHelper):
         self.report({'ERROR'}, action.name + " doesn’t have enough channels")
         return {}
 
-      # Get the curves and the keyframe points.
-      locXCurve = channels[0]
-      locYCurve = channels[1]
-      locZCurve = channels[2]
-      rotWCurve = channels[3]
-      rotXCurve = channels[4]
-      rotYCurve = channels[5]
-      rotZCurve = channels[6]
-      scaXCurve = channels[7]
-      scaYCurve = channels[8]
-      scaZCurve = channels[9]
-      locXKeys = locXCurve.keyframe_points
-      locYKeys = locYCurve.keyframe_points
-      locZKeys = locZCurve.keyframe_points
-      rotWKeys = rotWCurve.keyframe_points
-      rotXKeys = rotXCurve.keyframe_points
-      rotYKeys = rotYCurve.keyframe_points
-      rotZKeys = rotZCurve.keyframe_points
-      scaXKeys = scaXCurve.keyframe_points
-      scaYKeys = scaYCurve.keyframe_points
-      scaZKeys = scaZCurve.keyframe_points
-
-      # Shrink the location curves into a single curve
-      locKeys = []
-      for i in range(0, len(locXKeys)):
-        p = (round_(locXKeys[i].co.y),round_(locYKeys[i].co.y),round_(locZKeys[i].co.y))
-        locKeys.append(Key(locXKeys[i].interpolation, round_(locXKeys[i].co.x), p).__dict__)
-      locCurve = Curve('position', locKeys).__dict__
-
-      # Shrink the rotation curves into a single curve
-      rotKeys = []
-      for i in range(0, len(rotWKeys)):
-        o = (round_(rotWKeys[i].co.y),round_(rotXKeys[i].co.y),round_(rotYKeys[i].co.y),round_(rotZKeys[i].co.y))
-        rotKeys.append(Key(rotWKeys[i].interpolation, round_(rotWKeys[i].co.x), o).__dict__)
-      rotCurve = Curve('orientation', rotKeys).__dict__
-
-      # Shrink the scale curves into a single curve
-      scaKeys = []
-      for i in range (0, len(scaXKeys)):
-        s = (round_(scaXKeys[i].co.y),round_(scaYKeys[i].co.y),round_(scaZKeys[i].co.y))
-        scaKeys.append(Key(scaXKeys[i].interpolation, round_(scaXKeys[i].co.x), s).__dict__)
-      scaCurve = Curve('scale', scaKeys).__dict__
+      # Convert the curves and the keyframe points.
+      curves = [
+          fromFCurve(channels[0], 'position.x')
+        , fromFCurve(channels[1], 'position.y')
+        , fromFCurve(channels[2], 'position.z')
+        , fromFCurve(channels[3], 'orientation.w')
+        , fromFCurve(channels[4], 'orientation.x')
+        , fromFCurve(channels[5], 'orientation.y')
+        , fromFCurve(channels[6], 'orientation.z')
+        , fromFCurve(channels[7], 'scale.x')
+        , fromFCurve(channels[8], 'scale.y')
+        , fromFCurve(channels[9], 'scale.z')
+        ]
 
       # Build the action
-      act = Action(action.name, [locCurve,rotCurve,scaCurve]).__dict__
+      act = Action(action.name, curves).__dict__
       acts.append(act)
 
     fp = open(self.filepath, "w")
@@ -137,6 +110,26 @@ class QuaazarKeyframesExporter(bpy.types.Operator, ExportHelper):
     json.dump(acts, fp, sort_keys=True, indent=i)
     fp.close()
     return {'FINISHED'}
+
+# Given a curve, remove all the extra features we don’t need and yield a
+# Curve.
+def fromFCurve(fcurve, name):
+  keys = []
+  for kfp in fcurve.keyframe_points:
+      left = None
+      right = None
+      if kfp.interpolation == 'BEZIER':
+        left = list(kfp.handle_left)
+        right = list(kfp.handle_right)
+      keys.append(Key(
+          kfp.interpolation
+        , round_(kfp.co.x)
+        , round_(kfp.co.y)
+        , left
+        , right
+        ).__dict__
+      )
+  return Curve(name, keys).__dict__
 
 def register():
   bpy.utils.register_class(QuaazarKeyframesExporter)
