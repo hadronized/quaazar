@@ -10,15 +10,12 @@
 ----------------------------------------------------------------------------
 
 module Quaazar.System.Event (
-    -- * Events
-    Event(..)
     -- * Key
-  , Key(..)
+    Key(..)
   , KeyState(..)
     -- * Mouse
   , MouseButton(..)
   , MouseButtonState(..)
-  , MouseMotion(..)
     -- * Window
   , WindowState(..)
     -- * System
@@ -187,17 +184,6 @@ data MouseButtonState
   | ButtonReleased
     deriving (Eq,Ord,Read,Show)
 
--- |When the mouse moves, it generates a 'MouseMotion' event. That event
--- gathers the new position of the mouse (use 'mouseX' and 'mouseY' to get
--- them) along with its relative movement (use 'mouseRX' and 'mouseRY' to get
--- them).
-data MouseMotion = MouseMotion {
-    mouseX  :: Double -- ^ Mouse position on X
-  , mouseY  :: Double -- ^ Mouse position on Y
-  , mouseRX :: Double -- ^ Mouse relative movement on X
-  , mouseRY :: Double -- ^ Mouse relative movement on Y
-  } deriving (Eq,Read,Show)
-
 -- |A window can emit several events: 'Closed' when the user closes it,
 -- 'Opened' when the application starts, 'FocusLost' when the window loses the
 -- focus and 'FocusGained' and it gets the focus back.
@@ -211,15 +197,6 @@ data WindowState
 -- |System state are other kind of events.
 data SystemState
   = Quit -- ^ The application is quitting
-    deriving (Eq,Read,Show)
-
--- |Gather all core events.
-data Event
-  = KeyEvent Key KeyState
-  | MouseButtonEvent MouseButton MouseButtonState
-  | MouseMotionEvent MouseMotion
-  | WindowEvent WindowState
-  | SystemEvent SystemState
     deriving (Eq,Read,Show)
 
 -- |Convert a GLFW key into quaazar one.
