@@ -1,0 +1,4 @@
+[submodule "future"]
+	path = future
+	url = https://github.com/phaazon/future
+	branch = master

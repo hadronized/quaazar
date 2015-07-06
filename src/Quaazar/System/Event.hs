@@ -225,7 +225,7 @@ data Event
 -- |Convert a GLFW key into quaazar one.
 fromGLFWKey :: GLFW.Key -> Key
 fromGLFWKey k = case k of
-  Key'Unknown      -> Unknown 
+  Key'Unknown      -> Unknown
   Key'Space        -> Space
   Key'Apostrophe   -> Apostrophe
   Key'Comma        -> Comma
@@ -346,7 +346,7 @@ fromGLFWKey k = case k of
   Key'RightAlt     -> RightAlt
   Key'RightSuper   -> RightSuper
   Key'Menu         -> Menu
-  
+
 -- |Convert a GLFW key state into quaazar one.
 fromGLFWKeyState :: GLFW.KeyState -> KeyState
 fromGLFWKeyState ks = case ks of
@@ -373,7 +373,7 @@ fromGLFWMouseButtonState bs = case bs of
   MouseButtonState'Released -> ButtonReleased
 
 -- |Convert a GLFW window focus into a quaazar one.
-fromGLFWFocusState :: FocusState -> WindowState
+fromGLFWFocusState :: FocusState -> Bool
 fromGLFWFocusState fs = case fs of
-  FocusState'Focused -> FocusGained
-  FocusState'Defocused -> FocusLost
+  FocusState'Focused -> True
+  FocusState'Defocused -> False

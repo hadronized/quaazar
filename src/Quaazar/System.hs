@@ -16,3 +16,4 @@ module Quaazar.System (
 import Quaazar.System.Loader as X
 import Quaazar.System.Managers as X
 import Quaazar.System.Resource as X
+import Quaazar.System.Windowing as X

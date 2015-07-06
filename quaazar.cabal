@@ -63,6 +63,7 @@ library
                      , Quaazar.System.Loader
                      , Quaazar.System.Managers
                      , Quaazar.System.Resource
+                     , Quaazar.System.Windowing
                      , Quaazar.Technics
                      , Quaazar.Technics.Lighting.Phong
                      , Quaazar.Utils
@@ -91,6 +92,7 @@ library
                      , LambdaCase
                      , GeneralizedNewtypeDeriving
                      , MultiParamTypeClasses
+                     , MultiWayIf
                      , ScopedTypeVariables
                      , TemplateHaskell
                      , TupleSections
@@ -127,6 +129,7 @@ library
                      , clock             >= 0.4   && < 0.5
                      , profunctors       >= 4.3   && < 4.5
                      , containers        >= 0.5   && < 0.6
+                     , future            >= 0.1   && < 0.2
 
   default-language:    Haskell2010
 
@@ -148,6 +151,7 @@ executable qzr
                      , monad-journal     >= 0.2   && < 0.8
                      , filepath          >= 1.3   && < 1.4
                      , directory         >= 1.2   && < 1.3
+                     , future            >= 0.1   && < 0.2
 
   default-language:    Haskell2010
 
