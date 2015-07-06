@@ -111,27 +111,6 @@ getFutures win = do
     changeFocus (fromGLFWFocusState f)
   pure (key,mouse,cursor,windowClosed,focus)
 
--- |Interpreter version of 'standalone'.
---
--- That function can be used in a **ghci** session.
-{-
-standaloneInterpreter :: Natural -- ^ Width of the window
-                      -> Natural -- ^ Height of the window
-                      -> Bool -- ^ Should the window be fullscreen?
-                      -> String -- ^ Title of the window
-                      -> IO (
-                            Window
-                          , Future (Key,KeyState)
-                          , Future (MouseButton,MouseButtonState)
-                          , Future (Double,Double)
-                          , Future ()
-                          , Future Bool
-                          , IO ()
-                          )
--}
-
-
-
 initGL :: IO ()
 initGL = do
   glEnable gl_DEPTH_TEST
