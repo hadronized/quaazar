@@ -63,7 +63,7 @@ library
                      , Quaazar.System.Loader
                      , Quaazar.System.Managers
                      , Quaazar.System.Resource
-                     , Quaazar.System.Windowing
+                     , Quaazar.System.Run
                      , Quaazar.Technics
                      , Quaazar.Technics.Lighting.Phong
                      , Quaazar.Utils
