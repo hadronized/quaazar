@@ -64,6 +64,7 @@ library
                      , Quaazar.System.Managers
                      , Quaazar.System.Resource
                      , Quaazar.System.Run
+                     , Quaazar.System.Run.Live
                      , Quaazar.System.Run.Startup
                      , Quaazar.Technics
                      , Quaazar.Technics.Lighting.Phong

@@ -13,9 +13,12 @@ module Quaazar.System.Run.Startup (
     startup
     -- * Miscellaneous
   , setWindowTitle
+    -- * Re-exported
+  , Window
   ) where
 
 import Control.Concurrent.Future
+import Data.Foldable ( traverse_ )
 import Data.List ( intercalate )
 import Graphics.Rendering.OpenGL.Raw
 import Graphics.UI.GLFW hiding ( Key, KeyState, MouseButton, MouseButtonState
@@ -59,13 +62,15 @@ startup :: Natural -- ^ Width of the window
           -> IO ()
           )
         -> IO ()
-startup w h full title app =
-  initiate w h full title >>= \case
-    Just win -> do
+startup w h full title app = do
+    initiate w h full title >>= traverse_ runApp
+    terminate
+  where
+    runApp win = do
       initGL
       (key,mouse,cursor,windowClosed,focus) <- getFutures win
       app win key mouse cursor windowClosed focus pollEvents
-    Nothing -> terminate
+      setWindowShouldClose win True
 
 initiate :: Natural -> Natural -> Bool -> String -> IO (Maybe Window)
 initiate w h full title = do
