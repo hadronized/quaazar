@@ -111,6 +111,22 @@ class QuaazarKeyframesExporter(bpy.types.Operator, ExportHelper):
     fp.close()
     return {'FINISHED'}
 
+# Convert interpolation mode to match smoothie’s. See
+# https://hackage.haskell.org/package/smoothie-0.3.3.2/docs/Data-Spline-Key.html#t:Key.
+def adaptInterpolationMode(mode):
+  matched = 'linear' # default to linear if mode is not supported
+  if mode == 'CONSTANT':
+    matched = 'hold'
+  elif mode == 'LINEAR':
+    matched = 'linear'
+  elif mode == 'SINE':
+    matched = 'cosine'
+  elif mode == 'CUBIC':
+    matched = 'cubic-hermite'
+  elif mode == 'BEZIER':
+    matched = 'bezier'
+  return matched
+
 # Given a curve, remove all the extra features we don’t need and yield a
 # Curve.
 def fromFCurve(fcurve, name):
@@ -119,10 +135,10 @@ def fromFCurve(fcurve, name):
       left = None
       right = None
       if kfp.interpolation == 'BEZIER':
-        left = list(kfp.handle_left)
-        right = list(kfp.handle_right)
+        left = list(map(round_,kfp.handle_left))
+        right = list(map(round_,kfp.handle_right))
       keys.append(Key(
-          kfp.interpolation
+          adaptInterpolationMode(kfp.interpolation)
         , round_(kfp.co.x)
         , round_(kfp.co.y)
         , left
