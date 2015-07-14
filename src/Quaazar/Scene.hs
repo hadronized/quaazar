@@ -16,6 +16,5 @@ module Quaazar.Scene (
 import Quaazar.Scene.BoundingVolume as X
 import Quaazar.Scene.Camera as X
 import Quaazar.Scene.Color as X
-import Quaazar.Scene.Hierarchy as X
 import Quaazar.Scene.Model as X
 import Quaazar.Scene.Transform as X

@@ -25,15 +25,11 @@ module Quaazar.Geometry.Mesh (
   ) where
 
 import Control.Lens
-import Control.Monad.Error.Class ( MonadError )
-import Control.Monad.Trans ( MonadIO )
 import Data.Aeson
 import Quaazar.Geometry.Vertex
 import Quaazar.Geometry.VGroup
 import Quaazar.System.Loader
 import Quaazar.System.Resource
-import Quaazar.Utils.Log
-import Quaazar.Utils.Scoped
 
 -- |A mesh is a pair of vertices and vertex group.
 data Mesh = Mesh {

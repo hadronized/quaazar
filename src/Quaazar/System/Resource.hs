@@ -25,7 +25,7 @@ import Control.Lens
 import Control.Monad.Error.Class as X ( MonadError )
 import Control.Monad.Trans as X ( MonadIO(..) )
 import Data.IORef
-import Data.Map as M ( Map, empty )
+import Data.Map as M ( empty )
 import Quaazar.System.Loader as X
 import Quaazar.Utils.Log as X ( Log, MonadLogger )
 import Quaazar.Utils.Scoped as X ( MonadScoped )

@@ -17,5 +17,3 @@ import Quaazar.Geometry.Mesh as X
 import Quaazar.Geometry.Normal as X
 import Quaazar.Geometry.Position as X
 import Quaazar.Geometry.UV as X
-import Quaazar.Geometry.Vertex as X
-import Quaazar.Geometry.VGroup as X

@@ -14,8 +14,6 @@ module Quaazar.Render.GL.Texture where
 import Codec.Picture
 import Codec.Picture.Types
 import Control.Arrow ( left )
-import Control.Monad.Error.Class ( MonadError(..) )
-import Control.Monad.Trans ( MonadIO(..) )
 import Data.Either.Combinators ( eitherToError )
 import Foreign.Marshal.Array ( withArray )
 import Foreign.Storable ( Storable )
@@ -24,7 +22,6 @@ import Numeric.Natural ( Natural )
 import Quaazar.Render.GL.GLObject
 import Quaazar.Render.GL.Log ( gllog )
 import Quaazar.Render.GL.Shader ( Uniformable(..) )
-import Quaazar.System.Loader ( Load(..), rootPath )
 import Quaazar.System.Resource
 import Quaazar.Utils.Log
 import System.FilePath ( (</>) )
